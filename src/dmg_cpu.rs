@@ -1,11 +1,10 @@
 // Declare all register ID and necessary constants
 
+/// GB has 8 8-bit registers (including special flag register).
+/// 3 16-bit pair registers, which is a combination from pairing 2 8-bit registers together.
+/// 2 special registers: SP and PC.
 pub struct Registers {
-    // 8 8-bit registers (including register F)
-    // 5 16-bit register (all pairs, not including AF, including PC)
-    
     pub mut A: u8,      // Accumulator register
-    pub mut F: u8,      // Special flag register
     pub mut B: u8,
     pub mut C: u8,
     pub mut D: u8,
@@ -17,14 +16,20 @@ pub struct Registers {
     pub mut BC: u16,
     pub mut DE: u16,
     pub mut HL: u16,
-    pub mut SP: u16,
-    pub mut PC: u16,
 
+    // Special registers
+    pub mut F: u8,      // Special flag register
+    pub mut SP: u16,    // Stack pointer
+    pub mut PC: u16,
 }
 
-
 pub struct CPU {
-    // All the components of CPU
+    pub mut reg: Registers,     // Set of registers
+    
+    pub mut mem: [u8; 65536],   // 64KB memory
+    pub mut stack: Vec<u16>,    // Stack for PC
+
+    pub mut clock: u8,          // For timing in GB
 }
 
 impl CPU {
