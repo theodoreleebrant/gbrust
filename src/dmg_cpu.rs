@@ -3,6 +3,23 @@
 pub struct Registers {
     // 8 8-bit registers (including register F)
     // 5 16-bit register (all pairs, not including AF, including PC)
+    
+    pub mut A: u8,      // Accumulator register
+    pub mut F: u8,      // Special flag register
+    pub mut B: u8,
+    pub mut C: u8,
+    pub mut D: u8,
+    pub mut E: u8,
+    pub mut H: u8,
+    pub mut L: u8,
+
+    // 16-bit pair registers
+    pub mut BC: u16,
+    pub mut DE: u16,
+    pub mut HL: u16,
+    pub mut SP: u16,
+    pub mut PC: u16,
+
 }
 
 
