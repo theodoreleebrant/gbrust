@@ -48,7 +48,7 @@ pub struct CPU {
     pub mut reg: Registers,     // Set of registers
     
     pub mut mem: [u8; 65536],   // 64KB memory
-    pub mut stack: Vec<u8>,    // Stack for PC
+    pub mut stack: [u8; 256],    // Stack for PC
 
     pub mut clock: u8,          // For timing in GB
 }
@@ -438,7 +438,7 @@ impl CPU {
     pub fn ld_SP_HL(&self) -> ProgramCounter {
         self.reg.SP = self.reg.HL;
 
-        ProgramCounter::Next(1);
+        ProgramCounter::Next(1)
     }
 
     /// push_rr: push data from register rr to stack memory
@@ -446,9 +446,26 @@ impl CPU {
     pub fn push_rr(&self) -> ProgramCounter {
         let rr = self.get_r16();
 
-        self.(SP - 1) = 
+        self.stack[self.reg.SP - 1] = (rr >> 8) as u8;
+        self.stack[self.reg.SP - 2] = (rr & 0x00FF) as u8;
 
+        self.reg.SP -= 2;
 
+        ProgramCounter::Next(1)
+    }
+
+    /// pop_rr: pop data from stack to the 16-bit register rr.
+    /// 1-byte instruction
+    pub fn pop_rr(&self) -> ProgramCounter {
+        let rr = self.get_r16();
+        
+        let nn_low = self.stack[self.reg.SP as usize];
+        let nn_high = self.stack[(self.reg.SP + 1) as usize];
+
+        self.write_to_r16(rr, nn_low | (nn_high << 8));
+
+        ProgramCounter::Next(1)
+    }
 
 
 
