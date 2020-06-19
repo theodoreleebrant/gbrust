@@ -112,11 +112,18 @@ impl CPU {
 
         Some(result)
     }
-
+    
+    /// load_mem_to_r8: Loads content from memory specified by addr into register r8_id.
+    /// @param r8_id: ID of some 8-bit register
+    /// @param addr: 16-bit address for memory
+    /// @return boolean whether ID is valid
     pub fn load_mem_to_r8(&self, r8_id: u8, addr: u16) -> bool{
         self.write_to_r8(r8_id, self.mem[addr as usize])
     }
 
+    /// save_r8_to_mem: Saves content from register r8_id into memory specified by addr.
+    /// @param r8_id: ID of some 8-bit register with content
+    /// @param addr: 16-bit address for memory to be saved to
     pub fn save_r8_to_mem(&self, r8_id: u8, addr: u16) {
         match self.read_from_r8(r8_id) {
             Some(content) => self.mem[addr as usize] = content,
@@ -222,13 +229,18 @@ impl CPU {
         ProgramCounter::Next(2)
     }
 
-    /// 3-byte instruction
+    /// ld_A_addr_nn: Load content at memory specified by address nn into register A.
+    /// 3-byte instruction.
+    /// @param nn: 16-bit address
     pub fn ld_A_addr_nn(&self, nn: u16) {
         self.load_mem_to_r8(A_ID, nn);
 
         ProgramCounter::Next(3)
     }
 
+    /// ld_addr_nn_A: Save content of register A into memory specified by address nn.
+    /// 3-byte instruction.
+    /// @param nn: 16-bit address.
     pub fn ld_addr_nn_A(&self, nn: u16) {
         self.save_r8_to_mem(A_ID, nn);
     
