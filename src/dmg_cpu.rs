@@ -119,7 +119,7 @@ impl CPU {
 
     pub fn save_r8_to_mem(&self, r8_id: u8, addr: u16) {
         match self.read_from_r8(r8_id) {
-            Some(content) => mem[addr as usize] = content,
+            Some(content) => self.mem[addr as usize] = content,
             None => (),
         }
     }
@@ -149,11 +149,91 @@ impl CPU {
     }
 
     /// ld_r_addr_HL: loads contents of memory specified at (HL) to register r. 1-byte instruction
+    /// @param r: 8-bit register ID
     pub fn ld_r_addr_HL(&self, r: u8) -> ProgramCounter {
-        load_mem_to_r8(r, self.reg.HL);
+        self.load_mem_to_r8(r, self.reg.HL);
+
+        ProgramCounter::Next(1)
     }
 
+    /// ld_addr_HL_r: stores contents of register r into memory specified by register pair HL.
+    /// 1-byte instruction.
+    /// @param: r: ID of 8-bit register
+    pub fn ld_addr_HL_r(&self, r: u8) -> ProgramCounter {
+        self.save_r8_to_mem(r, self.reg.HL);
+        
+        ProgramCounter::Next(1)
+    }
+
+    /// ld_addr_HL_n: stores 8-bit immediate data in memory specified by register pair HL.
+    /// 2-byte instruction.
+    /// @param n: 8-bit immediate.
+    pub fn ld_addr_HL_n(&self, n: u8) -> ProgramCounter {
+        self.mem[self.reg.HL as usize] = n;
+
+        ProgramCounter::Next(2)
+    }
+
+    /// ld_A_addr_BC: Load contents of memory specified by BC into A.
+    /// 1-byte instruction
+    pub fn ld_A_addr_BC(&self) -> ProgramCounter {
+        self.load_mem_to_r8(A_ID, self.reg.BC);
+
+        ProgramCounter::Next(1)
+    }
+
+    /// ld_A_addr_DE: Load contents of memory specified by DE into A.
+    /// 1-byte instruction
+    pub fn ld_A_addr_DE(&self) -> ProgramCounter {
+        self.load_mem_to_r8(A_ID, self.reg.DE);
+
+        ProgramCounter::Next(1)
+    }
+
+    /// ld_A_addr_offset_C: Load contents of memory specified by C + 0xFF00 into A.
+    /// 1-byte instruction
+    pub fn ld_A_addr_offset_C(&self) -> ProgramCounter {
+        self.load_mem_to_r8(A_ID, (0xFF00 + self.reg.C));
+
+        ProgramCounter::Next(1)
+    }
+
+    /// ld_addr_offset_C_A: Load contents of A into memory specified by 0xFF00 + C.
+    /// 1-byte instruction
+    pub fn ld_addr_offset_C_A(&self) -> ProgramCounter {
+        self.save_r8_to_mem(A_ID, (0xFF00 + self.reg.C));
+
+        ProgramCounter::Next(1)
+    }
+
+    /// ld_A_addr_offset_nn: Load contents of memory specified by nn + 0xFF00 into A.
+    /// 1-byte instruction
+    pub fn ld_A_addr_offset_n(&self, n: u8) {
+        self.load_mem_to_r8(A_ID, (0xFF00 + n));
+        
+        ProgramCounter::Next(2)
+    }
     
+    /// ld_addr_offset_n_A: Load contents of A into memory specified by 0xFF00 + n.
+    /// 1-byte instruction
+    pub fn ld_addr_offset_n_A(&self, n: u8) {
+        self.save_r8_to_mem(A_ID, (0xFF00 + n));
+
+        ProgramCounter::Next(2)
+    }
+
+    /// 3-byte instruction
+    pub fn ld_A_addr_nn(&self, nn: u16) {
+        self.load_mem_to_r8(A_ID, nn);
+
+        ProgramCounter::Next(3)
+    }
+
+    pub fn ld_addr_nn_A(&self, nn: u16) {
+        self.save_r8_to_mem(A_ID, nn);
+    
+        ProgramCounter::Next(3)
+    } 
 
 
 
