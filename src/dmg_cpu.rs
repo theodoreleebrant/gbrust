@@ -247,6 +247,61 @@ impl CPU {
         ProgramCounter::Next(3)
     } 
 
+    /// ld_A_addr_HL_inc: Load content of memory specified by HL into register A, then increment
+    /// content in HL.
+    /// 1-byte instruction.
+    pub fn ld_A_addr_HL_inc(&self) -> ProgramCounter {
+        self.load_mem_to_r8(A_ID, self.reg.HL);
+        HL += 1;
+
+        ProgramCounter::Next(1)
+    }
+
+    /// ld_A_addr_HL_dec: Load content of memory specified by HL into register A, then deccrement
+    /// content in HL.
+    /// 1-byte instruction.
+    pub fn ld_A_addr_HL_dec(&self) -> ProgramCounter {
+        self.load_mem_to_r8(A_ID, self.reg.HL);
+        HL -= 1;
+
+        ProgramCounter::Next(1)
+    }
+
+    /// ld_addr_BC_A: Save content of register A to memory specified by BC.
+    /// 1-byte instruction
+    pub fn ld_addr_BC_A(&self) -> ProgramCounter {
+        self.save_r8_to_mem(A_ID, self.reg.BC);
+    }
+
+    /// ld_addr_DE_A: Save content of register A to memory specified by DE.
+    /// 1-byte instruction
+    pub fn ld_addr_DE_A(&self) -> ProgramCounter {
+        self.save_r8_to_mem(A_ID, self.reg.DE);
+    }
+
+    /// ld_addr_HL_A_inc: Load content of register A into memory specified by HL, then increment
+    /// content in HL.
+    /// 1-byte instruction.
+    pub fn ld_A_addr_HL_inc(&self) -> ProgramCounter {
+        self.save_r8_to_mem(A_ID, self.reg.HL);
+        HL += 1;
+
+        ProgramCounter::Next(1)
+    }
+
+    /// ld_addr_HL_A_dec: Load content of register A into memory specified by HL, then deccrement
+    /// content in HL.
+    /// 1-byte instruction.
+    pub fn ld_A_addr_HL_dec(&self) -> ProgramCounter {
+        self.save_r8_to_mem(A_ID, self.reg.HL);
+        HL -= 1;
+
+        ProgramCounter::Next(1)
+    }
+
+    
+
+
 
 
 
