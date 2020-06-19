@@ -1,4 +1,10 @@
-// Declare all register ID and necessary constants
+// Flags
+const ZF: u8 = 0x80; // 0b10000000
+const NF: u8 = 0x40; // 0b01000000
+const HF: u8 = 0x20; // 0b00100000
+const CF: u8 = 0x10; // 0b00010000
+
+// Places to jump to during interrupts
 
 /// GB has 8 8-bit registers (including special flag register).
 /// 3 16-bit pair registers, which is a combination from pairing 2 8-bit registers together.
@@ -52,7 +58,7 @@ impl CPU {
     */
 
     // Opcodes goes here!!
-
+        
 
 
 
