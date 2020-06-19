@@ -48,7 +48,7 @@ pub struct CPU {
     pub mut reg: Registers,     // Set of registers
     
     pub mut mem: [u8; 65536],   // 64KB memory
-    pub mut stack: Vec<u16>,    // Stack for PC
+    pub mut stack: Vec<u8>,    // Stack for PC
 
     pub mut clock: u8,          // For timing in GB
 }
@@ -139,7 +139,7 @@ impl CPU {
     /// get_r8_to: gets 3-bit register ID from opcode. Register ID takes bit 3, 4, 5 for register
     /// written to.
     pub fn get_r8_to(&self) -> u8 {
-        (self.mem[self.reg.PC as usize] & 0b00111000) >> 3 as u8
+        ((self.mem[self.reg.PC as usize] & 0b00111000) >> 3) as u8
     }
     
     /// get_r8_from: gets 3-bit register ID from opcode. Register ID takes bit 0,1,2 for register
@@ -196,12 +196,15 @@ impl CPU {
         Some(result)
     }
 
-    /// save_r16_to_mem: Saves content of 16-byte register to memory specified by addr.
+    /// save_r16_to_mem: Saves lower-byte of 16-bit register to addr, and higher-byte to addr + 1.
     /// @param r16_id: ID of 16-byte register.
     /// @param addr: address to write content to.
     pub fn save_r16_to_mem(&self, r16_id: u8, addr: u16) {
         match read_from_r16(r16_id) {
-            Some(value) => self.mem[addr as usize] = value,
+            Some(value) => {
+                self.mem[addr as usize] = (value & 0x00FF) as u8;
+                self.mem[(addr + 1)  as usize] = (value >> 8) as u8;
+            },
             None => (),
         }
     }
@@ -213,6 +216,10 @@ impl CPU {
         let nn = (nn_high << 8) | nn_low; 
 
         nn
+    }
+
+    pub fn get_r16(&self) -> u8 {
+        ((self.mem[self.reg.PC as usize] & 0b00110000) >> 4) as u8
     }
 
     // Opcodes goes here!!
@@ -407,11 +414,49 @@ impl CPU {
     /// ld_rr_nn: load 16-bit immediate nn to 16-bit register rr.
     /// 3-byte instruction
     /// @param rr: ID of 16-bit instruction
-    pub fn ld_rr_nn(rr: u8) -> ProgramCounter {
-
-
+    pub fn ld_rr_nn(&self) -> ProgramCounter {
+        let rr = self.get_r16();
+        let nn = self.get_nn();
+        
+        self.write_to_r16(rr, nn);
 
         ProgramCounter::Next(3)
     }
+
+    /// ld_addr_nn_SP: load lower-byte of SP to (nn), load higher-byte of SP to (nn+1)
+    /// 3-byte instruction
+    pub fn ld_addr_nn_SP(&self) -> ProgramCounter {
+        let nn = self.get_nn();
+
+        save_r16_to_mem(SP_ID, nn);
+
+        ProgramCounter::Next(3)
+    }
+
+    /// ld_SP_HL: load data from HL register to SP register.
+    /// 1-byte instruction
+    pub fn ld_SP_HL(&self) -> ProgramCounter {
+        self.reg.SP = self.reg.HL;
+
+        ProgramCounter::Next(1);
+    }
+
+    /// push_rr: push data from register rr to stack memory
+    /// 1-byte instruction
+    pub fn push_rr(&self) -> ProgramCounter {
+        let rr = self.get_r16();
+
+        self.(SP - 1) = 
+
+
+
+
+
+
+
+
+
+
+
 
 }
