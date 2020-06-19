@@ -14,6 +14,10 @@ const H_ID: u8 = 0b100;
 const L_ID: u8 = 0b101;
 
 // 16-bit Register IDs
+const BC_ID: u8 = 0b00;
+const DE_ID: u8 = 0b01;
+const HL_ID: u8 = 0b10;
+const SP_ID: u8 = 0b11;
 
 // Places to jump to during interrupts
 
@@ -103,11 +107,7 @@ impl CPU {
             E_ID => result = self.reg.E,
             H_ID => result = self.reg.H,
             L_ID => result = self.reg.L,
-            .. => result = None,
-        }
-
-        if result == None {
-            return None;
+            .. => return None,
         }
 
         Some(result)
@@ -131,6 +131,63 @@ impl CPU {
         }
     }
 
+    /// write_to_r16: Write content onto a 16-byte register.
+    /// @param r16_id: ID of 16-byte reg
+    /// @param content: content to be written
+    /// @return bool value if ID was valid.
+    pub fn write_to_r16(&self, r16_id: u8, content: u16) -> boolean {
+        let msb = content >> 8 as u8;
+        let lsb = content & 0x00FF as u8;
+
+        match r16_id {
+            BC_ID => {
+                self.reg.BC = content;
+                self.reg.B = msb;
+                self.reg.C = lsb;
+            },
+            DE_ID => {
+                self.reg.DE = content;
+                self.reg.D = msb;
+                self.reg.E = lsb;
+            },
+            HL_ID => {
+                self.reg.HL = content;
+                self.reg.H = msb;
+                self.reg.L = lsb;
+            },
+            SP_ID => self.reg.SP = content,
+            .. => return false;
+        }
+
+        true
+    }
+
+    /// read_from_r16: reads content of a 16-bit register.
+    /// @param r16_id: ID of a 16-byte register.
+    /// @return Some<u16> if ID is valid, None if not valid.
+    pub fn read_from_r16(&self, r16_id: u8) -> Option<u16> {
+        let result: u16;
+
+        match r16_id {
+            BC_ID => result = self.reg.BC,
+            DE_ID => result = self.reg.DE,
+            HL_ID => result = self.reg.HL,
+            SP_ID => result = self.reg.SP,
+            .. => return None,
+        }
+
+        Some(result)
+    }
+
+    /// save_r16_to_mem: Saves content of 16-byte register to memory specified by addr.
+    /// @param r16_id: ID of 16-byte register.
+    /// @param addr: address to write content to.
+    pub fn save_r16_to_mem(&self, r16_id: u8, addr: u16) {
+        match read_from_r16(r16_id) {
+            Some(value) => self.mem[addr as usize] = value,
+            None => (),
+        }
+    }
 
     // Opcodes goes here!!
     
