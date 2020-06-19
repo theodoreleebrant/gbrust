@@ -136,6 +136,18 @@ impl CPU {
         self.mem[(self.reg.PC + 1) as usize]
     }
 
+    /// get_r8_to: gets 3-bit register ID from opcode. Register ID takes bit 3, 4, 5 for register
+    /// written to.
+    pub fn get_r8_to(&self) -> u8 {
+        (self.mem[self.reg.PC as usize] & 0b00111000) >> 3 as u8
+    }
+    
+    /// get_r8_from: gets 3-bit register ID from opcode. Register ID takes bit 0,1,2 for register
+    /// written to.
+    pub fn get_r8_to(&self) -> u8 {
+        (self.mem[self.reg.PC as usize] & 0b00000111) as u8
+    }
+
     /// write_to_r16: Write content onto a 16-byte register.
     /// @param r16_id: ID of 16-byte reg
     /// @param content: content to be written
