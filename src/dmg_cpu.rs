@@ -144,7 +144,7 @@ impl CPU {
     
     /// get_r8_from: gets 3-bit register ID from opcode. Register ID takes bit 0,1,2 for register
     /// written to.
-    pub fn get_r8_to(&self) -> u8 {
+    pub fn get_r8_from(&self) -> u8 {
         (self.mem[self.reg.PC as usize] & 0b00000111) as u8
     }
 
