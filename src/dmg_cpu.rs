@@ -221,7 +221,10 @@ impl CPU {
     
     /// ld_rx_ry: load contents of ry to rx. 1-byte instruction
     /// @param rx, ry: ID for register rx and ry (8-bit)
-    pub fn ld_rx_ry(&self, rx: u8, ry: u8) -> ProgramCounter {
+    pub fn ld_rx_ry(&self) -> ProgramCounter {
+        let rx = self.get_r8_to();
+        let ry =  self.get_r8_from();
+
         match self.read_from_r8(ry) {
             Some(value) => self.write_to_r8(rx),
             None => (),
@@ -232,7 +235,10 @@ impl CPU {
 
     /// ld_r_n: Load 8-bit data n into register r. 2-byte instruction
     /// @param: r: register ID; n: intermediate
-    pub fn ld_r_n(&self, r: u8, n: u8) -> ProgramCounter {
+    pub fn ld_r_n(&self) -> ProgramCounter {
+        let r = self.get_r8_to();
+        let n = self.get_n();
+
         self.write_to_r8(r, n);
 
         ProgramCounter::Next(2)
@@ -240,7 +246,9 @@ impl CPU {
 
     /// ld_r_addr_HL: loads contents of memory specified at (HL) to register r. 1-byte instruction
     /// @param r: 8-bit register ID
-    pub fn ld_r_addr_HL(&self, r: u8) -> ProgramCounter {
+    pub fn ld_r_addr_HL(&self) -> ProgramCounter {
+        let r = self.get_r8_to();
+
         self.load_mem_to_r8(r, self.reg.HL);
 
         ProgramCounter::Next(1)
@@ -249,7 +257,9 @@ impl CPU {
     /// ld_addr_HL_r: stores contents of register r into memory specified by register pair HL.
     /// 1-byte instruction.
     /// @param: r: ID of 8-bit register
-    pub fn ld_addr_HL_r(&self, r: u8) -> ProgramCounter {
+    pub fn ld_addr_HL_r(&self) -> ProgramCounter {
+        let r = self.get_r8_from();
+    
         self.save_r8_to_mem(r, self.reg.HL);
         
         ProgramCounter::Next(1)
@@ -258,7 +268,9 @@ impl CPU {
     /// ld_addr_HL_n: stores 8-bit immediate data in memory specified by register pair HL.
     /// 2-byte instruction.
     /// @param n: 8-bit immediate.
-    pub fn ld_addr_HL_n(&self, n: u8) -> ProgramCounter {
+    pub fn ld_addr_HL_n(&self) -> ProgramCounter {
+        let n = self.get_n();
+
         self.mem[self.reg.HL as usize] = n;
 
         ProgramCounter::Next(2)
@@ -298,7 +310,9 @@ impl CPU {
 
     /// ld_A_addr_offset_nn: Load contents of memory specified by nn + 0xFF00 into A.
     /// 1-byte instruction
-    pub fn ld_A_addr_offset_n(&self, n: u8) -> ProgramCounter {
+    pub fn ld_A_addr_offset_n(&self) -> ProgramCounter {
+        let n = self.get_n();
+
         self.load_mem_to_r8(A_ID, (0xFF00 + n));
         
         ProgramCounter::Next(2)
@@ -306,7 +320,9 @@ impl CPU {
     
     /// ld_addr_offset_n_A: Load contents of A into memory specified by 0xFF00 + n.
     /// 1-byte instruction
-    pub fn ld_addr_offset_n_A(&self, n: u8) -> ProgramCounter {
+    pub fn ld_addr_offset_n_A(&self) -> ProgramCounter {
+        let n = self.get_n();
+
         self.save_r8_to_mem(A_ID, (0xFF00 + n));
 
         ProgramCounter::Next(2)
@@ -315,7 +331,9 @@ impl CPU {
     /// ld_A_addr_nn: Load content at memory specified by address nn into register A.
     /// 3-byte instruction.
     /// @param nn: 16-bit address
-    pub fn ld_A_addr_nn(&self, nn: u16) -> ProgramCounter {
+    pub fn ld_A_addr_nn(&self) -> ProgramCounter {
+        let nn = self.get_nn;
+
         self.load_mem_to_r8(A_ID, nn);
 
         ProgramCounter::Next(3)
@@ -324,7 +342,9 @@ impl CPU {
     /// ld_addr_nn_A: Save content of register A into memory specified by address nn.
     /// 3-byte instruction.
     /// @param nn: 16-bit address.
-    pub fn ld_addr_nn_A(&self, nn: u16) -> ProgramCounter {
+    pub fn ld_addr_nn_A(&self) -> ProgramCounter {
+        let nn = self.get_nn();
+
         self.save_r8_to_mem(A_ID, nn);
     
         ProgramCounter::Next(3)
