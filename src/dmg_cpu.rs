@@ -215,7 +215,7 @@ impl CPU {
 
     /// ld_A_addr_offset_nn: Load contents of memory specified by nn + 0xFF00 into A.
     /// 1-byte instruction
-    pub fn ld_A_addr_offset_n(&self, n: u8) {
+    pub fn ld_A_addr_offset_n(&self, n: u8) -> ProgramCounter {
         self.load_mem_to_r8(A_ID, (0xFF00 + n));
         
         ProgramCounter::Next(2)
@@ -223,7 +223,7 @@ impl CPU {
     
     /// ld_addr_offset_n_A: Load contents of A into memory specified by 0xFF00 + n.
     /// 1-byte instruction
-    pub fn ld_addr_offset_n_A(&self, n: u8) {
+    pub fn ld_addr_offset_n_A(&self, n: u8) -> ProgramCounter {
         self.save_r8_to_mem(A_ID, (0xFF00 + n));
 
         ProgramCounter::Next(2)
@@ -232,7 +232,7 @@ impl CPU {
     /// ld_A_addr_nn: Load content at memory specified by address nn into register A.
     /// 3-byte instruction.
     /// @param nn: 16-bit address
-    pub fn ld_A_addr_nn(&self, nn: u16) {
+    pub fn ld_A_addr_nn(&self, nn: u16) -> ProgramCounter {
         self.load_mem_to_r8(A_ID, nn);
 
         ProgramCounter::Next(3)
@@ -241,7 +241,7 @@ impl CPU {
     /// ld_addr_nn_A: Save content of register A into memory specified by address nn.
     /// 3-byte instruction.
     /// @param nn: 16-bit address.
-    pub fn ld_addr_nn_A(&self, nn: u16) {
+    pub fn ld_addr_nn_A(&self, nn: u16) -> ProgramCounter {
         self.save_r8_to_mem(A_ID, nn);
     
         ProgramCounter::Next(3)
