@@ -131,6 +131,11 @@ impl CPU {
         }
     }
 
+    /// get_n: gets 8-bit immediate n right after opcode
+    pub fn get_n(&self) -> u8 {
+        self.mem[(self.reg.PC + 1) as usize]
+    }
+
     /// write_to_r16: Write content onto a 16-byte register.
     /// @param r16_id: ID of 16-byte reg
     /// @param content: content to be written
@@ -187,6 +192,15 @@ impl CPU {
             Some(value) => self.mem[addr as usize] = value,
             None => (),
         }
+    }
+
+    /// get_nn: gets 16-bit immediate nn right after opcode
+    pub fn get_nn(&self) -> u16 {
+        let nn_low = self.mem[(self.reg.PC + 1) as usize];
+        let nn_high = self.mem[(self.reg.PC + 2) as usize];
+        let nn = (nn_high << 8) | nn_low; 
+
+        nn
     }
 
     // Opcodes goes here!!
@@ -356,12 +370,16 @@ impl CPU {
         ProgramCounter::Next(1)
     }
 
+    // 16-bit load instructions
     
+    /// ld_rr_nn: load 16-bit immediate nn to 16-bit register rr.
+    /// 3-byte instruction
+    /// @param rr: ID of 16-bit instruction
+    pub fn ld_rr_nn(rr: u8) -> ProgramCounter {
 
 
 
-
-
-
+        ProgramCounter::Next(3)
+    }
 
 }
