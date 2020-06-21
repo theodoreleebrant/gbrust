@@ -634,7 +634,7 @@ impl CPU {
 	    ProgramCounter::Next(2)
 	}
 
-    pub fn add_a_HL(&self) {
+    pub fn add_a_HL(&self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID)?;
         let r: u8 = self.mem[self.reg.HL as usize];
