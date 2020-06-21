@@ -330,6 +330,17 @@ impl CPU {
         self.set_hczn(false, c, false, false);
     }
 
+    pub fn write_a(&self, to_write: u8) {
+    	self.write_to_r8(A_ID, to_write);
+    }
+
+    pub fn set_hcnz(&self, h: bool, c: bool, n: bool, z: bool) {
+	    if h {self.set_flag(H_ID)} else {self.reset_flag(H_ID)};
+	    if c {self.set_flag(C_ID)} else {self.reset_flag(C_ID)};
+	    if n {self.set_flag(N_ID)} else {self.reset_flag(N_ID)};
+	    if z {self.set_flag(Z_ID)} else {self.reset_flag(Z_ID)};
+	}
+
     // Opcodes goes here!!
     
     // 8-bit load instructions
@@ -578,6 +589,7 @@ impl CPU {
 
     // 8 Bit Arithmetic Operation Instruction
     // ADD A,r: Add the value in register r to A, set it to A. 
+    // Cycles: 1
     pub fn add_ar(&self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID)?;
@@ -593,13 +605,33 @@ impl CPU {
 	    let to_write: u8 = (a & 0xFF) as u8;
 	    let z: bool = to_write == 0;
 
-	    self.write_to_r8(A_ID, to_write);
-	    if h {self.set_flag(H_ID)} else {self.reset_flag(H_ID)};
-	    if c {self.set_flag(C_ID)} else {self.reset_flag(C_ID)};
-	    if n {self.set_flag(N_ID)} else {self.reset_flag(N_ID)};
-	    if z {self.set_flag(Z_ID)} else {self.reset_flag(Z_ID)};
+	    self.write_a(to_write);
+	    self.set_hcnz(h, c, n, z);
 
 	    ProgramCounter::Next(1)
+	}
+
+	// ADD A, n: add immediate operand n to register A.
+	// Cycles: 2
+	pub fn add_an(&self) -> ProgramCounter {
+	    // reading
+	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let r: u8 = self.get_n();
+
+	    // processing
+	    let res: u16 = (a as u16) + (r as u16);
+
+	    // flags and writing
+	    let h: bool = ((a & 0x0F) + (r & 0x0F)) > 0x0F;
+	    let c: bool = res > 0xFF;
+	    let n: bool = false;
+	    let to_write: u8 = (a & 0xFF) as u8;
+	    let z: bool = to_write == 0;
+
+	    self.write_a(to_write);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(2)
 	}
 
 
