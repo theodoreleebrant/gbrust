@@ -634,8 +634,28 @@ impl CPU {
 	    ProgramCounter::Next(2)
 	}
 
+    pub fn add_a_HL(&self) {
+        // reading
+        let a: u8 = self.read_from_r8(A_ID)?;
+        let r: u8 = self.mem[self.reg.HL as usize];
+
+        // processing
+        let res: u16 = (a as u16) + (r as u16);
+
+        // flags and writing
+	    let h: bool = ((a & 0x0F) + (r & 0x0F)) > 0x0F;
+	    let c: bool = res > 0xFF;
+	    let n: bool = false;
+	    let to_write: u8 = (a & 0xFF) as u8;
+	    let z: bool = to_write == 0;
+
+	    self.write_a(to_write);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+    }
+        
 
 
 
 
-}
