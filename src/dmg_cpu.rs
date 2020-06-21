@@ -222,6 +222,54 @@ impl CPU {
         ((self.mem[self.reg.PC as usize] & 0b00110000) >> 4) as u8
     }
 
+    // Reusable code for 8-bit Rotate, Shift instructions
+    
+    pub fn set_flag(&self, flag: u8) {
+        self.reg.F = self.reg.F | flag;
+    }
+
+    pub fn reset_flag(&self, flag: u8) {
+        match flag {
+            ZF => self.reg.F &= 0b01111111,
+            NF => self.reg.F &= 0b10111111,
+            HF => self.reg.F &= 0b11011111,
+            CF => self.reg.F &= 0b11101111,
+            .. => (),
+        }
+    }
+
+    /// rotate_left_r8: Rotate left function for 8-bit registers.\
+    /// There are 2 types of rotate operations: Has carry or no carry.
+    /// If operation has carry: bit A7 is copied to flag CY AND bit 0 of A.
+    /// If operation has no carry: bit 0 of A is replaced by CY, and then bit A7 is copied to CY 
+    pub fn rotate_left_r8(&self, r8_id: u8, has_carry: bool) {
+        let mut data: u8;
+
+        match self.read_from_r8(r8_id) {
+            Some(value) => data = value,
+            None => return (), // terminate
+        }
+
+        let bit_a7: u8 = (data & 0x80) >> 7;
+        let bit_cf: u8 = (self.reg.F & CF) >> 4;
+        data = (data << 1) as u8; // a7 diasppeared, a0 = 0
+
+        // setting bit a0
+        if has_carry {
+            data = data | bit_a7;
+        } else {
+            data = data | bit_cf;
+        } 
+        
+        // set CF to bit_a7
+        if bit_a7 > 0 {
+            self.set_flag(CF);
+        } else {
+            self.reset_flag(CF);
+        }
+    }
+
+
     pub fn write_a(&self, to_write: u8) {
     	self.write_to_r8(A_ID, to_write);
     }
