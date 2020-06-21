@@ -659,3 +659,113 @@ impl CPU {
 
 
 
+
+
+
+
+
+
+
+
+
+
+    // 2.5 Shift and Rotate instructions
+    
+    /// rlca: Rotates content of register A to the left. a7 <- a0
+    /// is_left_rotate = true, has_carry = true
+    /// 1-byte instruction
+    pub fn rlca(&self) -> ProgramCounter {
+        self.rotate_r8(A_ID, true, true);
+        
+        ProgramCounter::Next(1)
+    }
+
+    /// rla: Rotates content of register A to the left. a7 <- cf
+    /// is_left_rotate = true, has_carry = false
+    /// 1-byte instruction.
+    pub fn rla(&self) -> ProgramCounter {
+        self.rotate_r8(A_ID, true, false);
+
+        ProgramCounter::Next(1)
+    }
+
+    /// rrca: Rotates content of register A to the right. a0 <- a7
+    /// is_left_rotate = false, has_carry = true.
+    /// 1-byte instruction
+    pub fn rrca(&self) -> ProgramCounter {
+        self.rotate_r8(A_ID, false, true);
+
+        ProgramCounter::Next(1)
+    }
+
+    /// rra: Rotates content of register A to the right. a0 <- cf
+    /// is_left_rotate = false, has_carry = false.
+    /// 1-byte instruction
+    pub fn rra(&self) -> ProgramCounter {
+        self.rotate_r8(A_ID, false, false);
+
+        ProgramCounter::Next(1)
+    }
+
+    /// rlc: Rotates content of either some register r or memory pointed to by HL, depending on
+    /// opcode. to the left, with carry.
+    pub fn rlc(&self) -> ProgramCounter {
+        self.reg.PC += 1;
+        let r = self.get_r8_from();
+        self.reg.PC -= 1;
+
+        match r {
+            0x06 => self.rotate_mem(self.reg.HL, true, true),
+            .. => self.rotate_r8(r, true, true),
+        }
+
+        ProgramCounter::Next(1)
+    }
+
+    /// rl: Rotates content of either some register r or memory pointed to by HL, depending on
+    /// opcode. to the left, without carry.
+    pub fn rlc(&self) -> ProgramCounter {
+        self.reg.PC += 1;
+        let r = self.get_r8_from();
+        self.reg.PC -= 1;
+
+        match r {
+            0x06 => self.rotate_mem(self.reg.HL, true, false),
+            .. => self.rotate_r8(r, true, false),
+        }
+
+        ProgramCounter::Next(1)
+    }
+    
+    /// rrc: Rotates content of either some register r or memory pointed to by HL, depending on
+    /// opcode. to the right, with carry.
+    pub fn rlc(&self) -> ProgramCounter {
+        self.reg.PC += 1;
+        let r = self.get_r8_from();
+        self.reg.PC -= 1;
+
+        match r {
+            0x06 => self.rotate_mem(self.reg.HL, false, true),
+            .. => self.rotate_r8(r, false, true),
+        }
+
+        ProgramCounter::Next(1)
+    }
+
+    /// rr: Rotates content of either some register r or memory pointed to by HL, depending on
+    /// opcode. to the right, without carry.
+    pub fn rlc(&self) -> ProgramCounter {
+        self.reg.PC += 1;
+        let r = self.get_r8_from();
+        self.reg.PC -= 1;
+
+        match r {
+            0x06 => self.rotate_mem(self.reg.HL, false, false),
+            .. => self.rotate_r8(r, false, false),
+        }
+
+        ProgramCounter::Next(1)
+    }
+
+
+
