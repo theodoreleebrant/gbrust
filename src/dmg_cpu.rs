@@ -286,7 +286,7 @@ impl CPU {
         self.write_to_r8(r8_id, data); 
         
         // set flags
-        self.set_hczn(false, c, false, false);
+        self.set_hcnz(false, c, false, data == 0);
     }
 
     /// rotate_mem: Rotate left function for values in memory. Can toggle with is_left_rotate bool.
@@ -327,7 +327,7 @@ impl CPU {
         self.mem[addr] = data; // write back to memory
 
         // setting cf to bit_a7
-        self.set_hczn(false, c, false, false);
+        self.set_hcnz(false, c, false, data == 0);
     }
 
     pub fn write_a(&self, to_write: u8) {
@@ -719,7 +719,7 @@ impl CPU {
             .. => self.rotate_r8(r, true, true),
         }
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(2)
     }
 
     /// rl: Rotates content of either some register r or memory pointed to by HL, depending on
@@ -734,7 +734,7 @@ impl CPU {
             .. => self.rotate_r8(r, true, false),
         }
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(2)
     }
     
     /// rrc: Rotates content of either some register r or memory pointed to by HL, depending on
@@ -749,7 +749,7 @@ impl CPU {
             .. => self.rotate_r8(r, false, true),
         }
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(2)
     }
 
     /// rr: Rotates content of either some register r or memory pointed to by HL, depending on
@@ -764,8 +764,167 @@ impl CPU {
             .. => self.rotate_r8(r, false, false),
         }
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(2)
     }
 
+    /// SLA: Shift content of operand m to the left. Bit 7 is copied to CF, bit 0 is reset.
+    /// 2-byte instruction
+    pub fn sla(&self) -> ProgramCounter {
+        self.reg.PC += 1;
+        let r = self.get_r8_from();
+        self.reg.PC -= 1;
 
+        let mut data: u8;
+        let mut bit_7: u8;
 
+        match r {
+            0x06 => {
+                data = self.mem[self.reg.HL as usize];
+                bit_7 = (data & 0x80) >> 7;
+                
+                // processing
+                data = data << 1;
+                
+                // write back
+                self.mem[self.reg.HL as usize] = data;
+            },
+            .. => {
+                data = read_from_r8(r)?;
+                bit_7 = (data & 0x80) >> 7;
+                
+                // processing
+                data = data << 1;
+                
+                // write back
+                self.write_to_r8(r, data);
+            },
+        }
+
+        // set flags
+        self.set_hcnz(false, bit_7 > 0, false, data == 0);
+
+        ProgramCounter::Next(2)
+    }
+        
+    /// SRA: Shift content of operand m to the right. Bit 0 is copied to CF, bit 7 stays the same!.
+    /// 2-byte instruction
+    pub fn sra(&self) -> ProgramCounter {
+        self.reg.PC += 1;
+        let r = self.get_r8_from();
+        self.reg.PC -= 1;
+
+        let mut data: u8;
+        let mut bit_0: u8;
+        let mut bit_7: u8;
+
+        match r {
+            0x06 => {
+                data = self.mem[self.reg.HL as usize];
+                bit_7 = (data & 0x80) >> 7;
+                bit_0 = (data & 0x01);
+                
+                // processing
+                data = data >> 1;
+                data |= (bit_7 << 7)
+                
+                // write back
+                self.mem[self.reg.HL as usize] = data;
+            },
+            .. => {
+                data = read_from_r8(r)?;
+                bit_7 = (data & 0x80) >> 7;
+                bit_0 = (data & 0x01);
+                
+                // processing
+                data = data << 1;
+                data |= (bit_7 << 7);
+
+                // write back
+                self.write_to_r8(r, data);
+            },
+        }
+
+        // set flags
+        self.set_hcnz(false, bit_0 > 0, false, data == 0);
+
+        ProgramCounter::Next(2)
+    }
+
+    /// SRL: Shift content of operand m to the right. Bit 0 is copied to CF, bit 7 is reset.
+    /// 2-byte instruction
+    pub fn srl(&self) -> ProgramCounter {
+        self.reg.PC += 1;
+        let r = self.get_r8_from();
+        self.reg.PC -= 1;
+
+        let mut data: u8;
+        let mut bit_0: u8;
+
+        match r {
+            0x06 => {
+                data = self.mem[self.reg.HL as usize];
+                bit_0 = (data & 0x01);
+                
+                // processing
+                data = data >> 1;
+                
+                // write back
+                self.mem[self.reg.HL as usize] = data;
+            },
+            .. => {
+                data = read_from_r8(r)?;
+                bit_0 = (data & 0x01);
+                
+                // processing
+                data = data << 1;
+
+                // write back
+                self.write_to_r8(r, data);
+            },
+        }
+
+        // set flags
+        self.set_hcnz(false, bit_0 > 0, false, data == 0);
+
+        ProgramCounter::Next(2)
+    }
+
+    /// SWAP: Shift content of lower-order 4 bits to higher-order 4 bits, and vice versa. Reset all
+    /// flags except ZF.
+    /// 2-byte instruction.
+    pub fn swap(&self) -> ProgramCounter {
+        self.reg.PC += 1;
+        let r = self.get_r8_from();
+        self.reg.PC -= 1;
+
+        let mut data: u8;
+       
+        match r {
+            0x06 => {
+                // read
+                data = self.mem[self.reg.HL as usize];
+                
+                // process
+                let lower = data & 0x0F;
+                let higher = (data & 0xF0) >> 4;
+                data = (lower << 4) | higher;
+
+                // write back
+                self.mem[self.reg.HL as usize] = data;
+            },
+            .. => {
+                // read
+                data = self.read_from_u8(r)?;
+
+                // process
+                let lower = data & 0x0F;
+                let higher = (data & 0xF0) >> 4;
+                data = (lower << 4) | higher;
+                
+                // write back
+                self.write_to_r8(r, data);
+            }
+        }
+
+        self.set_hcnz(false, false, false, data == 0);
+    }
