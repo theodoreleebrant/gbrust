@@ -238,37 +238,97 @@ impl CPU {
         }
     }
 
-    /// rotate_left_r8: Rotate left function for 8-bit registers.\
+    /// rotate_r8: Rotate function for 8-bit registers. Toggle between lpeft or right using bool
+    /// is_rotate_left.
     /// There are 2 types of rotate operations: Has carry or no carry.
     /// If operation has carry: bit A7 is copied to flag CY AND bit 0 of A.
     /// If operation has no carry: bit 0 of A is replaced by CY, and then bit A7 is copied to CY 
-    pub fn rotate_left_r8(&self, r8_id: u8, has_carry: bool) {
+    /// after rotation, write data back to register.
+    
+    pub fn rotate_r8(&self, r8_id: u8, is_rotate_left: bool, has_carry: bool) {
         let mut data: u8;
+        let mut c: bool;
 
         match self.read_from_r8(r8_id) {
             Some(value) => data = value,
-            None => return (), // terminate
+            None => return (),
         }
 
-        let bit_a7: u8 = (data & 0x80) >> 7;
         let bit_cf: u8 = (self.reg.F & CF) >> 4;
-        data = (data << 1) as u8; // a7 diasppeared, a0 = 0
 
-        // setting bit a0
-        if has_carry {
-            data = data | bit_a7;
+        if is_rotate_left {
+            let bit_a7: u8 = (data & 0x80) >> 7;
+            data = (data << 1) as u8; // a7 diasppeared, a0 = 0
+            
+            // setting bit a7
+            if has_carry {
+                data = data | bit_a7;
+            } else {
+                data = data | bit_cf;
+            }
+            
+            c = bit_a7 > 0;
         } else {
-            data = data | bit_cf;
-        } 
-        
-        // set CF to bit_a7
-        if bit_a7 > 0 {
-            self.set_flag(CF);
-        } else {
-            self.reset_flag(CF);
+            let bit_a0: u8 = data & 0x01;
+            data = (data >> 1) as u8; // a0 diasppeared, a7 = 0
+
+            // setting bit a0
+            if has_carry {
+                data = data | (bit_a0 << 7);
+            } else {
+                data = data | (bit_cf << 7);
+            }
+
+            c = bit_a0 > 0;
         }
+        
+        // write back to register
+        self.write_to_r8(r8_id, data); 
+        
+        // set flags
+        self.set_hczn(false, c, false, false);
     }
 
+    /// rotate_mem: Rotate left function for values in memory. Can toggle with is_left_rotate bool.
+    /// Implementing 2 types of rotate operations as well: has carry and no carry, similar to
+    /// register rotation.
+    
+    pub fn rotate_mem(&self, addr: u16, is_left_rotate: bool, has_carry: bool) {
+        let mut data = self.mem[addr as usize];
+        let mut c = bool;
+        let bit_cf = (self.reg.F & CF) >> 4;
+    
+        if is_left_rotate {
+            let bit_a7 = (data & 0x80) >> 7;
+            data = data << 1; // bit a7 gone, bit a0 = 0
+
+            // setting bit a7
+            if has_carry {
+                data = data | bit_a7;
+            } else {
+                data = data | bit_cf;
+            }
+
+            c = bit_a7 > 0;
+        } else {
+            let bit_a0: u8 = data & 0x01;
+            data = (data >> 1) as u8; // a0 diasppeared, a7 = 0
+
+            // setting bit a0
+            if has_carry {
+                data = data | (bit_a0 << 7);
+            } else {
+                data = data | (bit_cf << 7);
+            }
+
+            c = bit_a0 > 0;
+        }
+
+        self.mem[addr] = data; // write back to memory
+
+        // setting cf to bit_a7
+        self.set_hczn(false, c, false, false);
+    }
 
     // Opcodes goes here!!
     
