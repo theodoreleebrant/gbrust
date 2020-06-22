@@ -987,7 +987,7 @@ impl CPU {
     pub fn jp_cc_nn(&self) -> ProgramCounter {
         let abs_addr = self.get_nn();
         let cc = self.check_cc();
-        let pc_final: ProgramCounter;
+        let mut pc_final: ProgramCounter;
 
         if cc {
             pc_final = ProgramCounter::Jump(abs_addr);
@@ -1010,7 +1010,7 @@ impl CPU {
     pub fn jr_cc_e(&self) -> ProgramCounter {
         let e = self.get_n() as i8;
         let cc = self.check_cc();
-        let pc_final: ProgramCounter;
+        let mut pc_final: ProgramCounter;
         
         if cc {
             pc_final = ProgramCounter::Next(e);
@@ -1021,4 +1021,56 @@ impl CPU {
         pc_final
     }    
 
+    /// call_nn: unconditional function call to absolute address specified by 16-bit operand nn
+    /// 3 bytes. 6 cycles
+    pub fn call_nn(&self) -> ProgramCounter {
+        let nn = self.get_nn();
+        self.push_u16(self.reg.PC); // Push PC onto the stacc
+        
+        ProgramCounter::Jump(nn);
+    }
+
+    /// call_cc_nn: Conditional function call to absolute address specified by 16-bit operand nn,
+    /// depending on condition cc.
+    /// 3 bytes, 3 cycles if cc == false, 6 cycles if cc ==  true
+    pub fn call_cc_nn(&self) -> ProgramCounter {
+        let nn = self.get_nn();
+        let cc = self.check_cc();
+
+        let mut pc_final: ProgramCounter;
+
+        if cc { // execute function call
+            self.push_u16(self.reg.PC);
+            pc_final = ProgramCounter::Jump(nn);
+        } else {
+            pc_final = ProgramCounter::Next(3);
+        }
+
+        pc_final
+    }
+
+    /// ret: Unconditional return from a function. Pop PC from stack.
+    /// 1 byte, 4 cycles.
+    pub fn ret(&self) -> ProgramCounter {
+        let pop_val = self.pop_u16();
+
+        ProgramCounter::Jump(pop_val)
+    }
+
+    /// ret_cc: Conditional return from a function, depending on condition cc.
+    /// Only pop if cc is true.
+    /// 1 byte, 2 cycles if cc = false, 5 cycles if cc = true
+    pub fn ret_cc(&self) -> ProgramCounter {
+        let cc = self.check_cc();
+        let mut pc_final: ProgramCounter;
+
+        if cc {
+            let pop_val = self.pop_u16();
+            pc_final = ProgramCounter::Jump(pop_val);
+        } else {
+            pc_final = ProgramCounter::Next(1);
+        }
+
+        pc_final
+    }
 
