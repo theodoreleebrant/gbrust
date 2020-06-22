@@ -340,6 +340,26 @@ impl CPU {
 	    if n {self.set_flag(N_ID)} else {self.reset_flag(N_ID)};
 	    if z {self.set_flag(Z_ID)} else {self.reset_flag(Z_ID)};
 	}
+    
+    /// check_cc extracts condition cc from opcode, and check whether condition is true.
+    /// cc is a 2-bit number, at bit 3 and 4 of opcode, representing:
+    /// 00 -> Z == 0; 01 -> Z == 1; 10 -> C == 0; 11 -> C == 1
+    pub fn check_cc(&self) -> bool {
+        // extract cc from opcode
+        let opcode = self.mem[self.reg.PC];
+        let cc: u8 = (opcode & 0b00011000) >> 3;
+        let mut result: bool;
+        
+        match cc {
+            00 => result = self.reg.F & ZF == 0,
+            01 => result = self.reg.F & ZF != 0,
+            10 => result = self.reg.F & CF == 0,
+            11 => result = self.reg.F & CF != 0,
+        }
+
+        result
+    }
+
 
     // Opcodes goes here!!
     
@@ -943,6 +963,25 @@ impl CPU {
     pub fn jp_HL(&self) -> ProgramCounter {
         ProgramCounter::Jump(self.reg.HL)
     }
+
+    /// jp_cc_nn: Conditional jump to absolute address nn, depending on condition cc.
+    /// cc is 2-bit number that refers to:
+    /// 00 -> Z == 0; 01 -> Z == 1; 10 -> C == 0; 11 -> C == 1
+    /// 3-byte instruction
+    pub fn jp_cc_nn(&self) -> ProgramCounter {
+        let abs_addr = self.get_nn();
+        let cc = self.check_cc();
+        let pc_final: ProgramCounter;
+
+        if cc {
+            pc_final = ProgramCounter::Jump(abs_addr);
+        } else {
+            pc_final = ProgramCounter::Next(3);
+        }
+
+        pc_final
+    }
+
 
 
 
