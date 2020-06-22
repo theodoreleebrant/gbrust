@@ -350,6 +350,7 @@ impl CPU {
         let cc: u8 = (opcode & 0b00011000) >> 3;
         let mut result: bool;
         
+        // match cc with respective outcomes
         match cc {
             00 => result = self.reg.F & ZF == 0,
             01 => result = self.reg.F & ZF != 0,
