@@ -1074,3 +1074,42 @@ impl CPU {
         pc_final
     }
 
+    /// reti: Unconditional return from a function. Enables IME signal.
+    /// IME is Interrupt Master Enable. When this is enabled, interrupts can happen
+    /// same as ret, but set register IME.
+    pun fn reti(&self) -> ProgramCounter {
+        let pop_val = self.pop_u16();
+        self.reg.IME = 1;
+
+        ProgramCounter::Jump(pop_val)
+    }
+
+    /// rst_n: Unconditional function call to absolute fixed address defined by opcode.
+    /// opcode specifies rst_address in xxx: bits 3 4 5. Each combination of xxx indicates an
+    /// address.
+    /// 1 byte, 4 cycles.
+    pub fn rst_n(&self) -> ProgramCounter {
+        // push pc onto stack
+        self.push_u16(self.reg.PC);
+
+        let xxx = self.get_r_to(); // same bits
+        let pc_msb: u16 = 0x00;
+        let mut pc_lsb: u16;
+
+        match xxx {
+            0 => pc_lsb = 0x00,
+            1 => pc_lsb = 0x08,
+            2 => pc_lsb = 0x10,
+            3 => pc_lsb = 0x18,
+            4 => pc_lsb = 0x20,
+            5 => pc_lsb = 0x28,
+            6 => pc_lsb = 0x30,
+            7 => pc_lsb = 0x38,
+        }
+
+        let addr = (pc_msb << 8) | pc_lsb;
+
+        ProgramCounter::Jump(addr)
+    }
+        
+
