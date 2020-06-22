@@ -925,6 +925,24 @@ impl CPU {
                 self.write_to_r8(r, data);
             }
         }
-
         self.set_hcnz(false, false, false, data == 0);
+        
+        ProgramCounter::Next(2)
     }
+
+    // 2.6 Control Flow Instruction
+
+    /// jp_nn: unconditional jump to absolute address specified by 16-bit immediate. Set PC = nn
+    /// 3-byte instruction, 4 cycles.
+    pub fn jp_nn(&self) -> ProgramCounter {
+        ProgramCounter::Jump(self.get_nn())
+    }
+
+    /// jp_hl: unconditional jump to absolute address specified by 16-bit register HL. Set PC = HL.
+    /// 1-byte instruction, 1 cycle.
+    pub fn jp_HL(&self) -> ProgramCounter {
+        ProgramCounter::Jump(self.reg.HL)
+    }
+
+
+
