@@ -40,7 +40,7 @@ pub struct Registers {
 
     // Special registers
     pub mut F: u8,      // Special flag register
-    pub mut SP: u16,    // Stack pointer
+    pub mut SP: u16,    // Stack pointer. SP will start at 65536
     pub mut PC: u16,
 }
 
@@ -48,7 +48,7 @@ pub struct CPU {
     pub mut reg: Registers,     // Set of registers
     
     pub mut mem: [u8; 65536],   // 64KB memory
-    pub mut stack: [u8; 256],    // Stack for PC
+    pub mut stack: [u8; 65536],    // Stack for PC
 
     pub mut clock: u8,          // For timing in GB
 }
@@ -360,7 +360,27 @@ impl CPU {
 
         result
     }
+   
+    /// push_u16: push a u16 value onto the stack.
+    /// Most significant byte (MSB) goes to SP - 1
+    /// Least significant byte (LSB)  goes to SP - 2
+    pub fn push_u16(&self, val: u16) {
+        self.stack[(self.reg.SP - 1) as usize] = (val >> 8) as u8; // most sig. byte
+        self.stack[(self.reg.SP - 2) as usize] = (val & 0x00FF) as u8; // least sig. byte.
 
+        self.reg.SP -= 2;
+    }
+
+    /// pop_u16: pop a u16 value off the stack and return it.
+    /// LSB is at SP. MSB is at SP + 1. After that, increment SP by 2
+    pub fn pop_u16(&self) -> u16 {
+        let lsb = self.stack[self.reg.SP as usize] as u16;
+        let msb = self.stack[(self.reg.SP + 1) as usize] as u16;
+
+        self.reg.SP += 2;
+
+        (msb << 8) | lsb
+    }
 
     // Opcodes goes here!!
     
@@ -585,11 +605,9 @@ impl CPU {
     /// 1-byte instruction
     pub fn push_rr(&self) -> ProgramCounter {
         let rr = self.get_r16();
+        let val = read_from_r16(rr)?;
 
-        self.stack[self.reg.SP - 1] = (rr >> 8) as u8;
-        self.stack[self.reg.SP - 2] = (rr & 0x00FF) as u8;
-
-        self.reg.SP -= 2;
+        self.push_u16(val);
 
         ProgramCounter::Next(1)
     }
@@ -599,10 +617,7 @@ impl CPU {
     pub fn pop_rr(&self) -> ProgramCounter {
         let rr = self.get_r16();
         
-        let nn_low = self.stack[self.reg.SP as usize];
-        let nn_high = self.stack[(self.reg.SP + 1) as usize];
-
-        self.write_to_r16(rr, nn_low | (nn_high << 8));
+        self.write_to_r16(rr, self.pop_u16());
 
         ProgramCounter::Next(1)
     }
@@ -935,7 +950,7 @@ impl CPU {
             },
             .. => {
                 // read
-                data = self.read_from_u8(r)?;
+                data = self.read_from_r8(r)?;
 
                 // process
                 let lower = data & 0x0F;
