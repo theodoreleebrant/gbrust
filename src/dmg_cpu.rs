@@ -42,6 +42,12 @@ pub struct Registers {
     pub mut F: u8,      // Special flag register
     pub mut SP: u16,    // Stack pointer. SP will start at 65536
     pub mut PC: u16,
+
+    // Registers for interrupt. Each of these is only used for 1 bit, maybe can combine to become
+    // like register F
+    pub mut IE: u8, 
+    pub mut IF: u8,
+    pub mut IME: u8,    // Enable / Disable all interrupts
 }
 
 pub struct CPU {
