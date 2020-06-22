@@ -983,6 +983,27 @@ impl CPU {
         pc_final
     }
 
+    /// jr_e: Unconditional jump to relative address specified by signed 8-bit operand e.
+    /// 2 bytes, 3 cycles.
+    pub fn jr_e(&self) -> ProgramCounter {
+        let e = self.get_n() as i8; // idk if this works
+        ProgramCounter::Next(e) // idk if this works also... needa try implementing ProgramCounter enum.
+    }
 
+    /// jr_cc_e: Conditional jump to relative address specified by signed 8-bit operand e, depending on condition cc.
+    /// 2 bytes, 2 cycles if cc == false, 3 cycles if cc == true.
+    pub fn jr_cc_e(&self) -> ProgramCounter {
+        let e = self.get_n() as i8;
+        let cc = self.check_cc();
+        let pc_final: ProgramCounter;
+        
+        if cc {
+            pc_final = ProgramCounter::Next(e);
+        } else {
+            pc_final = ProgramCounter::Next(2);
+        }
+
+        pc_final
+    }    
 
 
