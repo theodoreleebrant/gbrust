@@ -1118,4 +1118,55 @@ impl CPU {
         ProgramCounter::Jump(addr)
     }
         
+    /// halt: CPU enters "halt mode" and stops system clock. Oscillator circuit and LCD Controller
+    /// continue to operate. "halt mode" can be cancelled with an interrupt or reset signal.
+    /// PC is halted as well. After interrupted / reset, program starts from PC address.
+    /// TODO: find a way to implement
+    
+    /// stop: CPU enters "stop mode" and stops everything including system clock, 
+    /// oscillator circuit and LCD Controller.
+    /// TODO: find a way to implement
 
+    /// di: Disables interrupt handling by setting IME = 0, cancelling any scheduled effects of the
+    /// EI instruction if any.
+    /// 1 byte, 1 cycle
+    pub fn di(&self) -> ProgramCounter {
+        self.reg.ime = 0;
+
+        ProgramCounter::Next(1)
+    }
+
+    /// ei: schedules interrupt handling to be enabled THE NEXT MACHINE CYCLE
+    /// 1 byte, 1 cycle + 1 cycle for EI effect.
+    /// TODO: find a way to implement
+
+    /// ccf: Flips carry flag, reset N and H flags
+    /// 1 byte, 1 cycle.
+    pub fn ccf(&self) -> ProgramCounter {
+        let c_bit = (self.reg.F & CF) >> 4;
+        let z_bit = (self.reg.F & ZH) >> 7;
+
+        // set all the flags
+        self.set_hcnz(false, c_bit == 0, false, z_bit == 1);
+
+        ProgramCounter::Next(1)
+    }
+
+    /// scf: Sets carry flag, reset N and H flags.
+    /// 1 byte, 1 cycle
+    pub fn scf(&self) -> ProgramCounter {
+        let z_bit = (self.reg.F & ZF) >> 7;
+
+        // set carry, reset n and h
+        self.set_hcnz(false, true, false, z_bit == 1);
+
+        ProgramCounter::Next(1)
+    }
+
+    /// nop: this doesn't do anything lmao, but add one cycle and increment PC by 1.
+    /// 1 byte, 1 cycle
+    pub fn nop(&self) -> ProgramCounter {
+        ProgramCounter::Next(1)
+    }
+
+    /// daa: decimal adjust acc.
