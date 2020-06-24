@@ -574,7 +574,12 @@ impl CPU {
 	    ProgramCounter::Next(2)
 	}
 
+	// ADD A, (HL): adds the contents of memory specified by the contents 
+	// of register pair HL to the contents of register Aand stores the results in register A
+	// Cycles: 2
+	//pub fn add_ahl(&self) -> ProgramCounter {
 
+	//}
 
 
 
