@@ -346,6 +346,12 @@ impl CPU {
 	    if n {self.set_flag(N_ID)} else {self.reset_flag(N_ID)};
 	    if z {self.set_flag(Z_ID)} else {self.reset_flag(Z_ID)};
 	}
+
+	pub fn set_hnz(&self, h: bool, c: bool, n: bool, z: bool) {
+	    if h {self.set_flag(H_ID)} else {self.reset_flag(H_ID)};
+	    if n {self.set_flag(N_ID)} else {self.reset_flag(N_ID)};
+	    if z {self.set_flag(Z_ID)} else {self.reset_flag(Z_ID)};
+	}
     
     /// check_cc extracts condition cc from opcode, and check whether condition is true.
     /// cc is a 2-bit number, at bit 3 and 4 of opcode, representing:
@@ -635,7 +641,8 @@ impl CPU {
     pub fn add_ar(&self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID)?;
-	    let r: u8 = self.get_r8_from();
+	    let idx: u8 = self.get_r8_from();
+	    let r: u8 = self.read_from_r8(idx)?;
 
 	    // processing
 	    let res: u16 = (a as u16) + (r as u16);
@@ -676,7 +683,7 @@ impl CPU {
 	    ProgramCounter::Next(2)
 	}
 
-    pub fn add_a_HL(&self) -> ProgramCounter {
+    pub fn add_ahl(&self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID)?;
         let r: u8 = self.mem[self.reg.HL as usize];
@@ -697,15 +704,525 @@ impl CPU {
 	    ProgramCounter::Next(1)
     }
         
+    pub fn adc_ar(&self) -> ProgramCounter {
+	    // reading
+	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let carry: u8 = self.read_from_r8(C_ID)?;
+	    let idx: u8 = self.get_r8_from();
+	    let r: u8 = self.read_from_r8(idx)?;
 
+	    // processing
+	    let res: u16 = (a as u16) + (r as u16) + (carry as u16);
 
+	    // flags and writing
+	    let h: bool = ((a & 0x0F) + (r & 0x0F) + (carry & 0x0F)) > 0x0F;
+	    let c: bool = res > 0xFF;
+	    let n: bool = false;
+	    let to_write: u8 = (a & 0xFF) as u8;
+	    let z: bool = to_write == 0;
 
+	    self.write_a(to_write);
+	    self.set_hcnz(h, c, n, z);
 
+	    ProgramCounter::Next(1)
+	}
 
+	// ADD A, n: add immediate operand n to register A.
+	// Cycles: 2
+	pub fn adc_an(&self) -> ProgramCounter {
+	    // reading
+	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let carry: u8 = self.read_from_r8(C_ID)?;
+	    let r: u8 = self.get_n();
 
+	    // processing
+	    let res: u16 = (a as u16) + (r as u16) + (carry as u16);
 
+	    // flags and writing
+	    let h: bool = ((a & 0x0F) + (r & 0x0F) + (carry & 0x0F)) > 0x0F;
+	    let c: bool = res > 0xFF;
+	    let n: bool = false;
+	    let to_write: u8 = (a & 0xFF) as u8;
+	    let z: bool = to_write == 0;
 
+	    self.write_a(to_write);
+	    self.set_hcnz(h, c, n, z);
 
+	    ProgramCounter::Next(2)
+	}
+
+    pub fn adc_ahl(&self) -> ProgramCounter {
+        // reading
+        let a: u8 = self.read_from_r8(A_ID)?;
+        let carry: u8 = self.read_from_r8(C_ID)?;
+        let r: u8 = self.mem[self.reg.HL as usize];
+
+        // processing
+        let res: u16 = (a as u16) + (r as u16) + (carry as u16);
+
+        // flags and writing
+	    let h: bool = ((a & 0x0F) + (r & 0x0F) + (carry & 0x0F)) > 0x0F;
+	    let c: bool = res > 0xFF;
+	    let n: bool = false;
+	    let to_write: u8 = (a & 0xFF) as u8;
+	    let z: bool = to_write == 0;
+
+	    self.write_a(to_write);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+    }
+
+    pub fn sub_r(&self) -> ProgramCounter {
+	    // reading
+	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let idx: u8 = self.get_r8_from();
+	    let r: u8 = self.read_from_r8(idx)?;
+
+	    // processing
+	    let res: u8 = a.wrapping_sub(r);
+
+	    // flags and writing
+	    let h: bool = (a & 0x0F).checked_sub(r & 0x0F) == None;
+	    let c: bool = (a).checked_sub(r) == None;
+	    let n: bool = true;
+	    let z: bool = res == 0;
+
+	    self.write_a(res);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+	}
+
+	// Cycles: 2
+	pub fn sub_n(&self) -> ProgramCounter {
+	    // reading
+	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let r: u8 = self.get_n();
+
+	    // processing
+	    let res: u8 = a.wrapping_sub(r);
+
+	    // flags and writing
+	    let h: bool = (a & 0x0F).checked_sub(r & 0x0F) == None;
+	    let c: bool = (a).checked_sub(r) == None;
+	    let n: bool = true;
+	    let z: bool = res == 0;
+
+	    self.write_a(res);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(2)
+	}
+
+    pub fn sub_hl(&self) -> ProgramCounter {
+        // reading
+        let a: u8 = self.read_from_r8(A_ID)?;
+        let r: u8 = self.mem[self.reg.HL as usize];
+
+        // processing
+	    let res: u8 = a.wrapping_sub(r);
+
+	    // flags and writing
+	    let h: bool = (a & 0x0F).checked_sub(r & 0x0F) == None;
+	    let c: bool = (a).checked_sub(r) == None;
+	    let n: bool = true;
+	    let z: bool = res == 0;
+
+	    self.write_a(res);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+    }
+        
+    pub fn sbc_ar(&self) -> ProgramCounter {
+	    // reading
+	    let carry: u8 = self.read_from_r8(C_ID)?;
+        let a: u8 = self.read_from_r8(A_ID)?;
+        let idx: u8 = self.get_r8_from();
+	    let r: u8 = self.read_from_r8(idx)?;
+
+        // processing
+	    let res: u8 = a.wrapping_sub(r).wrapping_sub(carry);
+
+	    // flags and writing
+	    let h: bool = (a & 0x0F).checked_sub((r & 0x0F) + carry) == None;
+	    let c: bool = (a as u16) < (r as u16 + carry as u16);
+	    let n: bool = true;
+	    let z: bool = res == 0;
+
+	    self.write_a(res);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+	}
+
+	// ADD A, n: add immediate operand n to register A.
+	// Cycles: 2
+	pub fn sbc_an(&self) -> ProgramCounter {
+	    // reading
+	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let carry: u8 = self.read_from_r8(C_ID)?;
+        let r: u8 = self.get_n();
+
+        // processing
+	    let res: u8 = a.wrapping_sub(r).wrapping_sub(carry);
+
+	    // flags and writing
+	    let h: bool = (a & 0x0F).checked_sub((r & 0x0F) + carry) == None;
+	    let c: bool = (a as u16) < (r as u16 + carry as u16);
+	    let n: bool = true;
+	    let z: bool = res == 0;
+
+	    self.write_a(res);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+	}
+
+    pub fn sbc_ahl(&self) -> ProgramCounter {
+        // reading
+        let carry: u8 = self.read_from_r8(C_ID)?;
+        let a: u8 = self.read_from_r8(A_ID)?;
+        let r: u8 = self.mem[self.reg.HL as usize];
+
+        // processing
+	    let res: u8 = a.wrapping_sub(r).wrapping_sub(carry);
+
+	    // flags and writing
+	    let h: bool = (a & 0x0F).checked_sub((r & 0x0F) + carry) == None;
+	    let c: bool = (a as u16) < (r as u16 + carry as u16);
+	    let n: bool = true;
+	    let z: bool = res == 0;
+
+	    self.write_a(res);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+    }
+
+    pub fn and_r(&self) -> ProgramCounter {
+	    // reading
+	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let idx: u8 = self.get_r8_from();
+	    let r: u8 = self.read_from_r8(idx)?;
+
+	    // processing
+	    let res: u16 = a & r;
+
+	    // flags and writing
+	    let h: bool = true;
+	    let c: bool = false;
+	    let n: bool = false;
+	    let z: bool = res == 0;
+
+	    self.write_a(res);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+	}
+
+	// ADD A, n: add immediate operand n to register A.
+	// Cycles: 2
+	pub fn and_n(&self) -> ProgramCounter {
+	    // reading
+	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let r: u8 = self.get_n();
+
+	    // processing
+	    let res: u16 = a & r;
+
+	    // flags and writing
+	    let h: bool = true;
+	    let c: bool = false;
+	    let n: bool = false;
+	    let z: bool = res == 0;
+
+	    self.write_a(res);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+	}
+
+    pub fn and_hl(&self) -> ProgramCounter {
+        // reading
+        let a: u8 = self.read_from_r8(A_ID)?;
+        let r: u8 = self.mem[self.reg.HL as usize];
+
+        // processing
+	    let res: u16 = a & r;
+
+	    // flags and writing
+	    let h: bool = true;
+	    let c: bool = false;
+	    let n: bool = false;
+	    let z: bool = res == 0;
+
+	    self.write_a(res);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+    }
+
+    pub fn or_r(&self) -> ProgramCounter {
+	    // reading
+	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let idx: u8 = self.get_r8_from();
+	    let r: u8 = self.read_from_r8(idx)?;
+
+	    // processing
+	    let res: u16 = a | r;
+	    // flags and writing
+	    let h: bool = false;
+	    let c: bool = false;
+	    let n: bool = false;
+	    let z: bool = res == 0;
+
+	    self.write_a(res);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+	}
+
+	// ADD A, n: add immediate operand n to register A.
+	// Cycles: 2
+	pub fn or_n(&self) -> ProgramCounter {
+	    // reading
+	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let r: u8 = self.get_n();
+
+	    // processing
+	    let res: u16 = a | r;
+
+	    // flags and writing
+	    let h: bool = false;
+	    let c: bool = false;
+	    let n: bool = false;
+	    let z: bool = res == 0;
+
+	    self.write_a(res);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+	}
+
+    pub fn or_hl(&self) -> ProgramCounter {
+        // reading
+        let a: u8 = self.read_from_r8(A_ID)?;
+        let r: u8 = self.mem[self.reg.HL as usize];
+
+        // processing
+	    let res: u16 = a | r;
+
+	    // flags and writing
+	    let h: bool = false;
+	    let c: bool = false;
+	    let n: bool = false;
+	    let z: bool = res == 0;
+
+	    self.write_a(res);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+    }
+
+    pub fn xor_r(&self) -> ProgramCounter {
+	    // reading
+	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let idx: u8 = self.get_r8_from();
+	    let r: u8 = self.read_from_r8(idx)?;
+
+	    // processing
+	    let res: u16 = a ^ r;
+
+	    // flags and writing
+	    let h: bool = false;
+	    let c: bool = false;
+	    let n: bool = false;
+	    let z: bool = res == 0;
+
+	    self.write_a(res);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+	}
+
+	// ADD A, n: add immediate operand n to register A.
+	// Cycles: 2
+	pub fn xor_n(&self) -> ProgramCounter {
+	    // reading
+	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let r: u8 = self.get_n();
+
+	    // processing
+	    let res: u16 = a ^ r;
+
+	    // flags and writing
+	    let h: bool = false;
+	    let c: bool = false;
+	    let n: bool = false;
+	    let z: bool = res == 0;
+
+	    self.write_a(res);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+	}
+
+    pub fn xor_hl(&self) -> ProgramCounter {
+        // reading
+        let a: u8 = self.read_from_r8(A_ID)?;
+        let r: u8 = self.mem[self.reg.HL as usize];
+
+        // processing
+	    let res: u16 = a ^ r;
+
+	    // flags and writing
+	    let h: bool = false;
+	    let c: bool = false;
+	    let n: bool = false;
+	    let z: bool = res == 0;
+
+	    self.write_a(res);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+    }
+
+    pub fn cp_r(&self) -> ProgramCounter {
+	    // reading
+	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let idx: u8 = self.get_r8_from();
+	    let r: u8 = self.read_from_r8(idx)?;
+
+	    // processing
+	    let res: u8 = a.wrapping_sub(r);
+
+	    // flags and writing
+	    let h: bool = (a & 0x0F).checked_sub(r & 0x0F) == None;
+	    let c: bool = (a).checked_sub(r) == None;
+	    let n: bool = true;
+	    let z: bool = res == 0;
+
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+	}
+
+	// Cycles: 2
+	pub fn cp_n(&self) -> ProgramCounter {
+	    // reading
+	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let r: u8 = self.get_n();
+
+	    // processing
+	    let res: u8 = a.wrapping_sub(r);
+
+	    // flags and writing
+	    let h: bool = (a & 0x0F).checked_sub(r & 0x0F) == None;
+	    let c: bool = (a).checked_sub(r) == None;
+	    let n: bool = true;
+	    let z: bool = res == 0;
+
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(2)
+	}
+
+    pub fn cp_hl(&self) -> ProgramCounter {
+        // reading
+        let a: u8 = self.read_from_r8(A_ID)?;
+        let r: u8 = self.mem[self.reg.HL as usize];
+
+        // processing
+	    let res: u8 = a.wrapping_sub(r);
+
+	    // flags and writing
+	    let h: bool = (a & 0x0F).checked_sub(r & 0x0F) == None;
+	    let c: bool = (a).checked_sub(r) == None;
+	    let n: bool = true;
+	    let z: bool = res == 0;
+
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+    }
+
+    pub fn inc_r(&self) -> ProgramCounter {
+	    // reading
+	    let idx: u8 = self.get_r8_to();
+	    let r: u8 = self.read_from_r8(idx)?;
+
+	    // processing
+	    let res: u8 = if r == u8::MAX {0} else {r + 1};
+
+	    // flags and writing
+	    let h: bool = (r & 0xF) == 0xF;
+	    let n: bool = false;
+	    let z: bool = res == 0;
+
+	    self.write_to_r8(idx);
+	    self.set_hnz(h, n, z);
+
+	    ProgramCounter::Next(1)
+	}
+
+	pub fn inc_hl(&self) -> ProgramCounter {
+	    // reading
+	    let idx: u8 = self.get_r8_to();
+	    let r: u8 = self.mem[self.reg.HL as usize];
+
+	    // processing
+	    let res: u8 = if r == u8::MAX {0} else {r + 1};
+
+	    // flags and writing
+	    let h: bool = (r & 0xF) == 0xF;
+	    let n: bool = false;
+	    let z: bool = res == 0;
+
+	    self.mem[self.reg.HL as usize] = res;
+	    self.set_hnz(h, n, z);
+
+	    ProgramCounter::Next(1)
+	}
+
+	pub fn dec_r(&self) -> ProgramCounter {
+	    // reading
+	    let idx: u8 = self.get_r8_to();
+	    let r: u8 = self.read_from_r8(idx)?;
+
+	    // processing
+	    let res: u8 = if r == 0 {u8::MAX} else {r - 1};
+
+	    // flags and writing
+	    let h: bool = (r & 0xF) == 0xF;
+	    let n: bool = true;
+	    let z: bool = res == 0;
+
+	    self.write_to_r8(idx);
+	    self.set_hnz(h, n, z);
+
+	    ProgramCounter::Next(1)
+	}
+
+	pub fn dec_hl(&self) -> ProgramCounter {
+	    // reading
+	    let idx: u8 = self.get_r8_to();
+	    let r: u8 = self.mem[self.reg.HL as usize];
+
+	    // processing
+	    let res: u8 = if r == 0 {u8::MAX} else {r - 1};
+
+	    // flags and writing
+	    let h: bool = (r & 0xF) == 0xF;
+	    let n: bool = true;
+	    let z: bool = res == 0;
+
+	    self.mem[self.reg.HL as usize] = res;
+	    self.set_hnz(h, n, z);
+
+	    ProgramCounter::Next(1)
+	}
 
 
 
