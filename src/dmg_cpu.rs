@@ -54,7 +54,10 @@ pub struct CPU {
     pub mut reg: Registers,     // Set of registers
     
     pub mut mem: [u8; 65536],   // 64KB memory
-    pub mut stack: [u8; 65536],    // Stack for PC
+    pub mut stack: [u8; 65536], // Stack for PC
+
+    pub mut halt_mode: bool,    // true -> enter halt mode
+    pub mut stop_mode: bool,    // true -> enter stop mode
 
     pub mut clock: u8,          // For timing in GB
 }
@@ -1638,11 +1641,20 @@ impl CPU {
     /// halt: CPU enters "halt mode" and stops system clock. Oscillator circuit and LCD Controller
     /// continue to operate. "halt mode" can be cancelled with an interrupt or reset signal.
     /// PC is halted as well. After interrupted / reset, program starts from PC address.
-    /// TODO: find a way to implement
+    pub fn halt(&self) -> ProgramCounter {
+        self.halt_mode = true;
+
+        ProgramCounter::Next(0)     // does not incrememt
+    }
     
     /// stop: CPU enters "stop mode" and stops everything including system clock, 
     /// oscillator circuit and LCD Controller.
-    /// TODO: find a way to implement
+    /// 1 byte, 1 cycle
+    pub fn stop(&self) -> ProgramCounter {
+        self.stop_mode = true;
+
+        ProgramCounter::Next(0)     // does not increment
+    }
 
     /// di: Disables interrupt handling by setting IME = 0, cancelling any scheduled effects of the
     /// EI instruction if any.
@@ -1656,6 +1668,11 @@ impl CPU {
     /// ei: schedules interrupt handling to be enabled THE NEXT MACHINE CYCLE
     /// 1 byte, 1 cycle + 1 cycle for EI effect.
     /// TODO: find a way to implement
+    pub fn ei(&self) -> ProgramCounter {
+        self.reg.ime = 1;
+
+        ProgramCounter::Next(1);
+    }
 
     /// ccf: Flips carry flag, reset N and H flags
     /// 1 byte, 1 cycle.
