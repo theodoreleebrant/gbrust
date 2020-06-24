@@ -1186,6 +1186,44 @@ impl CPU {
 	    ProgramCounter::Next(1)
 	}
 
+	pub fn dec_r(&self) -> ProgramCounter {
+	    // reading
+	    let idx: u8 = self.get_r8_to();
+	    let r: u8 = self.read_from_r8(idx)?;
+
+	    // processing
+	    let res: u8 = if r == 0 {u8::MAX} else {r - 1};
+
+	    // flags and writing
+	    let h: bool = (r & 0xF) == 0xF;
+	    let n: bool = true;
+	    let z: bool = res == 0;
+
+	    self.write_to_r8(idx);
+	    self.set_hnz(h, n, z);
+
+	    ProgramCounter::Next(1)
+	}
+
+	pub fn dec_hl(&self) -> ProgramCounter {
+	    // reading
+	    let idx: u8 = self.get_r8_to();
+	    let r: u8 = self.mem[self.reg.HL as usize];
+
+	    // processing
+	    let res: u8 = if r == 0 {u8::MAX} else {r - 1};
+
+	    // flags and writing
+	    let h: bool = (r & 0xF) == 0xF;
+	    let n: bool = true;
+	    let z: bool = res == 0;
+
+	    self.mem[self.reg.HL as usize] = res;
+	    self.set_hnz(h, n, z);
+
+	    ProgramCounter::Next(1)
+	}
+
 
 
 
