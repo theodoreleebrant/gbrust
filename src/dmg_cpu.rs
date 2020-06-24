@@ -901,7 +901,7 @@ impl CPU {
 
 	    // flags and writing
 	    let h: bool = true;
-	    let c: bool = false
+	    let c: bool = false;
 	    let n: bool = false;
 	    let z: bool = res == 0;
 
@@ -923,7 +923,7 @@ impl CPU {
 
 	    // flags and writing
 	    let h: bool = true;
-	    let c: bool = false
+	    let c: bool = false;
 	    let n: bool = false;
 	    let z: bool = res == 0;
 
@@ -943,7 +943,7 @@ impl CPU {
 
 	    // flags and writing
 	    let h: bool = true;
-	    let c: bool = false
+	    let c: bool = false;
 	    let n: bool = false;
 	    let z: bool = res == 0;
 
@@ -961,8 +961,8 @@ impl CPU {
 	    // processing
 	    let res: u16 = a | r;
 	    // flags and writing
-	    let h: bool = true;
-	    let c: bool = false
+	    let h: bool = false;
+	    let c: bool = false;
 	    let n: bool = false;
 	    let z: bool = res == 0;
 
@@ -983,8 +983,8 @@ impl CPU {
 	    let res: u16 = a | r;
 
 	    // flags and writing
-	    let h: bool = true;
-	    let c: bool = false
+	    let h: bool = false;
+	    let c: bool = false;
 	    let n: bool = false;
 	    let z: bool = res == 0;
 
@@ -1003,8 +1003,8 @@ impl CPU {
 	    let res: u16 = a | r;
 
 	    // flags and writing
-	    let h: bool = true;
-	    let c: bool = false
+	    let h: bool = false;
+	    let c: bool = false;
 	    let n: bool = false;
 	    let z: bool = res == 0;
 
@@ -1023,8 +1023,8 @@ impl CPU {
 	    let res: u16 = a ^ r;
 
 	    // flags and writing
-	    let h: bool = true;
-	    let c: bool = false
+	    let h: bool = false;
+	    let c: bool = false;
 	    let n: bool = false;
 	    let z: bool = res == 0;
 
@@ -1045,8 +1045,8 @@ impl CPU {
 	    let res: u16 = a ^ r;
 
 	    // flags and writing
-	    let h: bool = true;
-	    let c: bool = false
+	    let h: bool = false;
+	    let c: bool = false;
 	    let n: bool = false;
 	    let z: bool = res == 0;
 
@@ -1065,12 +1065,70 @@ impl CPU {
 	    let res: u16 = a ^ r;
 
 	    // flags and writing
-	    let h: bool = true;
-	    let c: bool = false
+	    let h: bool = false;
+	    let c: bool = false;
 	    let n: bool = false;
 	    let z: bool = res == 0;
 
 	    self.write_a(res);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+    }
+
+    pub fn cp_r(&self) -> ProgramCounter {
+	    // reading
+	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let r: u8 = self.get_r8_from();
+
+	    // processing
+	    let res: u8 = a.wrapping_sub(r);
+
+	    // flags and writing
+	    let h: bool = (a & 0x0F).checked_sub(r & 0x0F) == None;
+	    let c: bool = (a).checked_sub(r) == None;
+	    let n: bool = true;
+	    let z: bool = res == 0;
+
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+	}
+
+	// Cycles: 2
+	pub fn cp_n(&self) -> ProgramCounter {
+	    // reading
+	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let r: u8 = self.get_n();
+
+	    // processing
+	    let res: u8 = a.wrapping_sub(r);
+
+	    // flags and writing
+	    let h: bool = (a & 0x0F).checked_sub(r & 0x0F) == None;
+	    let c: bool = (a).checked_sub(r) == None;
+	    let n: bool = true;
+	    let z: bool = res == 0;
+
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(2)
+	}
+
+    pub fn cp_hl(&self) -> ProgramCounter {
+        // reading
+        let a: u8 = self.read_from_r8(A_ID)?;
+        let r: u8 = self.mem[self.reg.HL as usize];
+
+        // processing
+	    let res: u8 = a.wrapping_sub(r);
+
+	    // flags and writing
+	    let h: bool = (a & 0x0F).checked_sub(r & 0x0F) == None;
+	    let c: bool = (a).checked_sub(r) == None;
+	    let n: bool = true;
+	    let z: bool = res == 0;
+
 	    self.set_hcnz(h, c, n, z);
 
 	    ProgramCounter::Next(1)
