@@ -346,6 +346,12 @@ impl CPU {
 	    if n {self.set_flag(N_ID)} else {self.reset_flag(N_ID)};
 	    if z {self.set_flag(Z_ID)} else {self.reset_flag(Z_ID)};
 	}
+
+	pub fn set_hnz(&self, h: bool, c: bool, n: bool, z: bool) {
+	    if h {self.set_flag(H_ID)} else {self.reset_flag(H_ID)};
+	    if n {self.set_flag(N_ID)} else {self.reset_flag(N_ID)};
+	    if z {self.set_flag(Z_ID)} else {self.reset_flag(Z_ID)};
+	}
     
     /// check_cc extracts condition cc from opcode, and check whether condition is true.
     /// cc is a 2-bit number, at bit 3 and 4 of opcode, representing:
@@ -635,7 +641,8 @@ impl CPU {
     pub fn add_ar(&self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID)?;
-	    let r: u8 = self.get_r8_from();
+	    let idx: u8 = self.get_r8_from();
+	    let r: u8 = self.read_from_r8(idx)?;
 
 	    // processing
 	    let res: u16 = (a as u16) + (r as u16);
@@ -701,7 +708,8 @@ impl CPU {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID)?;
 	    let carry: u8 = self.read_from_r8(C_ID)?;
-	    let r: u8 = self.get_r8_from();
+	    let idx: u8 = self.get_r8_from();
+	    let r: u8 = self.read_from_r8(idx)?;
 
 	    // processing
 	    let res: u16 = (a as u16) + (r as u16) + (carry as u16);
@@ -768,7 +776,8 @@ impl CPU {
     pub fn sub_r(&self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID)?;
-	    let r: u8 = self.get_r8_from();
+	    let idx: u8 = self.get_r8_from();
+	    let r: u8 = self.read_from_r8(idx)?;
 
 	    // processing
 	    let res: u8 = a.wrapping_sub(r);
@@ -830,7 +839,8 @@ impl CPU {
 	    // reading
 	    let carry: u8 = self.read_from_r8(C_ID)?;
         let a: u8 = self.read_from_r8(A_ID)?;
-        let r: u8 = self.get_r8_from();
+        let idx: u8 = self.get_r8_from();
+	    let r: u8 = self.read_from_r8(idx)?;
 
         // processing
 	    let res: u8 = a.wrapping_sub(r).wrapping_sub(carry);
@@ -894,7 +904,8 @@ impl CPU {
     pub fn and_r(&self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID)?;
-	    let r: u8 = self.get_r8_from();
+	    let idx: u8 = self.get_r8_from();
+	    let r: u8 = self.read_from_r8(idx)?;
 
 	    // processing
 	    let res: u16 = a & r;
@@ -956,7 +967,8 @@ impl CPU {
     pub fn or_r(&self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID)?;
-	    let r: u8 = self.get_r8_from();
+	    let idx: u8 = self.get_r8_from();
+	    let r: u8 = self.read_from_r8(idx)?;
 
 	    // processing
 	    let res: u16 = a | r;
@@ -1017,7 +1029,8 @@ impl CPU {
     pub fn xor_r(&self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID)?;
-	    let r: u8 = self.get_r8_from();
+	    let idx: u8 = self.get_r8_from();
+	    let r: u8 = self.read_from_r8(idx)?;
 
 	    // processing
 	    let res: u16 = a ^ r;
@@ -1079,7 +1092,8 @@ impl CPU {
     pub fn cp_r(&self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID)?;
-	    let r: u8 = self.get_r8_from();
+	    let idx: u8 = self.get_r8_from();
+	    let r: u8 = self.read_from_r8(idx)?;
 
 	    // processing
 	    let res: u8 = a.wrapping_sub(r);
@@ -1134,7 +1148,43 @@ impl CPU {
 	    ProgramCounter::Next(1)
     }
 
+    pub fn inc_r(&self) -> ProgramCounter {
+	    // reading
+	    let idx: u8 = self.get_r8_to();
+	    let r: u8 = self.read_from_r8(idx)?;
 
+	    // processing
+	    let res: u8 = if r == u8::MAX {0} else {r + 1};
+
+	    // flags and writing
+	    let h: bool = (r & 0xF) == 0xF;
+	    let n: bool = false;
+	    let z: bool = res == 0;
+
+	    self.write_to_r8(idx);
+	    self.set_hnz(h, n, z);
+
+	    ProgramCounter::Next(1)
+	}
+
+	pub fn inc_hl(&self) -> ProgramCounter {
+	    // reading
+	    let idx: u8 = self.get_r8_to();
+	    let r: u8 = self.mem[self.reg.HL as usize];
+
+	    // processing
+	    let res: u8 = if r == u8::MAX {0} else {r + 1};
+
+	    // flags and writing
+	    let h: bool = (r & 0xF) == 0xF;
+	    let n: bool = false;
+	    let z: bool = res == 0;
+
+	    self.mem[self.reg.HL as usize] = res;
+	    self.set_hnz(h, n, z);
+
+	    ProgramCounter::Next(1)
+	}
 
 
 
