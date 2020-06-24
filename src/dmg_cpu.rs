@@ -953,6 +953,68 @@ impl CPU {
 	    ProgramCounter::Next(1)
     }
 
+    pub fn or_r(&self) -> ProgramCounter {
+	    // reading
+	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let r: u8 = self.get_r8_from();
+
+	    // processing
+	    let res: u16 = a ^ r;
+
+	    // flags and writing
+	    let h: bool = true;
+	    let c: bool = false
+	    let n: bool = false;
+	    let z: bool = res == 0;
+
+	    self.write_a(res);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+	}
+
+	// ADD A, n: add immediate operand n to register A.
+	// Cycles: 2
+	pub fn or_n(&self) -> ProgramCounter {
+	    // reading
+	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let r: u8 = self.get_n();
+
+	    // processing
+	    let res: u16 = a ^ r;
+
+	    // flags and writing
+	    let h: bool = true;
+	    let c: bool = false
+	    let n: bool = false;
+	    let z: bool = res == 0;
+
+	    self.write_a(res);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+	}
+
+    pub fn or_hl(&self) -> ProgramCounter {
+        // reading
+        let a: u8 = self.read_from_r8(A_ID)?;
+        let r: u8 = self.mem[self.reg.HL as usize];
+
+        // processing
+	    let res: u16 = a ^ r;
+
+	    // flags and writing
+	    let h: bool = true;
+	    let c: bool = false
+	    let n: bool = false;
+	    let z: bool = res == 0;
+
+	    self.write_a(res);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+    }
+
 
 
 
