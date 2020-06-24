@@ -1170,3 +1170,55 @@ impl CPU {
     }
 
     /// daa: decimal adjust acc.
+    /// This is binary arithmetic acting as binary numbers...
+    /// 1 byte, 1 cycle.
+    pub fn daa(&self) -> ProgramCounter {
+        let mut a: u8 = self.read_from_r8(A_ID)?;
+
+        let is_addition: bool = (self.reg.F & NF) > 0;
+        let c_flag: bool = (self.reg.F & CF) > 0;
+        let h_flag: bool = (self.reg.F & HF) > 0;
+        let mut has_carry: bool = false;
+
+        if is_addition { // after addition, adjust if half-carry occured or if results out of bounds.
+            if (a > 0x90 || c_flag) {
+                a += 0x60;
+                has_carry = true;
+            }
+
+            if ((a & 0x0F) > 0x09 || h_flag) {
+                a += 0x06;
+            }
+        } else { // after subtraction, adjust if half-carry occured.
+            if c_flag {
+                a -= 0x60;
+            }
+
+            if h_flag {
+                a -= 0x06;
+            }
+        }
+
+        // Write back data to reg A
+        self.write_to_r8(A_ID, a);
+
+        ProgramCounter::Next(1)
+    }
+
+    /// cpl: flip all bits in the A-register, sets N and H to 1.
+    /// 1 byte, 1 cycle
+    pub fn cpl(&self) -> ProgramCounter {
+        let mut a: u8 = self.read_from_u8(A_ID)?;
+
+        let mut n = 0;
+
+        while n < 8 {
+            // reverse every bit in a
+            a = a ^ (0x01 << n);
+            n += 1;
+        }
+
+        self.write_to_r8(A_ID, a);
+
+        ProgramCounter::Next(1)
+    }
