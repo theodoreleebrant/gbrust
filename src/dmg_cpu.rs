@@ -413,6 +413,7 @@ impl CPU {
     
     /// ld_rx_ry: load contents of ry to rx. 1-byte instruction
     /// @param rx, ry: ID for register rx and ry (8-bit)
+    // Cycles: 2
     pub fn ld_rx_ry(&self) -> ProgramCounter {
         let rx = self.get_r8_to();
         let ry =  self.get_r8_from();
@@ -427,6 +428,7 @@ impl CPU {
 
     /// ld_r_n: Load 8-bit data n into register r. 2-byte instruction
     /// @param: r: register ID; n: intermediate
+    // Cycles: 2
     pub fn ld_r_n(&self) -> ProgramCounter {
         let r = self.get_r8_to();
         let n = self.get_n();
@@ -438,6 +440,7 @@ impl CPU {
 
     /// ld_r_addr_HL: loads contents of memory specified at (HL) to register r. 1-byte instruction
     /// @param r: 8-bit register ID
+    // Cycles: 2
     pub fn ld_r_addr_HL(&self) -> ProgramCounter {
         let r = self.get_r8_to();
 
@@ -449,6 +452,7 @@ impl CPU {
     /// ld_addr_HL_r: stores contents of register r into memory specified by register pair HL.
     /// 1-byte instruction.
     /// @param: r: ID of 8-bit register
+    // Cycles: 2
     pub fn ld_addr_HL_r(&self) -> ProgramCounter {
         let r = self.get_r8_from();
     
@@ -460,6 +464,7 @@ impl CPU {
     /// ld_addr_HL_n: stores 8-bit immediate data in memory specified by register pair HL.
     /// 2-byte instruction.
     /// @param n: 8-bit immediate.
+    // Cycles: 3
     pub fn ld_addr_HL_n(&self) -> ProgramCounter {
         let n = self.get_n();
 
@@ -470,6 +475,7 @@ impl CPU {
 
     /// ld_A_addr_BC: Load contents of memory specified by BC into A.
     /// 1-byte instruction
+    // 
     pub fn ld_A_addr_BC(&self) -> ProgramCounter {
         self.load_mem_to_r8(A_ID, self.reg.BC);
 
@@ -890,7 +896,7 @@ impl CPU {
 	    self.write_a(res);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(2)
 	}
 
     pub fn sbc_ahl(&self) -> ProgramCounter {
@@ -954,7 +960,7 @@ impl CPU {
 	    self.write_a(res);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(2)
 	}
 
     pub fn and_hl(&self) -> ProgramCounter {
@@ -1016,7 +1022,7 @@ impl CPU {
 	    self.write_a(res);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(2)
 	}
 
     pub fn or_hl(&self) -> ProgramCounter {
@@ -1079,7 +1085,7 @@ impl CPU {
 	    self.write_a(res);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(2)
 	}
 
     pub fn xor_hl(&self) -> ProgramCounter {
@@ -1278,7 +1284,7 @@ impl CPU {
 	    self.write_to_r16(SP_ID, to_write);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(2)
 	}
 
 	pub fn inc_ss(&self) -> ProgramCounter {
