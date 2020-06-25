@@ -355,6 +355,12 @@ impl CPU {
 	    if n {self.set_flag(N_ID)} else {self.reset_flag(N_ID)};
 	    if z {self.set_flag(Z_ID)} else {self.reset_flag(Z_ID)};
 	}
+
+	pub fn set_hcn(&self, h: bool, c: bool, n: bool, z: bool) {
+	    if h {self.set_flag(H_ID)} else {self.reset_flag(H_ID)};
+	    if c {self.set_flag(C_ID)} else {self.reset_flag(C_ID)};
+	    if n {self.set_flag(N_ID)} else {self.reset_flag(N_ID)};
+	}
     
     /// check_cc extracts condition cc from opcode, and check whether condition is true.
     /// cc is a 2-bit number, at bit 3 and 4 of opcode, representing:
@@ -1227,7 +1233,50 @@ impl CPU {
 	    ProgramCounter::Next(1)
 	}
 
+	// 2.4 16-bit intstructions
 
+	pub fn add_hlss(&self) -> ProgramCounter {
+		// reading
+	    let idx: u8 = (self.get_r8_to() & 0b110) >> 1;
+	    let r: u16 = self.read_from_r16(idx);
+	    let hl: u16 = self.read_from_r16(HL_ID);
+
+	    // processing
+	    let res: u32 = r as u32 + hl as u32;
+
+	    // flags and writing
+	    let h: bool = ((hl & 0x0FFF) + (r & 0x0FFF)) > 0x0FFF
+	    let c: bool = res > 0xFFFF;
+	    let n: bool = false;
+	    let to_write: u16 = (res & 0xFFFF) as u16
+
+	    self.write_to_r16(HL_ID, to_write);
+	    self.set_hcn(h, c, n);
+
+	    ProgramCounter::Next(1)
+	}
+
+	pub fn add_spe(&self) -> ProgramCounter {
+		// reading
+	    let idx: u8 = (self.get_r8_to() & 0b110) >> 1;
+	    let r: u16 = self.get_n as u16;
+	    let sp: u16 = self.read_from_r16(SP_ID);
+
+	    // processing
+	    let res: u32 = r as u32 + sp as u32;
+
+	    // flags and writing
+	    let h: bool = ((sp & 0x0FFF) + (r & 0x0FFF)) > 0x0FFF
+	    let c: bool = res > 0xFFFF;
+	    let n: bool = false;
+	    let z: bool = false;
+	    let to_write: u16 = (res & 0xFFFF) as u16
+
+	    self.write_to_r16(SP_ID, to_write);
+	    self.set_hcnz(h, c, n, z);
+
+	    ProgramCounter::Next(1)
+	}
 
 
 
