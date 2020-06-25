@@ -27,41 +27,41 @@ const SP_ID: u8 = 0b11;
 /// 3 Interrupt Registers: IME (master), IE: Interrupt Enable -> Enables interrupts, IF: Interrupt
 ///   Flag -> Requests Interrupts
 pub struct Registers {
-    pub mut A: u8,      // Accumulator register
-    pub mut B: u8,
-    pub mut C: u8,
-    pub mut D: u8,
-    pub mut E: u8,
-    pub mut H: u8,
-    pub mut L: u8,
+	A: u8,      // Accumulator register
+	B: u8,
+	C: u8,
+	D: u8,
+	E: u8,
+	H: u8,
+	L: u8,
 
-    // 16-bit pair registers
-    pub mut BC: u16,
-    pub mut DE: u16,
-    pub mut HL: u16,
+	// 16-bit pair registers
+	BC: u16,
+	DE: u16,
+	HL: u16,
 
-    // Special registers
-    pub mut F: u8,      // Special flag register
-    pub mut SP: u16,    // Stack pointer. SP will start at 65536
-    pub mut PC: u16,
+	// Special registers
+	F: u8,      // Special flag register
+	SP: u16,    // Stack pointer. SP will start at 65536
+	PC: u16,
 
-    // Registers for interrupt.
-    // IME: 0 -> Disable all Interrupts, 1 -> Enable all Interrupts enabled in IE
-    pub mut IE: u8,     // Interrupt Enable
-    pub mut IF: u8,     // Interrupt Flag
-    pub mut IME: u8,    // Enable / Disable all interrupts
+	// Registers for interrupt.
+	// IME: 0 -> Disable all Interrupts, 1 -> Enable all Interrupts enabled in IE
+	IE: u8,     // Interrupt Enable
+	IF: u8,     // Interrupt Flag
+	IME: u8,    // Enable / Disable all interrupts
 }
 
 pub struct CPU {
-    pub mut reg: Registers,     // Set of registers
-    
-    pub mut mem: [u8; 65536],   // 64KB memory
-    pub mut stack: [u8; 65536], // Stack for PC
+	reg: Registers,     // Set of registers
 
-    pub mut halt_mode: bool,    // true -> enter halt mode
-    pub mut stop_mode: bool,    // true -> enter stop mode
+	mem: [u8; 65536],   // 64KB memory
+	stack: [u8; 65536], // Stack for PC
 
-    pub mut clock: u8,          // For timing in GB
+	halt_mode: bool,    // true -> enter halt mode
+	stop_mode: bool,    // true -> enter stop mode
+
+	clock: u8,          // For timing in GB
 }
 
 impl CPU {
@@ -186,7 +186,7 @@ impl CPU {
                 self.reg.L = lsb;
             },
             SP_ID => self.reg.SP = content,
-            _ => return false;
+            .. => return false;
         }
 
         true
@@ -203,7 +203,7 @@ impl CPU {
             DE_ID => result = self.reg.DE,
             HL_ID => result = self.reg.HL,
             SP_ID => result = self.reg.SP,
-            _ => return None,
+            .. => return None,
         }
 
         Some(result)
@@ -247,7 +247,7 @@ impl CPU {
             NF => self.reg.F &= 0b10111111,
             HF => self.reg.F &= 0b11011111,
             CF => self.reg.F &= 0b11101111,
-            _ => (),
+            .. => (),
         }
     }
 
@@ -1360,7 +1360,7 @@ impl CPU {
 
         match r {
             0x06 => self.rotate_mem(self.reg.HL, true, true),
-            _ => self.rotate_r8(r, true, true),
+            .. => self.rotate_r8(r, true, true),
         }
 
         ProgramCounter::Next(2)
@@ -1375,7 +1375,7 @@ impl CPU {
 
         match r {
             0x06 => self.rotate_mem(self.reg.HL, true, false),
-            _ => self.rotate_r8(r, true, false),
+            .. => self.rotate_r8(r, true, false),
         }
 
         ProgramCounter::Next(2)
@@ -1390,7 +1390,7 @@ impl CPU {
 
         match r {
             0x06 => self.rotate_mem(self.reg.HL, false, true),
-            _ => self.rotate_r8(r, false, true),
+            .. => self.rotate_r8(r, false, true),
         }
 
         ProgramCounter::Next(2)
@@ -1405,7 +1405,7 @@ impl CPU {
 
         match r {
             0x06 => self.rotate_mem(self.reg.HL, false, false),
-            _ => self.rotate_r8(r, false, false),
+            .. => self.rotate_r8(r, false, false),
         }
 
         ProgramCounter::Next(2)
@@ -1432,7 +1432,7 @@ impl CPU {
                 // write back
                 self.mem[self.reg.HL as usize] = data;
             },
-            _ => {
+            .. => {
                 data = read_from_r8(r)?;
                 bit_7 = (data & 0x80) >> 7;
                 
@@ -1474,7 +1474,7 @@ impl CPU {
                 // write back
                 self.mem[self.reg.HL as usize] = data;
             },
-            _ => {
+            .. => {
                 data = read_from_r8(r)?;
                 bit_7 = (data & 0x80) >> 7;
                 bit_0 = (data & 0x01);
@@ -1515,7 +1515,7 @@ impl CPU {
                 // write back
                 self.mem[self.reg.HL as usize] = data;
             },
-            _ => {
+            .. => {
                 data = read_from_r8(r)?;
                 bit_0 = (data & 0x01);
                 
@@ -1556,7 +1556,7 @@ impl CPU {
                 // write back
                 self.mem[self.reg.HL as usize] = data;
             },
-            _ => {
+            .. => {
                 // read
                 data = self.read_from_r8(r)?;
 
@@ -1576,7 +1576,7 @@ impl CPU {
 
     // CB (bit operation)
     
-    /// bit_b_r: Copies complement of bit_b of register r to Z flag.
+    /// bit_b_r: Copies bit_b of register r to Z flag.
     /// 2 bytes, 2 cycles
     pub fn bit_b_r(&self) -> ProgramCounter {
         let br_info = self.get_n();
@@ -1588,73 +1588,6 @@ impl CPU {
 
         // set the flag
         self.set_hnz(true, false, val == 0);
-
-        ProgramCounter::Next(2)
-    }
-
-    /// bit_b_HL: copies complement bit_b of contents at specified memory HL into Z flag.
-    /// 2 bytes, 3 cycles
-    pub fn bit_b_HL(&self) -> ProgramCounter {
-        let b = self.get_n();
-        let b = (b & 0x38) >> 3;
-
-        let mut val: u8 = self.mem[self.reg.HL as usize];
-        val = (val >> b) & 0x01;
-
-        // set the flag
-        self.set_hnz(true, false, val == 0);
-
-        ProgramCounter::Next(2)
-    }
-
-    /// set_b_r: set bit_b of register r to 1.
-    /// 2 bytes, 2 cycles
-    pub fn set_b_r(&self) -> ProgramCounter {
-        let br_info = self.get_n();
-        let b = (br_info & 0x38) >> 3;
-        let r = br_info & 0x07;
-
-        let mut val: u8 = self.read_from_r8(r)?;
-        val = val | (0x01 << b);
-        self.write_to_r8(r, val);
-
-        ProgramCounter::Next(2)
-    }
-
-    /// set_b_HL: set bit_b of contents at memry HL to 1.
-    /// 2 bytes, 4 cycles
-    pub fn set_b_HL(&self) -> ProgramCounter {
-        let b = self.get_n();
-        let b = (b & 0x38) >> 3;
-
-        let mut val: u8 = self.mem[self.reg.HL as usize];
-        val = val | (0x01 << b);
-
-        ProgramCounter::Next(2)
-    }
-
-    /// res_b_r: Reset bit_b of register r to 0.
-    /// 2 bytes, 2 cycles
-    pub fn res_b_r(&self) -> ProgramCounter {
-        let br_info = self.get_n();
-        let b = (br_info & 0x38) >> 3;
-        let r = br_info & 0x07;
-
-        let mut val: u8 = self.read_from_r8(r)?;
-        val = val ^ (0x01 << b);
-        self.write_to_r8(r, val);
-
-        ProgramCounter::Next(2)
-    }
-
-    /// res_b_HL: set bit_b of contents at memry HL to 1.
-    /// 2 bytes, 4 cycles
-    pub fn res_b_HL(&self) -> ProgramCounter {
-        let b = self.get_n();
-        let b = (b & 0x38) >> 3;
-
-        let mut val: u8 = self.mem[self.reg.HL as usize];
-        val = val ^ (0x01 << b);
 
         ProgramCounter::Next(2)
     }
@@ -1923,3 +1856,4 @@ impl CPU {
 
         ProgramCounter::Next(1)
     }
+}
