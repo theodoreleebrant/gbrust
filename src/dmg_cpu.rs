@@ -100,7 +100,7 @@ impl CPU {
             E_ID => self.reg.E = content,
             H_ID => self.reg.H = content,
             L_ID => self.reg.L = content,
-            .. => return false;
+            _ => return false;
         }
 
         true
@@ -120,7 +120,7 @@ impl CPU {
             E_ID => result = self.reg.E,
             H_ID => result = self.reg.H,
             L_ID => result = self.reg.L,
-            .. => return None,
+            _ => return None,
         }
 
         Some(result)
@@ -186,7 +186,7 @@ impl CPU {
                 self.reg.L = lsb;
             },
             SP_ID => self.reg.SP = content,
-            .. => return false;
+            _ => return false;
         }
 
         true
@@ -203,7 +203,7 @@ impl CPU {
             DE_ID => result = self.reg.DE,
             HL_ID => result = self.reg.HL,
             SP_ID => result = self.reg.SP,
-            .. => return None,
+            _ => return None,
         }
 
         Some(result)
@@ -247,7 +247,7 @@ impl CPU {
             NF => self.reg.F &= 0b10111111,
             HF => self.reg.F &= 0b11011111,
             CF => self.reg.F &= 0b11101111,
-            .. => (),
+            _ => (),
         }
     }
 
@@ -1360,7 +1360,7 @@ impl CPU {
 
         match r {
             0x06 => self.rotate_mem(self.reg.HL, true, true),
-            .. => self.rotate_r8(r, true, true),
+            _ => self.rotate_r8(r, true, true),
         }
 
         ProgramCounter::Next(2)
@@ -1375,7 +1375,7 @@ impl CPU {
 
         match r {
             0x06 => self.rotate_mem(self.reg.HL, true, false),
-            .. => self.rotate_r8(r, true, false),
+            _ => self.rotate_r8(r, true, false),
         }
 
         ProgramCounter::Next(2)
@@ -1390,7 +1390,7 @@ impl CPU {
 
         match r {
             0x06 => self.rotate_mem(self.reg.HL, false, true),
-            .. => self.rotate_r8(r, false, true),
+            _ => self.rotate_r8(r, false, true),
         }
 
         ProgramCounter::Next(2)
@@ -1405,7 +1405,7 @@ impl CPU {
 
         match r {
             0x06 => self.rotate_mem(self.reg.HL, false, false),
-            .. => self.rotate_r8(r, false, false),
+            _ => self.rotate_r8(r, false, false),
         }
 
         ProgramCounter::Next(2)
@@ -1432,7 +1432,7 @@ impl CPU {
                 // write back
                 self.mem[self.reg.HL as usize] = data;
             },
-            .. => {
+            _ => {
                 data = read_from_r8(r)?;
                 bit_7 = (data & 0x80) >> 7;
                 
@@ -1474,7 +1474,7 @@ impl CPU {
                 // write back
                 self.mem[self.reg.HL as usize] = data;
             },
-            .. => {
+            _ => {
                 data = read_from_r8(r)?;
                 bit_7 = (data & 0x80) >> 7;
                 bit_0 = (data & 0x01);
@@ -1515,7 +1515,7 @@ impl CPU {
                 // write back
                 self.mem[self.reg.HL as usize] = data;
             },
-            .. => {
+            _ => {
                 data = read_from_r8(r)?;
                 bit_0 = (data & 0x01);
                 
@@ -1556,7 +1556,7 @@ impl CPU {
                 // write back
                 self.mem[self.reg.HL as usize] = data;
             },
-            .. => {
+            _ => {
                 // read
                 data = self.read_from_r8(r)?;
 
