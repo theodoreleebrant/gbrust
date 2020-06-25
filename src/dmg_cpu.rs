@@ -24,6 +24,8 @@ const SP_ID: u8 = 0b11;
 /// GB has 8 8-bit registers (including special flag register).
 /// 3 16-bit pair registers, which is a combination from pairing 2 8-bit registers together.
 /// 2 special registers: SP and PC.
+/// 3 Interrupt Registers: IME (master), IE: Interrupt Enable -> Enables interrupts, IF: Interrupt
+///   Flag -> Requests Interrupts
 pub struct Registers {
     pub mut A: u8,      // Accumulator register
     pub mut B: u8,
@@ -43,10 +45,10 @@ pub struct Registers {
     pub mut SP: u16,    // Stack pointer. SP will start at 65536
     pub mut PC: u16,
 
-    // Registers for interrupt. Each of these is only used for 1 bit, maybe can combine to become
-    // like register F
-    pub mut IE: u8, 
-    pub mut IF: u8,
+    // Registers for interrupt.
+    // IME: 0 -> Disable all Interrupts, 1 -> Enable all Interrupts enabled in IE
+    pub mut IE: u8,     // Interrupt Enable
+    pub mut IF: u8,     // Interrupt Flag
     pub mut IME: u8,    // Enable / Disable all interrupts
 }
 
@@ -68,17 +70,19 @@ impl CPU {
         // Initializing a Gameboy CPU (initial state)
     }
 
-    pub fn tick() {
-        // For when CPU runs
+    pub fn step(&self) {
+        // Each step of the gameboy cycle
     }
 
-    pub fn read_opcode() {
-        // Obtain opcode
+    pub fn handle_interrupt(&self) {
+        // Implement how to handle interrupts, depending on registers IME, IF, IE
     }
 
-    pub fn run_opcode(opcode: u8) {
-        // Let it run boi
+    pub fn execute_opcode() {
+        // Obtain opcode and do that bigass match fest
     }
+
+
     */
 
     // Some reusable code (for opcodes)
@@ -1564,6 +1568,24 @@ impl CPU {
         ProgramCounter::Next(2)
     }
 
+    // CB (bit operation)
+    
+    /// bit_b_r: Copies bit_b of register r to Z flag.
+    /// 2 bytes, 2 cycles
+    pub fn bit_b_r(&self) -> ProgramCounter {
+        let br_info = self.get_n();
+        let b = (br_info & 0x38) >> 3;
+        let r = br_info & 0x07;
+        
+        let mut val: u8 = self.read_from_r8(r)?;
+        val = (val >> b) & 0x01;
+
+        // set the flag
+        self.set_hnz(true, false, val == 0);
+
+        ProgramCounter::Next(2)
+    }
+
     // 2.6 Control Flow Instruction
 
     /// jp_nn: unconditional jump to absolute address specified by 16-bit immediate. Set PC = nn
@@ -1732,7 +1754,7 @@ impl CPU {
     /// EI instruction if any.
     /// 1 byte, 1 cycle
     pub fn di(&self) -> ProgramCounter {
-        self.reg.ime = 0;
+        self.reg.IME = 0;
 
         ProgramCounter::Next(1)
     }
@@ -1741,7 +1763,7 @@ impl CPU {
     /// 1 byte, 1 cycle + 1 cycle for EI effect.
     /// TODO: find a way to implement
     pub fn ei(&self) -> ProgramCounter {
-        self.reg.ime = 1;
+        self.reg.IME = 1;
 
         ProgramCounter::Next(1);
     }
