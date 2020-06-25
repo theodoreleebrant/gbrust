@@ -100,7 +100,7 @@ impl CPU {
             E_ID => self.reg.E = content,
             H_ID => self.reg.H = content,
             L_ID => self.reg.L = content,
-            .. => return false;
+            _ => return false;
         }
 
         true
@@ -120,7 +120,7 @@ impl CPU {
             E_ID => result = self.reg.E,
             H_ID => result = self.reg.H,
             L_ID => result = self.reg.L,
-            .. => return None,
+            _ => return None,
         }
 
         Some(result)
@@ -186,7 +186,7 @@ impl CPU {
                 self.reg.L = lsb;
             },
             SP_ID => self.reg.SP = content,
-            .. => return false;
+            _ => return false;
         }
 
         true
@@ -203,7 +203,7 @@ impl CPU {
             DE_ID => result = self.reg.DE,
             HL_ID => result = self.reg.HL,
             SP_ID => result = self.reg.SP,
-            .. => return None,
+            _ => return None,
         }
 
         Some(result)
@@ -247,7 +247,7 @@ impl CPU {
             NF => self.reg.F &= 0b10111111,
             HF => self.reg.F &= 0b11011111,
             CF => self.reg.F &= 0b11101111,
-            .. => (),
+            _ => (),
         }
     }
 
@@ -1360,7 +1360,7 @@ impl CPU {
 
         match r {
             0x06 => self.rotate_mem(self.reg.HL, true, true),
-            .. => self.rotate_r8(r, true, true),
+            _ => self.rotate_r8(r, true, true),
         }
 
         ProgramCounter::Next(2)
@@ -1375,7 +1375,7 @@ impl CPU {
 
         match r {
             0x06 => self.rotate_mem(self.reg.HL, true, false),
-            .. => self.rotate_r8(r, true, false),
+            _ => self.rotate_r8(r, true, false),
         }
 
         ProgramCounter::Next(2)
@@ -1390,7 +1390,7 @@ impl CPU {
 
         match r {
             0x06 => self.rotate_mem(self.reg.HL, false, true),
-            .. => self.rotate_r8(r, false, true),
+            _ => self.rotate_r8(r, false, true),
         }
 
         ProgramCounter::Next(2)
@@ -1405,7 +1405,7 @@ impl CPU {
 
         match r {
             0x06 => self.rotate_mem(self.reg.HL, false, false),
-            .. => self.rotate_r8(r, false, false),
+            _ => self.rotate_r8(r, false, false),
         }
 
         ProgramCounter::Next(2)
@@ -1432,7 +1432,7 @@ impl CPU {
                 // write back
                 self.mem[self.reg.HL as usize] = data;
             },
-            .. => {
+            _ => {
                 data = read_from_r8(r)?;
                 bit_7 = (data & 0x80) >> 7;
                 
@@ -1474,7 +1474,7 @@ impl CPU {
                 // write back
                 self.mem[self.reg.HL as usize] = data;
             },
-            .. => {
+            _ => {
                 data = read_from_r8(r)?;
                 bit_7 = (data & 0x80) >> 7;
                 bit_0 = (data & 0x01);
@@ -1515,7 +1515,7 @@ impl CPU {
                 // write back
                 self.mem[self.reg.HL as usize] = data;
             },
-            .. => {
+            _ => {
                 data = read_from_r8(r)?;
                 bit_0 = (data & 0x01);
                 
@@ -1556,7 +1556,7 @@ impl CPU {
                 // write back
                 self.mem[self.reg.HL as usize] = data;
             },
-            .. => {
+            _ => {
                 // read
                 data = self.read_from_r8(r)?;
 
@@ -1576,7 +1576,7 @@ impl CPU {
 
     // CB (bit operation)
     
-    /// bit_b_r: Copies bit_b of register r to Z flag.
+    /// bit_b_r: Copies complement of bit_b of register r to Z flag.
     /// 2 bytes, 2 cycles
     pub fn bit_b_r(&self) -> ProgramCounter {
         let br_info = self.get_n();
@@ -1588,6 +1588,73 @@ impl CPU {
 
         // set the flag
         self.set_hnz(true, false, val == 0);
+
+        ProgramCounter::Next(2)
+    }
+
+    /// bit_b_HL: copies complement bit_b of contents at specified memory HL into Z flag.
+    /// 2 bytes, 3 cycles
+    pub fn bit_b_HL(&self) -> ProgramCounter {
+        let b = self.get_n();
+        let b = (b & 0x38) >> 3;
+
+        let mut val: u8 = self.mem[self.reg.HL as usize];
+        val = (val >> b) & 0x01;
+
+        // set the flag
+        self.set_hnz(true, false, val == 0);
+
+        ProgramCounter::Next(2)
+    }
+
+    /// set_b_r: set bit_b of register r to 1.
+    /// 2 bytes, 2 cycles
+    pub fn set_b_r(&self) -> ProgramCounter {
+        let br_info = self.get_n();
+        let b = (br_info & 0x38) >> 3;
+        let r = br_info & 0x07;
+
+        let mut val: u8 = self.read_from_r8(r)?;
+        val = val | (0x01 << b);
+        self.write_to_r8(r, val);
+
+        ProgramCounter::Next(2)
+    }
+
+    /// set_b_HL: set bit_b of contents at memry HL to 1.
+    /// 2 bytes, 4 cycles
+    pub fn set_b_HL(&self) -> ProgramCounter {
+        let b = self.get_n();
+        let b = (b & 0x38) >> 3;
+
+        let mut val: u8 = self.mem[self.reg.HL as usize];
+        val = val | (0x01 << b);
+
+        ProgramCounter::Next(2)
+    }
+
+    /// res_b_r: Reset bit_b of register r to 0.
+    /// 2 bytes, 2 cycles
+    pub fn res_b_r(&self) -> ProgramCounter {
+        let br_info = self.get_n();
+        let b = (br_info & 0x38) >> 3;
+        let r = br_info & 0x07;
+
+        let mut val: u8 = self.read_from_r8(r)?;
+        val = val ^ (0x01 << b);
+        self.write_to_r8(r, val);
+
+        ProgramCounter::Next(2)
+    }
+
+    /// res_b_HL: set bit_b of contents at memry HL to 1.
+    /// 2 bytes, 4 cycles
+    pub fn res_b_HL(&self) -> ProgramCounter {
+        let b = self.get_n();
+        let b = (b & 0x38) >> 3;
+
+        let mut val: u8 = self.mem[self.reg.HL as usize];
+        val = val ^ (0x01 << b);
 
         ProgramCounter::Next(2)
     }
