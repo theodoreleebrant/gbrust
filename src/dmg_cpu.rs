@@ -1238,8 +1238,8 @@ impl CPU {
 	pub fn add_hlss(&self) -> ProgramCounter {
 		// reading
 	    let idx: u8 = (self.get_r8_to() & 0b110) >> 1;
-	    let r: u16 = self.read_from_r16(idx);
-	    let hl: u16 = self.read_from_r16(HL_ID);
+	    let r: u16 = self.read_from_r16(idx)?;
+	    let hl: u16 = self.read_from_r16(HL_ID)?;
 
 	    // processing
 	    let res: u32 = r as u32 + hl as u32;
@@ -1259,7 +1259,7 @@ impl CPU {
 	pub fn add_spe(&self) -> ProgramCounter {
 		// reading
 	    let r: u16 = self.get_n as u16;
-	    let sp: u16 = self.read_from_r16(SP_ID);
+	    let sp: u16 = self.read_from_r16(SP_ID)?;
 
 	    // processing
 	    let res: u32 = r as u32 + sp as u32;
@@ -1281,25 +1281,27 @@ impl CPU {
 		// reading
 	    let idx: u8 = (self.get_r8_to() & 0b110) >> 1;
 	    let r: u16 = self.get_n as u16;
-	    let sp: u16 = self.read_from_r16(SP_ID);
 
 	    // processing
-	    let res: u32 = r as u32 + sp as u32;
+	    let res: u16 = if r == u16::MAX {0} else {r + 1};
 
-	    // flags and writing
-	    let h: bool = ((sp & 0x0FFF) + (r & 0x0FFF)) > 0x0FFF
-	    let c: bool = res > 0xFFFF;
-	    let n: bool = false;
-	    let z: bool = false;
-	    let to_write: u16 = (res & 0xFFFF) as u16
-
-	    self.write_to_r16(SP_ID, to_write);
-	    self.set_hcnz(h, c, n, z);
-	    self.set_h
-
+	    self.write_to_r16(idx, to_write);
+	    
 	    ProgramCounter::Next(1)
 	}
 
+	pub fn dec_ss(&self) -> ProgramCounter {
+		// reading
+	    let idx: u8 = (self.get_r8_to() & 0b110) >> 1;
+	    let r: u16 = self.get_n as u16;
+
+	    // processing
+	    let res: u16 = if r == 0 {u16::MAX} else {r - 1};
+
+	    self.write_to_r16(idx, to_write);
+	    
+	    ProgramCounter::Next(1)
+	}
 
     // 2.5 Shift and Rotate instructions
     
