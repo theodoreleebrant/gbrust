@@ -382,6 +382,7 @@ impl CPU {
             01 => result = self.reg.F & ZF != 0,
             10 => result = self.reg.F & CF == 0,
             11 => result = self.reg.F & CF != 0,
+            _ => panic!("Invalid cc"),
         }
 
         result
@@ -652,8 +653,9 @@ impl CPU {
     /// 1-byte instruction
     pub fn pop_rr(&mut self) -> ProgramCounter {
         let rr = self.get_r16();
+        let val_pop = self.pop_u16();
         
-        self.write_to_r16(rr, self.pop_u16());
+        self.write_to_r16(rr, val_pop);
 
         ProgramCounter::Next(1)
     }
@@ -1736,6 +1738,7 @@ impl CPU {
             5 => pc_lsb = 0x28,
             6 => pc_lsb = 0x30,
             7 => pc_lsb = 0x38,
+            _ => panic!("Invalid pc lsb"),
         }
 
         let addr = (pc_msb << 8) | pc_lsb;
