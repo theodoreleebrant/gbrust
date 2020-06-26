@@ -65,7 +65,7 @@ pub struct CPU {
 }
 
 pub enum ProgramCounter {
-    Next(u8),
+    Next(i8),
     Jump(u16),
 }
 
@@ -1659,7 +1659,7 @@ impl CPU {
         let nn = self.get_nn();
         self.push_u16(self.reg.PC); // Push PC onto the stacc
         
-        ProgramCounter::Jump(nn);
+        ProgramCounter::Jump(nn)
     }
 
     /// call_cc_nn: Conditional function call to absolute address specified by 16-bit operand nn,
