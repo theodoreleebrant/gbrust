@@ -91,7 +91,7 @@ impl CPU {
     /// @param r8_id: ID of register
     /// @param content: content to write to register
     /// returns boolean to indicate ID is valid.
-    pub fn write_to_r8(&self, r8_id: u8, content: u8) -> bool {
+    pub fn write_to_r8(&self, r8_id: u8, content: u8) {
         match r8_id {
             A_ID => self.reg.A = content,
             B_ID => self.reg.B = content,
@@ -100,10 +100,8 @@ impl CPU {
             E_ID => self.reg.E = content,
             H_ID => self.reg.H = content,
             L_ID => self.reg.L = content,
-            _ => return false;
+            _ => panic!("Invalid register!"),
         }
-
-        true
     }
 
     /// read_from_r8: Read data from the appropriate register.
@@ -130,8 +128,8 @@ impl CPU {
     /// @param r8_id: ID of some 8-bit register
     /// @param addr: 16-bit address for memory
     /// @return boolean whether ID is valid
-    pub fn load_mem_to_r8(&self, r8_id: u8, addr: u16) -> bool{
-        self.write_to_r8(r8_id, self.mem[addr as usize])
+    pub fn load_mem_to_r8(&self, r8_id: u8, addr: u16) {
+        self.write_to_r8(r8_id, self.mem[addr as usize]);
     }
 
     /// save_r8_to_mem: Saves content from register r8_id into memory specified by addr.
@@ -165,9 +163,9 @@ impl CPU {
     /// @param r16_id: ID of 16-byte reg
     /// @param content: content to be written
     /// @return bool value if ID was valid.
-    pub fn write_to_r16(&self, r16_id: u8, content: u16) -> boolean {
-        let msb = content >> 8 as u8;
-        let lsb = content & 0x00FF as u8;
+    pub fn write_to_r16(&self, r16_id: u8, content: u16) {
+        let msb = (content >> 8) as u8;
+        let lsb = (content & 0x00FF) as u8;
 
         match r16_id {
             BC_ID => {
@@ -186,10 +184,8 @@ impl CPU {
                 self.reg.L = lsb;
             },
             SP_ID => self.reg.SP = content,
-            .. => return false;
+            _ => panic!("Invalid register"),
         }
-
-        true
     }
 
     /// read_from_r16: reads content of a 16-bit register.
@@ -203,7 +199,7 @@ impl CPU {
             DE_ID => result = self.reg.DE,
             HL_ID => result = self.reg.HL,
             SP_ID => result = self.reg.SP,
-            .. => return None,
+            _ => return None,
         }
 
         Some(result)
@@ -213,7 +209,7 @@ impl CPU {
     /// @param r16_id: ID of 16-byte register.
     /// @param addr: address to write content to.
     pub fn save_r16_to_mem(&self, r16_id: u8, addr: u16) {
-        match read_from_r16(r16_id) {
+        match self.read_from_r16(r16_id) {
             Some(value) => {
                 self.mem[addr as usize] = (value & 0x00FF) as u8;
                 self.mem[(addr + 1)  as usize] = (value >> 8) as u8;
@@ -226,7 +222,7 @@ impl CPU {
     pub fn get_nn(&self) -> u16 {
         let nn_low = self.mem[(self.reg.PC + 1) as usize];
         let nn_high = self.mem[(self.reg.PC + 2) as usize];
-        let nn = (nn_high << 8) | nn_low; 
+        let nn = ((nn_high as u16) << 8) | (nn_low as u16); 
 
         nn
     }
@@ -247,7 +243,7 @@ impl CPU {
             NF => self.reg.F &= 0b10111111,
             HF => self.reg.F &= 0b11011111,
             CF => self.reg.F &= 0b11101111,
-            .. => (),
+            _ => (),
         }
     }
 
@@ -308,7 +304,7 @@ impl CPU {
     
     pub fn rotate_mem(&self, addr: u16, is_left_rotate: bool, has_carry: bool) {
         let mut data = self.mem[addr as usize];
-        let mut c = bool;
+        let mut c: bool;
         let bit_cf = (self.reg.F & CF) >> 4;
     
         if is_left_rotate {
@@ -337,7 +333,7 @@ impl CPU {
             c = bit_a0 > 0;
         }
 
-        self.mem[addr] = data; // write back to memory
+        self.mem[addr as usize] = data; // write back to memory
 
         // setting cf to bit_a7
         self.set_hcnz(false, c, false, data == 0);
@@ -348,22 +344,22 @@ impl CPU {
     }
 
     pub fn set_hcnz(&self, h: bool, c: bool, n: bool, z: bool) {
-	    if h {self.set_flag(H_ID)} else {self.reset_flag(H_ID)};
-	    if c {self.set_flag(C_ID)} else {self.reset_flag(C_ID)};
-	    if n {self.set_flag(N_ID)} else {self.reset_flag(N_ID)};
-	    if z {self.set_flag(Z_ID)} else {self.reset_flag(Z_ID)};
+	    if h {self.set_flag(HF)} else {self.reset_flag(HF)};
+	    if c {self.set_flag(CF)} else {self.reset_flag(CF)};
+	    if n {self.set_flag(NF)} else {self.reset_flag(NF)};
+	    if z {self.set_flag(ZF)} else {self.reset_flag(ZF)};
 	}
 
 	pub fn set_hnz(&self, h: bool, n: bool, z: bool) {
-	    if h {self.set_flag(H_ID)} else {self.reset_flag(H_ID)};
-	    if n {self.set_flag(N_ID)} else {self.reset_flag(N_ID)};
-	    if z {self.set_flag(Z_ID)} else {self.reset_flag(Z_ID)};
+	    if h {self.set_flag(HF)} else {self.reset_flag(HF)};
+	    if n {self.set_flag(NF)} else {self.reset_flag(NF)};
+	    if z {self.set_flag(ZF)} else {self.reset_flag(ZF)};
 	}
 
 	pub fn set_hcn(&self, h: bool, c: bool, n: bool) {
-	    if h {self.set_flag(H_ID)} else {self.reset_flag(H_ID)};
-	    if c {self.set_flag(C_ID)} else {self.reset_flag(C_ID)};
-	    if n {self.set_flag(N_ID)} else {self.reset_flag(N_ID)};
+	    if h {self.set_flag(HF)} else {self.reset_flag(HF)};
+	    if c {self.set_flag(CF)} else {self.reset_flag(CF)};
+	    if n {self.set_flag(NF)} else {self.reset_flag(NF)};
 	}
     
     /// check_cc extracts condition cc from opcode, and check whether condition is true.
@@ -371,7 +367,7 @@ impl CPU {
     /// 00 -> Z == 0; 01 -> Z == 1; 10 -> C == 0; 11 -> C == 1
     pub fn check_cc(&self) -> bool {
         // extract cc from opcode
-        let opcode = self.mem[self.reg.PC];
+        let opcode = self.mem[self.reg.PC as usize];
         let cc: u8 = (opcode & 0b00011000) >> 3;
         let mut result: bool;
         
@@ -419,7 +415,7 @@ impl CPU {
         let ry =  self.get_r8_from();
 
         match self.read_from_r8(ry) {
-            Some(value) => self.write_to_r8(rx),
+            Some(value) => self.write_to_r8(rx, ry),
             None => (),
         }
 
@@ -493,7 +489,7 @@ impl CPU {
     /// ld_A_addr_offset_C: Load contents of memory specified by C + 0xFF00 into A.
     /// 1-byte instruction
     pub fn ld_A_addr_offset_C(&self) -> ProgramCounter {
-        self.load_mem_to_r8(A_ID, (0xFF00 + self.reg.C));
+        self.load_mem_to_r8(A_ID, (0xFF00 + self.reg.C as u16));
 
         ProgramCounter::Next(1)
     }
@@ -501,7 +497,7 @@ impl CPU {
     /// ld_addr_offset_C_A: Load contents of A into memory specified by 0xFF00 + C.
     /// 1-byte instruction
     pub fn ld_addr_offset_C_A(&self) -> ProgramCounter {
-        self.save_r8_to_mem(A_ID, (0xFF00 + self.reg.C));
+        self.save_r8_to_mem(A_ID, (0xFF00 + self.reg.C as u16));
 
         ProgramCounter::Next(1)
     }
@@ -511,7 +507,7 @@ impl CPU {
     pub fn ld_A_addr_offset_n(&self) -> ProgramCounter {
         let n = self.get_n();
 
-        self.load_mem_to_r8(A_ID, (0xFF00 + n));
+        self.load_mem_to_r8(A_ID, (0xFF00 + n as u16));
         
         ProgramCounter::Next(2)
     }
@@ -521,7 +517,7 @@ impl CPU {
     pub fn ld_addr_offset_n_A(&self) -> ProgramCounter {
         let n = self.get_n();
 
-        self.save_r8_to_mem(A_ID, (0xFF00 + n));
+        self.save_r8_to_mem(A_ID, (0xFF00 + n as u16));
 
         ProgramCounter::Next(2)
     }
@@ -530,7 +526,7 @@ impl CPU {
     /// 3-byte instruction.
     /// @param nn: 16-bit address
     pub fn ld_A_addr_nn(&self) -> ProgramCounter {
-        let nn = self.get_nn;
+        let nn = self.get_nn();
 
         self.load_mem_to_r8(A_ID, nn);
 
@@ -553,7 +549,7 @@ impl CPU {
     /// 1-byte instruction.
     pub fn ld_A_addr_HL_inc(&self) -> ProgramCounter {
         self.load_mem_to_r8(A_ID, self.reg.HL);
-        HL += 1;
+        self.reg.HL += 1;
 
         ProgramCounter::Next(1)
     }
@@ -563,7 +559,7 @@ impl CPU {
     /// 1-byte instruction.
     pub fn ld_A_addr_HL_dec(&self) -> ProgramCounter {
         self.load_mem_to_r8(A_ID, self.reg.HL);
-        HL -= 1;
+        self.reg.HL -= 1;
 
         ProgramCounter::Next(1)
     }
@@ -583,9 +579,9 @@ impl CPU {
     /// ld_addr_HL_A_inc: Load content of register A into memory specified by HL, then increment
     /// content in HL.
     /// 1-byte instruction.
-    pub fn ld_A_addr_HL_inc(&self) -> ProgramCounter {
+    pub fn ld_addr_HL_A_inc(&self) -> ProgramCounter {
         self.save_r8_to_mem(A_ID, self.reg.HL);
-        HL += 1;
+        self.reg.HL += 1;
 
         ProgramCounter::Next(1)
     }
@@ -593,9 +589,9 @@ impl CPU {
     /// ld_addr_HL_A_dec: Load content of register A into memory specified by HL, then deccrement
     /// content in HL.
     /// 1-byte instruction.
-    pub fn ld_A_addr_HL_dec(&self) -> ProgramCounter {
+    pub fn ld_addr_HL_A_dec(&self) -> ProgramCounter {
         self.save_r8_to_mem(A_ID, self.reg.HL);
-        HL -= 1;
+        self.reg.HL -= 1;
 
         ProgramCounter::Next(1)
     }
@@ -927,7 +923,7 @@ impl CPU {
 	    let r: u8 = self.read_from_r8(idx)?;
 
 	    // processing
-	    let res: u16 = a & r;
+	    let res: u8 = a & r;
 
 	    // flags and writing
 	    let h: bool = true;
@@ -949,7 +945,7 @@ impl CPU {
 	    let r: u8 = self.get_n();
 
 	    // processing
-	    let res: u16 = a & r;
+	    let res: u8 = a & r;
 
 	    // flags and writing
 	    let h: bool = true;
@@ -969,7 +965,7 @@ impl CPU {
         let r: u8 = self.mem[self.reg.HL as usize];
 
         // processing
-	    let res: u16 = a & r;
+	    let res: u8 = a & r;
 
 	    // flags and writing
 	    let h: bool = true;
@@ -990,7 +986,7 @@ impl CPU {
 	    let r: u8 = self.read_from_r8(idx)?;
 
 	    // processing
-	    let res: u16 = a | r;
+	    let res: u8 = a | r;
 	    // flags and writing
 	    let h: bool = false;
 	    let c: bool = false;
@@ -1011,7 +1007,7 @@ impl CPU {
 	    let r: u8 = self.get_n();
 
 	    // processing
-	    let res: u16 = a | r;
+	    let res: u8 = a | r;
 
 	    // flags and writing
 	    let h: bool = false;
@@ -1031,7 +1027,7 @@ impl CPU {
         let r: u8 = self.mem[self.reg.HL as usize];
 
         // processing
-	    let res: u16 = a | r;
+	    let res: u8 = a | r;
 
 	    // flags and writing
 	    let h: bool = false;
@@ -1052,7 +1048,7 @@ impl CPU {
 	    let r: u8 = self.read_from_r8(idx)?;
 
 	    // processing
-	    let res: u16 = a ^ r;
+	    let res: u8 = a ^ r;
 
 	    // flags and writing
 	    let h: bool = false;
@@ -1074,7 +1070,7 @@ impl CPU {
 	    let r: u8 = self.get_n();
 
 	    // processing
-	    let res: u16 = a ^ r;
+	    let res: u8 = a ^ r;
 
 	    // flags and writing
 	    let h: bool = false;
@@ -1094,7 +1090,7 @@ impl CPU {
         let r: u8 = self.mem[self.reg.HL as usize];
 
         // processing
-	    let res: u16 = a ^ r;
+	    let res: u8 = a ^ r;
 
 	    // flags and writing
 	    let h: bool = false;
@@ -1173,14 +1169,14 @@ impl CPU {
 	    let r: u8 = self.read_from_r8(idx)?;
 
 	    // processing
-	    let res: u8 = if r == u8::MAX {0} else {r + 1};
+	    let res: u8 = if r == std::u8::MAX {0} else {r + 1};
 
 	    // flags and writing
 	    let h: bool = (r & 0xF) == 0xF;
 	    let n: bool = false;
 	    let z: bool = res == 0;
 
-	    self.write_to_r8(idx);
+	    self.write_to_r8(idx, res);
 	    self.set_hnz(h, n, z);
 
 	    ProgramCounter::Next(1)
@@ -1192,7 +1188,7 @@ impl CPU {
 	    let r: u8 = self.mem[self.reg.HL as usize];
 
 	    // processing
-	    let res: u8 = if r == u8::MAX {0} else {r + 1};
+	    let res: u8 = if r == std::u8::MAX {0} else {r + 1};
 
 	    // flags and writing
 	    let h: bool = (r & 0xF) == 0xF;
@@ -1211,14 +1207,14 @@ impl CPU {
 	    let r: u8 = self.read_from_r8(idx)?;
 
 	    // processing
-	    let res: u8 = if r == 0 {u8::MAX} else {r - 1};
+	    let res: u8 = if r == 0 {std::u8::MAX} else {r - 1};
 
 	    // flags and writing
 	    let h: bool = (r & 0xF) == 0xF;
 	    let n: bool = true;
 	    let z: bool = res == 0;
 
-	    self.write_to_r8(idx);
+	    self.write_to_r8(idx, res);
 	    self.set_hnz(h, n, z);
 
 	    ProgramCounter::Next(1)
@@ -1230,7 +1226,7 @@ impl CPU {
 	    let r: u8 = self.mem[self.reg.HL as usize];
 
 	    // processing
-	    let res: u8 = if r == 0 {u8::MAX} else {r - 1};
+	    let res: u8 = if r == 0 {std::u8::MAX} else {r - 1};
 
 	    // flags and writing
 	    let h: bool = (r & 0xF) == 0xF;
@@ -1255,10 +1251,10 @@ impl CPU {
 	    let res: u32 = r as u32 + hl as u32;
 
 	    // flags and writing
-	    let h: bool = ((hl & 0x0FFF) + (r & 0x0FFF)) > 0x0FFF
+	    let h: bool = ((hl & 0x0FFF) + (r & 0x0FFF)) > 0x0FFF;
 	    let c: bool = res > 0xFFFF;
 	    let n: bool = false;
-	    let to_write: u16 = (res & 0xFFFF) as u16
+	    let to_write: u16 = (res & 0xFFFF) as u16;
 
 	    self.write_to_r16(HL_ID, to_write);
 	    self.set_hcn(h, c, n);
@@ -1268,18 +1264,18 @@ impl CPU {
 
 	pub fn add_spe(&self) -> ProgramCounter {
 		// reading
-	    let r: u16 = self.get_n as u16;
+	    let r: u16 = self.get_n() as u16;
 	    let sp: u16 = self.read_from_r16(SP_ID)?;
 
 	    // processing
 	    let res: u32 = r as u32 + sp as u32;
 
 	    // flags and writing
-	    let h: bool = ((sp & 0x0FFF) + (r & 0x0FFF)) > 0x0FFF
+	    let h: bool = ((sp & 0x0FFF) + (r & 0x0FFF)) > 0x0FFF;
 	    let c: bool = res > 0xFFFF;
 	    let n: bool = false;
 	    let z: bool = false;
-	    let to_write: u16 = (res & 0xFFFF) as u16
+	    let to_write: u16 = (res & 0xFFFF) as u16;
 
 	    self.write_to_r16(SP_ID, to_write);
 	    self.set_hcnz(h, c, n, z);
@@ -1290,10 +1286,10 @@ impl CPU {
 	pub fn inc_ss(&self) -> ProgramCounter {
 		// reading
 	    let idx: u8 = (self.get_r8_to() & 0b110) >> 1;
-	    let r: u16 = self.get_n as u16;
+	    let r: u16 = self.get_n() as u16;
 
 	    // processing
-	    let res: u16 = if r == u16::MAX {0} else {r + 1};
+	    let res: u16 = if r == std::u16::MAX {0} else {r + 1};
 
 	    self.write_to_r16(idx, to_write);
 	    
@@ -1303,10 +1299,10 @@ impl CPU {
 	pub fn dec_ss(&self) -> ProgramCounter {
 		// reading
 	    let idx: u8 = (self.get_r8_to() & 0b110) >> 1;
-	    let r: u16 = self.get_n as u16;
+	    let r: u16 = self.get_n() as u16;
 
 	    // processing
-	    let res: u16 = if r == 0 {u16::MAX} else {r - 1};
+	    let res: u16 = if r == 0 {std::u16::MAX} else {r - 1};
 
 	    self.write_to_r16(idx, to_write);
 	    
@@ -1360,7 +1356,7 @@ impl CPU {
 
         match r {
             0x06 => self.rotate_mem(self.reg.HL, true, true),
-            .. => self.rotate_r8(r, true, true),
+            _ => self.rotate_r8(r, true, true),
         }
 
         ProgramCounter::Next(2)
@@ -1368,14 +1364,14 @@ impl CPU {
 
     /// rl: Rotates content of either some register r or memory pointed to by HL, depending on
     /// opcode. to the left, without carry.
-    pub fn rlc(&self) -> ProgramCounter {
+    pub fn rl(&self) -> ProgramCounter {
         self.reg.PC += 1;
         let r = self.get_r8_from();
         self.reg.PC -= 1;
 
         match r {
             0x06 => self.rotate_mem(self.reg.HL, true, false),
-            .. => self.rotate_r8(r, true, false),
+            _ => self.rotate_r8(r, true, false),
         }
 
         ProgramCounter::Next(2)
@@ -1383,14 +1379,14 @@ impl CPU {
     
     /// rrc: Rotates content of either some register r or memory pointed to by HL, depending on
     /// opcode. to the right, with carry.
-    pub fn rlc(&self) -> ProgramCounter {
+    pub fn rrc(&self) -> ProgramCounter {
         self.reg.PC += 1;
         let r = self.get_r8_from();
         self.reg.PC -= 1;
 
         match r {
             0x06 => self.rotate_mem(self.reg.HL, false, true),
-            .. => self.rotate_r8(r, false, true),
+            _ => self.rotate_r8(r, false, true),
         }
 
         ProgramCounter::Next(2)
@@ -1398,14 +1394,14 @@ impl CPU {
 
     /// rr: Rotates content of either some register r or memory pointed to by HL, depending on
     /// opcode. to the right, without carry.
-    pub fn rlc(&self) -> ProgramCounter {
+    pub fn rr(&self) -> ProgramCounter {
         self.reg.PC += 1;
         let r = self.get_r8_from();
         self.reg.PC -= 1;
 
         match r {
             0x06 => self.rotate_mem(self.reg.HL, false, false),
-            .. => self.rotate_r8(r, false, false),
+            _ => self.rotate_r8(r, false, false),
         }
 
         ProgramCounter::Next(2)
@@ -1432,7 +1428,7 @@ impl CPU {
                 // write back
                 self.mem[self.reg.HL as usize] = data;
             },
-            .. => {
+            _ => {
                 data = read_from_r8(r)?;
                 bit_7 = (data & 0x80) >> 7;
                 
@@ -1469,12 +1465,12 @@ impl CPU {
                 
                 // processing
                 data = data >> 1;
-                data |= (bit_7 << 7)
+                data |= (bit_7 << 7);
                 
                 // write back
                 self.mem[self.reg.HL as usize] = data;
             },
-            .. => {
+            _ => {
                 data = read_from_r8(r)?;
                 bit_7 = (data & 0x80) >> 7;
                 bit_0 = (data & 0x01);
@@ -1515,7 +1511,7 @@ impl CPU {
                 // write back
                 self.mem[self.reg.HL as usize] = data;
             },
-            .. => {
+            _ => {
                 data = read_from_r8(r)?;
                 bit_0 = (data & 0x01);
                 
@@ -1556,7 +1552,7 @@ impl CPU {
                 // write back
                 self.mem[self.reg.HL as usize] = data;
             },
-            .. => {
+            _ => {
                 // read
                 data = self.read_from_r8(r)?;
 
@@ -1703,7 +1699,7 @@ impl CPU {
     /// reti: Unconditional return from a function. Enables IME signal.
     /// IME is Interrupt Master Enable. When this is enabled, interrupts can happen
     /// same as ret, but set register IME.
-    pun fn reti(&self) -> ProgramCounter {
+    pub fn reti(&self) -> ProgramCounter {
         let pop_val = self.pop_u16();
         self.reg.IME = 1;
 
@@ -1718,7 +1714,7 @@ impl CPU {
         // push pc onto stack
         self.push_u16(self.reg.PC);
 
-        let xxx = self.get_r_to(); // same bits
+        let xxx = self.get_r8_to(); // same bits
         let pc_msb: u16 = 0x00;
         let mut pc_lsb: u16;
 
@@ -1842,7 +1838,7 @@ impl CPU {
     /// cpl: flip all bits in the A-register, sets N and H to 1.
     /// 1 byte, 1 cycle
     pub fn cpl(&self) -> ProgramCounter {
-        let mut a: u8 = self.read_from_u8(A_ID)?;
+        let mut a: u8 = self.read_from_r8(A_ID)?;
 
         let mut n = 0;
 
