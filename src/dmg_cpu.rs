@@ -637,7 +637,12 @@ impl CPU {
     /// 1-byte instruction
     pub fn push_rr(&self) -> ProgramCounter {
         let rr = self.get_r16();
-        let val = read_from_r16(rr)?;
+        let mut val: u16; 
+
+        match read_from_r16(rr) {
+            Some(num) => val = num,
+            None => (),
+        }
 
         self.push_u16(val);
 
@@ -660,9 +665,9 @@ impl CPU {
     // Cycles: 1
     pub fn add_ar(&self) -> ProgramCounter {
 	    // reading
-	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let idx: u8 = self.get_r8_from();
-	    let r: u8 = self.read_from_r8(idx)?;
+	    let r: u8 = self.read_from_r8(idx).unwrap();
 
 	    // processing
 	    let res: u16 = (a as u16) + (r as u16);
@@ -684,7 +689,7 @@ impl CPU {
 	// Cycles: 2
 	pub fn add_an(&self) -> ProgramCounter {
 	    // reading
-	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let r: u8 = self.get_n();
 
 	    // processing
@@ -705,7 +710,7 @@ impl CPU {
 
     pub fn add_ahl(&self) -> ProgramCounter {
         // reading
-        let a: u8 = self.read_from_r8(A_ID)?;
+        let a: u8 = self.read_from_r8(A_ID).unwrap();
         let r: u8 = self.mem[self.reg.HL as usize];
 
         // processing
@@ -726,10 +731,10 @@ impl CPU {
         
     pub fn adc_ar(&self) -> ProgramCounter {
 	    // reading
-	    let a: u8 = self.read_from_r8(A_ID)?;
-	    let carry: u8 = self.read_from_r8(C_ID)?;
+	    let a: u8 = self.read_from_r8(A_ID).unwrap();
+	    let carry: u8 = self.read_from_r8(C_ID).unwrap();
 	    let idx: u8 = self.get_r8_from();
-	    let r: u8 = self.read_from_r8(idx)?;
+	    let r: u8 = self.read_from_r8(idx).unwrap();
 
 	    // processing
 	    let res: u16 = (a as u16) + (r as u16) + (carry as u16);
@@ -751,8 +756,8 @@ impl CPU {
 	// Cycles: 2
 	pub fn adc_an(&self) -> ProgramCounter {
 	    // reading
-	    let a: u8 = self.read_from_r8(A_ID)?;
-	    let carry: u8 = self.read_from_r8(C_ID)?;
+	    let a: u8 = self.read_from_r8(A_ID).unwrap();
+	    let carry: u8 = self.read_from_r8(C_ID).unwrap();
 	    let r: u8 = self.get_n();
 
 	    // processing
@@ -773,8 +778,8 @@ impl CPU {
 
     pub fn adc_ahl(&self) -> ProgramCounter {
         // reading
-        let a: u8 = self.read_from_r8(A_ID)?;
-        let carry: u8 = self.read_from_r8(C_ID)?;
+        let a: u8 = self.read_from_r8(A_ID).unwrap();
+        let carry: u8 = self.read_from_r8(C_ID).unwrap();
         let r: u8 = self.mem[self.reg.HL as usize];
 
         // processing
@@ -795,9 +800,9 @@ impl CPU {
 
     pub fn sub_r(&self) -> ProgramCounter {
 	    // reading
-	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let idx: u8 = self.get_r8_from();
-	    let r: u8 = self.read_from_r8(idx)?;
+	    let r: u8 = self.read_from_r8(idx).unwrap();
 
 	    // processing
 	    let res: u8 = a.wrapping_sub(r);
@@ -817,7 +822,7 @@ impl CPU {
 	// Cycles: 2
 	pub fn sub_n(&self) -> ProgramCounter {
 	    // reading
-	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let r: u8 = self.get_n();
 
 	    // processing
@@ -837,7 +842,7 @@ impl CPU {
 
     pub fn sub_hl(&self) -> ProgramCounter {
         // reading
-        let a: u8 = self.read_from_r8(A_ID)?;
+        let a: u8 = self.read_from_r8(A_ID).unwrap();
         let r: u8 = self.mem[self.reg.HL as usize];
 
         // processing
@@ -857,10 +862,10 @@ impl CPU {
         
     pub fn sbc_ar(&self) -> ProgramCounter {
 	    // reading
-	    let carry: u8 = self.read_from_r8(C_ID)?;
-        let a: u8 = self.read_from_r8(A_ID)?;
+	    let carry: u8 = self.read_from_r8(C_ID).unwrap();
+        let a: u8 = self.read_from_r8(A_ID).unwrap();
         let idx: u8 = self.get_r8_from();
-	    let r: u8 = self.read_from_r8(idx)?;
+	    let r: u8 = self.read_from_r8(idx).unwrap();
 
         // processing
 	    let res: u8 = a.wrapping_sub(r).wrapping_sub(carry);
@@ -881,8 +886,8 @@ impl CPU {
 	// Cycles: 2
 	pub fn sbc_an(&self) -> ProgramCounter {
 	    // reading
-	    let a: u8 = self.read_from_r8(A_ID)?;
-	    let carry: u8 = self.read_from_r8(C_ID)?;
+	    let a: u8 = self.read_from_r8(A_ID).unwrap();
+	    let carry: u8 = self.read_from_r8(C_ID).unwrap();
         let r: u8 = self.get_n();
 
         // processing
@@ -902,8 +907,8 @@ impl CPU {
 
     pub fn sbc_ahl(&self) -> ProgramCounter {
         // reading
-        let carry: u8 = self.read_from_r8(C_ID)?;
-        let a: u8 = self.read_from_r8(A_ID)?;
+        let carry: u8 = self.read_from_r8(C_ID).unwrap();
+        let a: u8 = self.read_from_r8(A_ID).unwrap();
         let r: u8 = self.mem[self.reg.HL as usize];
 
         // processing
@@ -923,9 +928,9 @@ impl CPU {
 
     pub fn and_r(&self) -> ProgramCounter {
 	    // reading
-	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let idx: u8 = self.get_r8_from();
-	    let r: u8 = self.read_from_r8(idx)?;
+	    let r: u8 = self.read_from_r8(idx).unwrap();
 
 	    // processing
 	    let res: u8 = a & r;
@@ -946,7 +951,7 @@ impl CPU {
 	// Cycles: 2
 	pub fn and_n(&self) -> ProgramCounter {
 	    // reading
-	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let r: u8 = self.get_n();
 
 	    // processing
@@ -966,7 +971,7 @@ impl CPU {
 
     pub fn and_hl(&self) -> ProgramCounter {
         // reading
-        let a: u8 = self.read_from_r8(A_ID)?;
+        let a: u8 = self.read_from_r8(A_ID).unwrap();
         let r: u8 = self.mem[self.reg.HL as usize];
 
         // processing
@@ -986,9 +991,9 @@ impl CPU {
 
     pub fn or_r(&self) -> ProgramCounter {
 	    // reading
-	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let idx: u8 = self.get_r8_from();
-	    let r: u8 = self.read_from_r8(idx)?;
+	    let r: u8 = self.read_from_r8(idx).unwrap();
 
 	    // processing
 	    let res: u8 = a | r;
@@ -1008,7 +1013,7 @@ impl CPU {
 	// Cycles: 2
 	pub fn or_n(&self) -> ProgramCounter {
 	    // reading
-	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let r: u8 = self.get_n();
 
 	    // processing
@@ -1028,7 +1033,7 @@ impl CPU {
 
     pub fn or_hl(&self) -> ProgramCounter {
         // reading
-        let a: u8 = self.read_from_r8(A_ID)?;
+        let a: u8 = self.read_from_r8(A_ID).unwrap();
         let r: u8 = self.mem[self.reg.HL as usize];
 
         // processing
@@ -1048,9 +1053,9 @@ impl CPU {
 
     pub fn xor_r(&self) -> ProgramCounter {
 	    // reading
-	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let idx: u8 = self.get_r8_from();
-	    let r: u8 = self.read_from_r8(idx)?;
+	    let r: u8 = self.read_from_r8(idx).unwrap();
 
 	    // processing
 	    let res: u8 = a ^ r;
@@ -1071,7 +1076,7 @@ impl CPU {
 	// Cycles: 2
 	pub fn xor_n(&self) -> ProgramCounter {
 	    // reading
-	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let r: u8 = self.get_n();
 
 	    // processing
@@ -1091,7 +1096,7 @@ impl CPU {
 
     pub fn xor_hl(&self) -> ProgramCounter {
         // reading
-        let a: u8 = self.read_from_r8(A_ID)?;
+        let a: u8 = self.read_from_r8(A_ID).unwrap();
         let r: u8 = self.mem[self.reg.HL as usize];
 
         // processing
@@ -1111,9 +1116,9 @@ impl CPU {
 
     pub fn cp_r(&self) -> ProgramCounter {
 	    // reading
-	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let idx: u8 = self.get_r8_from();
-	    let r: u8 = self.read_from_r8(idx)?;
+	    let r: u8 = self.read_from_r8(idx).unwrap();
 
 	    // processing
 	    let res: u8 = a.wrapping_sub(r);
@@ -1132,7 +1137,7 @@ impl CPU {
 	// Cycles: 2
 	pub fn cp_n(&self) -> ProgramCounter {
 	    // reading
-	    let a: u8 = self.read_from_r8(A_ID)?;
+	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let r: u8 = self.get_n();
 
 	    // processing
@@ -1151,7 +1156,7 @@ impl CPU {
 
     pub fn cp_hl(&self) -> ProgramCounter {
         // reading
-        let a: u8 = self.read_from_r8(A_ID)?;
+        let a: u8 = self.read_from_r8(A_ID).unwrap();
         let r: u8 = self.mem[self.reg.HL as usize];
 
         // processing
@@ -1171,7 +1176,7 @@ impl CPU {
     pub fn inc_r(&self) -> ProgramCounter {
 	    // reading
 	    let idx: u8 = self.get_r8_to();
-	    let r: u8 = self.read_from_r8(idx)?;
+	    let r: u8 = self.read_from_r8(idx).unwrap();
 
 	    // processing
 	    let res: u8 = if r == std::u8::MAX {0} else {r + 1};
@@ -1209,7 +1214,7 @@ impl CPU {
 	pub fn dec_r(&self) -> ProgramCounter {
 	    // reading
 	    let idx: u8 = self.get_r8_to();
-	    let r: u8 = self.read_from_r8(idx)?;
+	    let r: u8 = self.read_from_r8(idx).unwrap();
 
 	    // processing
 	    let res: u8 = if r == 0 {std::u8::MAX} else {r - 1};
@@ -1249,8 +1254,8 @@ impl CPU {
 	pub fn add_hlss(&self) -> ProgramCounter {
 		// reading
 	    let idx: u8 = (self.get_r8_to() & 0b110) >> 1;
-	    let r: u16 = self.read_from_r16(idx)?;
-	    let hl: u16 = self.read_from_r16(HL_ID)?;
+	    let r: u16 = self.read_from_r16(idx).unwrap();
+	    let hl: u16 = self.read_from_r16(HL_ID).unwrap();
 
 	    // processing
 	    let res: u32 = r as u32 + hl as u32;
@@ -1270,7 +1275,7 @@ impl CPU {
 	pub fn add_spe(&self) -> ProgramCounter {
 		// reading
 	    let r: u16 = self.get_n() as u16;
-	    let sp: u16 = self.read_from_r16(SP_ID)?;
+	    let sp: u16 = self.read_from_r16(SP_ID).unwrap();
 
 	    // processing
 	    let res: u32 = r as u32 + sp as u32;
@@ -1434,7 +1439,7 @@ impl CPU {
                 self.mem[self.reg.HL as usize] = data;
             },
             _ => {
-                data = read_from_r8(r)?;
+                data = read_from_r8(r).unwrap();
                 bit_7 = (data & 0x80) >> 7;
                 
                 // processing
@@ -1476,7 +1481,7 @@ impl CPU {
                 self.mem[self.reg.HL as usize] = data;
             },
             _ => {
-                data = read_from_r8(r)?;
+                data = read_from_r8(r).unwrap();
                 bit_7 = (data & 0x80) >> 7;
                 bit_0 = (data & 0x01);
                 
@@ -1517,7 +1522,7 @@ impl CPU {
                 self.mem[self.reg.HL as usize] = data;
             },
             _ => {
-                data = read_from_r8(r)?;
+                data = read_from_r8(r).unwrap();
                 bit_0 = (data & 0x01);
                 
                 // processing
@@ -1559,7 +1564,7 @@ impl CPU {
             },
             _ => {
                 // read
-                data = self.read_from_r8(r)?;
+                data = self.read_from_r8(r).unwrap();
 
                 // process
                 let lower = data & 0x0F;
@@ -1584,7 +1589,7 @@ impl CPU {
         let b = (br_info & 0x38) >> 3;
         let r = br_info & 0x07;
         
-        let mut val: u8 = self.read_from_r8(r)?;
+        let mut val: u8 = self.read_from_r8(r).unwrap();
         val = (val >> b) & 0x01;
 
         // set the flag
@@ -1768,11 +1773,10 @@ impl CPU {
 
     /// ei: schedules interrupt handling to be enabled THE NEXT MACHINE CYCLE
     /// 1 byte, 1 cycle + 1 cycle for EI effect.
-    /// TODO: find a way to implement
     pub fn ei(&self) -> ProgramCounter {
         self.reg.IME = 1;
 
-        ProgramCounter::Next(1);
+        ProgramCounter::Next(1)
     }
 
     /// ccf: Flips carry flag, reset N and H flags
@@ -1808,7 +1812,7 @@ impl CPU {
     /// This is binary arithmetic acting as binary numbers...
     /// 1 byte, 1 cycle.
     pub fn daa(&self) -> ProgramCounter {
-        let mut a: u8 = self.read_from_r8(A_ID)?;
+        let mut a: u8 = self.read_from_r8(A_ID).unwrap();
 
         let is_addition: bool = (self.reg.F & NF) > 0;
         let c_flag: bool = (self.reg.F & CF) > 0;
@@ -1843,7 +1847,7 @@ impl CPU {
     /// cpl: flip all bits in the A-register, sets N and H to 1.
     /// 1 byte, 1 cycle
     pub fn cpl(&self) -> ProgramCounter {
-        let mut a: u8 = self.read_from_r8(A_ID)?;
+        let mut a: u8 = self.read_from_r8(A_ID).unwrap();
 
         let mut n = 0;
 
