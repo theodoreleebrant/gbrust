@@ -573,12 +573,16 @@ impl CPU {
     /// 1-byte instruction
     pub fn ld_addr_BC_A(&self) -> ProgramCounter {
         self.save_r8_to_mem(A_ID, self.reg.BC);
+
+        ProgramCounter::Next(1)
     }
 
     /// ld_addr_DE_A: Save content of register A to memory specified by DE.
     /// 1-byte instruction
     pub fn ld_addr_DE_A(&self) -> ProgramCounter {
         self.save_r8_to_mem(A_ID, self.reg.DE);
+
+        ProgramCounter::Next(1)
     }
 
     /// ld_addr_HL_A_inc: Load content of register A into memory specified by HL, then increment
@@ -620,7 +624,7 @@ impl CPU {
     pub fn ld_addr_nn_SP(&self) -> ProgramCounter {
         let nn = self.get_nn();
 
-        save_r16_to_mem(SP_ID, nn);
+        self.save_r16_to_mem(SP_ID, nn);
 
         ProgramCounter::Next(3)
     }
@@ -637,12 +641,7 @@ impl CPU {
     /// 1-byte instruction
     pub fn push_rr(&self) -> ProgramCounter {
         let rr = self.get_r16();
-        let mut val: u16; 
-
-        match read_from_r16(rr) {
-            Some(num) => val = num,
-            None => (),
-        }
+        let val = self.read_from_r16(rr).unwrap();
 
         self.push_u16(val);
 
@@ -1301,7 +1300,7 @@ impl CPU {
 	    // processing
 	    let res: u16 = if r == std::u16::MAX {0} else {r + 1};
 
-	    self.write_to_r16(idx, to_write);
+	    self.write_to_r16(idx, res);
 	    
 	    ProgramCounter::Next(1)
 	}
@@ -1314,7 +1313,7 @@ impl CPU {
 	    // processing
 	    let res: u16 = if r == 0 {std::u16::MAX} else {r - 1};
 
-	    self.write_to_r16(idx, to_write);
+	    self.write_to_r16(idx, res);
 	    
 	    ProgramCounter::Next(1)
 	}
@@ -1439,7 +1438,7 @@ impl CPU {
                 self.mem[self.reg.HL as usize] = data;
             },
             _ => {
-                data = read_from_r8(r).unwrap();
+                data = self.read_from_r8(r).unwrap();
                 bit_7 = (data & 0x80) >> 7;
                 
                 // processing
@@ -1481,7 +1480,7 @@ impl CPU {
                 self.mem[self.reg.HL as usize] = data;
             },
             _ => {
-                data = read_from_r8(r).unwrap();
+                data = self.read_from_r8(r).unwrap();
                 bit_7 = (data & 0x80) >> 7;
                 bit_0 = (data & 0x01);
                 
@@ -1522,7 +1521,7 @@ impl CPU {
                 self.mem[self.reg.HL as usize] = data;
             },
             _ => {
-                data = read_from_r8(r).unwrap();
+                data = self.read_from_r8(r).unwrap();
                 bit_0 = (data & 0x01);
                 
                 // processing
@@ -1783,7 +1782,7 @@ impl CPU {
     /// 1 byte, 1 cycle.
     pub fn ccf(&self) -> ProgramCounter {
         let c_bit = (self.reg.F & CF) >> 4;
-        let z_bit = (self.reg.F & ZH) >> 7;
+        let z_bit = (self.reg.F & ZF) >> 7;
 
         // set all the flags
         self.set_hcnz(false, c_bit == 0, false, z_bit == 1);
