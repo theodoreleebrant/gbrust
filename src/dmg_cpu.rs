@@ -64,6 +64,11 @@ pub struct CPU {
 	clock: u8,          // For timing in GB
 }
 
+pub enum ProgramCounter {
+    Next(u8),
+    Jump(u16),
+}
+
 impl CPU {
     /*
     pub fn initialize() -> Self {
