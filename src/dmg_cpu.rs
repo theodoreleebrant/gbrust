@@ -75,11 +75,11 @@ impl CPU {
         // Initializing a Gameboy CPU (initial state)
     }
 
-    pub fn step(&self) {
+    pub fn step(&mut self) {
         // Each step of the gameboy cycle
     }
 
-    pub fn handle_interrupt(&self) {
+    pub fn handle_interrupt(&mut self) {
         // Implement how to handle interrupts, depending on registers IME, IF, IE
     }
 
@@ -96,7 +96,7 @@ impl CPU {
     /// @param r8_id: ID of register
     /// @param content: content to write to register
     /// returns boolean to indicate ID is valid.
-    pub fn write_to_r8(&self, r8_id: u8, content: u8) {
+    pub fn write_to_r8(&mut self, r8_id: u8, content: u8) {
         match r8_id {
             A_ID => self.reg.A = content,
             B_ID => self.reg.B = content,
@@ -112,7 +112,7 @@ impl CPU {
     /// read_from_r8: Read data from the appropriate register.
     /// @param r8_id: ID of 8-bit register
     /// @return Option<u8>. returns None if r8_id is invalid or register is empty.
-    pub fn read_from_r8(&self, r8_id: u8) -> Option<u8> {
+    pub fn read_from_r8(&mut self, r8_id: u8) -> Option<u8> {
         let result: u8;
         
         match r8_id {
@@ -133,14 +133,14 @@ impl CPU {
     /// @param r8_id: ID of some 8-bit register
     /// @param addr: 16-bit address for memory
     /// @return boolean whether ID is valid
-    pub fn load_mem_to_r8(&self, r8_id: u8, addr: u16) {
+    pub fn load_mem_to_r8(&mut self, r8_id: u8, addr: u16) {
         self.write_to_r8(r8_id, self.mem[addr as usize]);
     }
 
     /// save_r8_to_mem: Saves content from register r8_id into memory specified by addr.
     /// @param r8_id: ID of some 8-bit register with content
     /// @param addr: 16-bit address for memory to be saved to
-    pub fn save_r8_to_mem(&self, r8_id: u8, addr: u16) {
+    pub fn save_r8_to_mem(&mut self, r8_id: u8, addr: u16) {
         match self.read_from_r8(r8_id) {
             Some(content) => self.mem[addr as usize] = content,
             None => (),
@@ -148,19 +148,19 @@ impl CPU {
     }
 
     /// get_n: gets 8-bit immediate n right after opcode
-    pub fn get_n(&self) -> u8 {
+    pub fn get_n(&mut self) -> u8 {
         self.mem[(self.reg.PC + 1) as usize]
     }
 
     /// get_r8_to: gets 3-bit register ID from opcode. Register ID takes bit 3, 4, 5 for register
     /// written to.
-    pub fn get_r8_to(&self) -> u8 {
+    pub fn get_r8_to(&mut self) -> u8 {
         ((self.mem[self.reg.PC as usize] & 0b00111000) >> 3) as u8
     }
     
     /// get_r8_from: gets 3-bit register ID from opcode. Register ID takes bit 0,1,2 for register
     /// written to.
-    pub fn get_r8_from(&self) -> u8 {
+    pub fn get_r8_from(&mut self) -> u8 {
         (self.mem[self.reg.PC as usize] & 0b00000111) as u8
     }
 
@@ -168,7 +168,7 @@ impl CPU {
     /// @param r16_id: ID of 16-byte reg
     /// @param content: content to be written
     /// @return bool value if ID was valid.
-    pub fn write_to_r16(&self, r16_id: u8, content: u16) {
+    pub fn write_to_r16(&mut self, r16_id: u8, content: u16) {
         let msb = (content >> 8) as u8;
         let lsb = (content & 0x00FF) as u8;
 
@@ -196,7 +196,7 @@ impl CPU {
     /// read_from_r16: reads content of a 16-bit register.
     /// @param r16_id: ID of a 16-byte register.
     /// @return Some<u16> if ID is valid, None if not valid.
-    pub fn read_from_r16(&self, r16_id: u8) -> Option<u16> {
+    pub fn read_from_r16(&mut self, r16_id: u8) -> Option<u16> {
         let result: u16;
 
         match r16_id {
@@ -213,7 +213,7 @@ impl CPU {
     /// save_r16_to_mem: Saves lower-byte of 16-bit register to addr, and higher-byte to addr + 1.
     /// @param r16_id: ID of 16-byte register.
     /// @param addr: address to write content to.
-    pub fn save_r16_to_mem(&self, r16_id: u8, addr: u16) {
+    pub fn save_r16_to_mem(&mut self, r16_id: u8, addr: u16) {
         match self.read_from_r16(r16_id) {
             Some(value) => {
                 self.mem[addr as usize] = (value & 0x00FF) as u8;
@@ -224,7 +224,7 @@ impl CPU {
     }
 
     /// get_nn: gets 16-bit immediate nn right after opcode
-    pub fn get_nn(&self) -> u16 {
+    pub fn get_nn(&mut self) -> u16 {
         let nn_low = self.mem[(self.reg.PC + 1) as usize];
         let nn_high = self.mem[(self.reg.PC + 2) as usize];
         let nn = ((nn_high as u16) << 8) | (nn_low as u16); 
@@ -232,17 +232,17 @@ impl CPU {
         nn
     }
 
-    pub fn get_r16(&self) -> u8 {
+    pub fn get_r16(&mut self) -> u8 {
         ((self.mem[self.reg.PC as usize] & 0b00110000) >> 4) as u8
     }
 
     // Reusable code for 8-bit Rotate, Shift instructions
     
-    pub fn set_flag(&self, flag: u8) {
+    pub fn set_flag(&mut self, flag: u8) {
         self.reg.F = self.reg.F | flag;
     }
 
-    pub fn reset_flag(&self, flag: u8) {
+    pub fn reset_flag(&mut self, flag: u8) {
         match flag {
             ZF => self.reg.F &= 0b01111111,
             NF => self.reg.F &= 0b10111111,
@@ -259,7 +259,7 @@ impl CPU {
     /// If operation has no carry: bit 0 of A is replaced by CY, and then bit A7 is copied to CY 
     /// after rotation, write data back to register.
     
-    pub fn rotate_r8(&self, r8_id: u8, is_rotate_left: bool, has_carry: bool) {
+    pub fn rotate_r8(&mut self, r8_id: u8, is_rotate_left: bool, has_carry: bool) {
         let mut data: u8;
         let mut c: bool;
 
@@ -307,7 +307,7 @@ impl CPU {
     /// Implementing 2 types of rotate operations as well: has carry and no carry, similar to
     /// register rotation.
     
-    pub fn rotate_mem(&self, addr: u16, is_left_rotate: bool, has_carry: bool) {
+    pub fn rotate_mem(&mut self, addr: u16, is_left_rotate: bool, has_carry: bool) {
         let mut data = self.mem[addr as usize];
         let mut c: bool;
         let bit_cf = (self.reg.F & CF) >> 4;
@@ -344,24 +344,24 @@ impl CPU {
         self.set_hcnz(false, c, false, data == 0);
     }
 
-    pub fn write_a(&self, to_write: u8) {
+    pub fn write_a(&mut self, to_write: u8) {
     	self.write_to_r8(A_ID, to_write);
     }
 
-    pub fn set_hcnz(&self, h: bool, c: bool, n: bool, z: bool) {
+    pub fn set_hcnz(&mut self, h: bool, c: bool, n: bool, z: bool) {
 	    if h {self.set_flag(HF)} else {self.reset_flag(HF)};
 	    if c {self.set_flag(CF)} else {self.reset_flag(CF)};
 	    if n {self.set_flag(NF)} else {self.reset_flag(NF)};
 	    if z {self.set_flag(ZF)} else {self.reset_flag(ZF)};
 	}
 
-	pub fn set_hnz(&self, h: bool, n: bool, z: bool) {
+	pub fn set_hnz(&mut self, h: bool, n: bool, z: bool) {
 	    if h {self.set_flag(HF)} else {self.reset_flag(HF)};
 	    if n {self.set_flag(NF)} else {self.reset_flag(NF)};
 	    if z {self.set_flag(ZF)} else {self.reset_flag(ZF)};
 	}
 
-	pub fn set_hcn(&self, h: bool, c: bool, n: bool) {
+	pub fn set_hcn(&mut self, h: bool, c: bool, n: bool) {
 	    if h {self.set_flag(HF)} else {self.reset_flag(HF)};
 	    if c {self.set_flag(CF)} else {self.reset_flag(CF)};
 	    if n {self.set_flag(NF)} else {self.reset_flag(NF)};
@@ -370,7 +370,7 @@ impl CPU {
     /// check_cc extracts condition cc from opcode, and check whether condition is true.
     /// cc is a 2-bit number, at bit 3 and 4 of opcode, representing:
     /// 00 -> Z == 0; 01 -> Z == 1; 10 -> C == 0; 11 -> C == 1
-    pub fn check_cc(&self) -> bool {
+    pub fn check_cc(&mut self) -> bool {
         // extract cc from opcode
         let opcode = self.mem[self.reg.PC as usize];
         let cc: u8 = (opcode & 0b00011000) >> 3;
@@ -390,7 +390,7 @@ impl CPU {
     /// push_u16: push a u16 value onto the stack.
     /// Most significant byte (MSB) goes to SP - 1
     /// Least significant byte (LSB)  goes to SP - 2
-    pub fn push_u16(&self, val: u16) {
+    pub fn push_u16(&mut self, val: u16) {
         self.stack[(self.reg.SP - 1) as usize] = (val >> 8) as u8; // most sig. byte
         self.stack[(self.reg.SP - 2) as usize] = (val & 0x00FF) as u8; // least sig. byte.
 
@@ -399,7 +399,7 @@ impl CPU {
 
     /// pop_u16: pop a u16 value off the stack and return it.
     /// LSB is at SP. MSB is at SP + 1. After that, increment SP by 2
-    pub fn pop_u16(&self) -> u16 {
+    pub fn pop_u16(&mut self) -> u16 {
         let lsb = self.stack[self.reg.SP as usize] as u16;
         let msb = self.stack[(self.reg.SP + 1) as usize] as u16;
 
@@ -415,7 +415,7 @@ impl CPU {
     /// ld_rx_ry: load contents of ry to rx. 1-byte instruction
     /// @param rx, ry: ID for register rx and ry (8-bit)
     // Cycles: 2
-    pub fn ld_rx_ry(&self) -> ProgramCounter {
+    pub fn ld_rx_ry(&mut self) -> ProgramCounter {
         let rx = self.get_r8_to();
         let ry =  self.get_r8_from();
 
@@ -430,7 +430,7 @@ impl CPU {
     /// ld_r_n: Load 8-bit data n into register r. 2-byte instruction
     /// @param: r: register ID; n: intermediate
     // Cycles: 2
-    pub fn ld_r_n(&self) -> ProgramCounter {
+    pub fn ld_r_n(&mut self) -> ProgramCounter {
         let r = self.get_r8_to();
         let n = self.get_n();
 
@@ -442,7 +442,7 @@ impl CPU {
     /// ld_r_addr_HL: loads contents of memory specified at (HL) to register r. 1-byte instruction
     /// @param r: 8-bit register ID
     // Cycles: 2
-    pub fn ld_r_addr_HL(&self) -> ProgramCounter {
+    pub fn ld_r_addr_HL(&mut self) -> ProgramCounter {
         let r = self.get_r8_to();
 
         self.load_mem_to_r8(r, self.reg.HL);
@@ -454,7 +454,7 @@ impl CPU {
     /// 1-byte instruction.
     /// @param: r: ID of 8-bit register
     // Cycles: 2
-    pub fn ld_addr_HL_r(&self) -> ProgramCounter {
+    pub fn ld_addr_HL_r(&mut self) -> ProgramCounter {
         let r = self.get_r8_from();
     
         self.save_r8_to_mem(r, self.reg.HL);
@@ -466,7 +466,7 @@ impl CPU {
     /// 2-byte instruction.
     /// @param n: 8-bit immediate.
     // Cycles: 3
-    pub fn ld_addr_HL_n(&self) -> ProgramCounter {
+    pub fn ld_addr_HL_n(&mut self) -> ProgramCounter {
         let n = self.get_n();
 
         self.mem[self.reg.HL as usize] = n;
@@ -477,7 +477,7 @@ impl CPU {
     /// ld_A_addr_BC: Load contents of memory specified by BC into A.
     /// 1-byte instruction
     // 
-    pub fn ld_A_addr_BC(&self) -> ProgramCounter {
+    pub fn ld_A_addr_BC(&mut self) -> ProgramCounter {
         self.load_mem_to_r8(A_ID, self.reg.BC);
 
         ProgramCounter::Next(1)
@@ -485,7 +485,7 @@ impl CPU {
 
     /// ld_A_addr_DE: Load contents of memory specified by DE into A.
     /// 1-byte instruction
-    pub fn ld_A_addr_DE(&self) -> ProgramCounter {
+    pub fn ld_A_addr_DE(&mut self) -> ProgramCounter {
         self.load_mem_to_r8(A_ID, self.reg.DE);
 
         ProgramCounter::Next(1)
@@ -493,7 +493,7 @@ impl CPU {
 
     /// ld_A_addr_offset_C: Load contents of memory specified by C + 0xFF00 into A.
     /// 1-byte instruction
-    pub fn ld_A_addr_offset_C(&self) -> ProgramCounter {
+    pub fn ld_A_addr_offset_C(&mut self) -> ProgramCounter {
         self.load_mem_to_r8(A_ID, (0xFF00 + self.reg.C as u16));
 
         ProgramCounter::Next(1)
@@ -501,7 +501,7 @@ impl CPU {
 
     /// ld_addr_offset_C_A: Load contents of A into memory specified by 0xFF00 + C.
     /// 1-byte instruction
-    pub fn ld_addr_offset_C_A(&self) -> ProgramCounter {
+    pub fn ld_addr_offset_C_A(&mut self) -> ProgramCounter {
         self.save_r8_to_mem(A_ID, (0xFF00 + self.reg.C as u16));
 
         ProgramCounter::Next(1)
@@ -509,7 +509,7 @@ impl CPU {
 
     /// ld_A_addr_offset_nn: Load contents of memory specified by nn + 0xFF00 into A.
     /// 1-byte instruction
-    pub fn ld_A_addr_offset_n(&self) -> ProgramCounter {
+    pub fn ld_A_addr_offset_n(&mut self) -> ProgramCounter {
         let n = self.get_n();
 
         self.load_mem_to_r8(A_ID, (0xFF00 + n as u16));
@@ -519,7 +519,7 @@ impl CPU {
     
     /// ld_addr_offset_n_A: Load contents of A into memory specified by 0xFF00 + n.
     /// 1-byte instruction
-    pub fn ld_addr_offset_n_A(&self) -> ProgramCounter {
+    pub fn ld_addr_offset_n_A(&mut self) -> ProgramCounter {
         let n = self.get_n();
 
         self.save_r8_to_mem(A_ID, (0xFF00 + n as u16));
@@ -530,7 +530,7 @@ impl CPU {
     /// ld_A_addr_nn: Load content at memory specified by address nn into register A.
     /// 3-byte instruction.
     /// @param nn: 16-bit address
-    pub fn ld_A_addr_nn(&self) -> ProgramCounter {
+    pub fn ld_A_addr_nn(&mut self) -> ProgramCounter {
         let nn = self.get_nn();
 
         self.load_mem_to_r8(A_ID, nn);
@@ -541,7 +541,7 @@ impl CPU {
     /// ld_addr_nn_A: Save content of register A into memory specified by address nn.
     /// 3-byte instruction.
     /// @param nn: 16-bit address.
-    pub fn ld_addr_nn_A(&self) -> ProgramCounter {
+    pub fn ld_addr_nn_A(&mut self) -> ProgramCounter {
         let nn = self.get_nn();
 
         self.save_r8_to_mem(A_ID, nn);
@@ -552,7 +552,7 @@ impl CPU {
     /// ld_A_addr_HL_inc: Load content of memory specified by HL into register A, then increment
     /// content in HL.
     /// 1-byte instruction.
-    pub fn ld_A_addr_HL_inc(&self) -> ProgramCounter {
+    pub fn ld_A_addr_HL_inc(&mut self) -> ProgramCounter {
         self.load_mem_to_r8(A_ID, self.reg.HL);
         self.reg.HL += 1;
 
@@ -562,7 +562,7 @@ impl CPU {
     /// ld_A_addr_HL_dec: Load content of memory specified by HL into register A, then deccrement
     /// content in HL.
     /// 1-byte instruction.
-    pub fn ld_A_addr_HL_dec(&self) -> ProgramCounter {
+    pub fn ld_A_addr_HL_dec(&mut self) -> ProgramCounter {
         self.load_mem_to_r8(A_ID, self.reg.HL);
         self.reg.HL -= 1;
 
@@ -571,7 +571,7 @@ impl CPU {
 
     /// ld_addr_BC_A: Save content of register A to memory specified by BC.
     /// 1-byte instruction
-    pub fn ld_addr_BC_A(&self) -> ProgramCounter {
+    pub fn ld_addr_BC_A(&mut self) -> ProgramCounter {
         self.save_r8_to_mem(A_ID, self.reg.BC);
 
         ProgramCounter::Next(1)
@@ -579,7 +579,7 @@ impl CPU {
 
     /// ld_addr_DE_A: Save content of register A to memory specified by DE.
     /// 1-byte instruction
-    pub fn ld_addr_DE_A(&self) -> ProgramCounter {
+    pub fn ld_addr_DE_A(&mut self) -> ProgramCounter {
         self.save_r8_to_mem(A_ID, self.reg.DE);
 
         ProgramCounter::Next(1)
@@ -588,7 +588,7 @@ impl CPU {
     /// ld_addr_HL_A_inc: Load content of register A into memory specified by HL, then increment
     /// content in HL.
     /// 1-byte instruction.
-    pub fn ld_addr_HL_A_inc(&self) -> ProgramCounter {
+    pub fn ld_addr_HL_A_inc(&mut self) -> ProgramCounter {
         self.save_r8_to_mem(A_ID, self.reg.HL);
         self.reg.HL += 1;
 
@@ -598,7 +598,7 @@ impl CPU {
     /// ld_addr_HL_A_dec: Load content of register A into memory specified by HL, then deccrement
     /// content in HL.
     /// 1-byte instruction.
-    pub fn ld_addr_HL_A_dec(&self) -> ProgramCounter {
+    pub fn ld_addr_HL_A_dec(&mut self) -> ProgramCounter {
         self.save_r8_to_mem(A_ID, self.reg.HL);
         self.reg.HL -= 1;
 
@@ -610,7 +610,7 @@ impl CPU {
     /// ld_rr_nn: load 16-bit immediate nn to 16-bit register rr.
     /// 3-byte instruction
     /// @param rr: ID of 16-bit instruction
-    pub fn ld_rr_nn(&self) -> ProgramCounter {
+    pub fn ld_rr_nn(&mut self) -> ProgramCounter {
         let rr = self.get_r16();
         let nn = self.get_nn();
         
@@ -621,7 +621,7 @@ impl CPU {
 
     /// ld_addr_nn_SP: load lower-byte of SP to (nn), load higher-byte of SP to (nn+1)
     /// 3-byte instruction
-    pub fn ld_addr_nn_SP(&self) -> ProgramCounter {
+    pub fn ld_addr_nn_SP(&mut self) -> ProgramCounter {
         let nn = self.get_nn();
 
         self.save_r16_to_mem(SP_ID, nn);
@@ -631,7 +631,7 @@ impl CPU {
 
     /// ld_SP_HL: load data from HL register to SP register.
     /// 1-byte instruction
-    pub fn ld_SP_HL(&self) -> ProgramCounter {
+    pub fn ld_SP_HL(&mut self) -> ProgramCounter {
         self.reg.SP = self.reg.HL;
 
         ProgramCounter::Next(1)
@@ -639,7 +639,7 @@ impl CPU {
 
     /// push_rr: push data from register rr to stack memory
     /// 1-byte instruction
-    pub fn push_rr(&self) -> ProgramCounter {
+    pub fn push_rr(&mut self) -> ProgramCounter {
         let rr = self.get_r16();
         let val = self.read_from_r16(rr).unwrap();
 
@@ -650,7 +650,7 @@ impl CPU {
 
     /// pop_rr: pop data from stack to the 16-bit register rr.
     /// 1-byte instruction
-    pub fn pop_rr(&self) -> ProgramCounter {
+    pub fn pop_rr(&mut self) -> ProgramCounter {
         let rr = self.get_r16();
         
         self.write_to_r16(rr, self.pop_u16());
@@ -662,7 +662,7 @@ impl CPU {
     // 8 Bit Arithmetic Operation Instruction
     // ADD A,r: Add the value in register r to A, set it to A. 
     // Cycles: 1
-    pub fn add_ar(&self) -> ProgramCounter {
+    pub fn add_ar(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let idx: u8 = self.get_r8_from();
@@ -686,7 +686,7 @@ impl CPU {
 
 	// ADD A, n: add immediate operand n to register A.
 	// Cycles: 2
-	pub fn add_an(&self) -> ProgramCounter {
+	pub fn add_an(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let r: u8 = self.get_n();
@@ -707,7 +707,7 @@ impl CPU {
 	    ProgramCounter::Next(2)
 	}
 
-    pub fn add_ahl(&self) -> ProgramCounter {
+    pub fn add_ahl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
         let r: u8 = self.mem[self.reg.HL as usize];
@@ -728,7 +728,7 @@ impl CPU {
 	    ProgramCounter::Next(1)
     }
         
-    pub fn adc_ar(&self) -> ProgramCounter {
+    pub fn adc_ar(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let carry: u8 = self.read_from_r8(C_ID).unwrap();
@@ -753,7 +753,7 @@ impl CPU {
 
 	// ADD A, n: add immediate operand n to register A.
 	// Cycles: 2
-	pub fn adc_an(&self) -> ProgramCounter {
+	pub fn adc_an(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let carry: u8 = self.read_from_r8(C_ID).unwrap();
@@ -775,7 +775,7 @@ impl CPU {
 	    ProgramCounter::Next(2)
 	}
 
-    pub fn adc_ahl(&self) -> ProgramCounter {
+    pub fn adc_ahl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
         let carry: u8 = self.read_from_r8(C_ID).unwrap();
@@ -797,7 +797,7 @@ impl CPU {
 	    ProgramCounter::Next(1)
     }
 
-    pub fn sub_r(&self) -> ProgramCounter {
+    pub fn sub_r(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let idx: u8 = self.get_r8_from();
@@ -819,7 +819,7 @@ impl CPU {
 	}
 
 	// Cycles: 2
-	pub fn sub_n(&self) -> ProgramCounter {
+	pub fn sub_n(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let r: u8 = self.get_n();
@@ -839,7 +839,7 @@ impl CPU {
 	    ProgramCounter::Next(2)
 	}
 
-    pub fn sub_hl(&self) -> ProgramCounter {
+    pub fn sub_hl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
         let r: u8 = self.mem[self.reg.HL as usize];
@@ -859,7 +859,7 @@ impl CPU {
 	    ProgramCounter::Next(1)
     }
         
-    pub fn sbc_ar(&self) -> ProgramCounter {
+    pub fn sbc_ar(&mut self) -> ProgramCounter {
 	    // reading
 	    let carry: u8 = self.read_from_r8(C_ID).unwrap();
         let a: u8 = self.read_from_r8(A_ID).unwrap();
@@ -883,7 +883,7 @@ impl CPU {
 
 	// ADD A, n: add immediate operand n to register A.
 	// Cycles: 2
-	pub fn sbc_an(&self) -> ProgramCounter {
+	pub fn sbc_an(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let carry: u8 = self.read_from_r8(C_ID).unwrap();
@@ -904,7 +904,7 @@ impl CPU {
 	    ProgramCounter::Next(2)
 	}
 
-    pub fn sbc_ahl(&self) -> ProgramCounter {
+    pub fn sbc_ahl(&mut self) -> ProgramCounter {
         // reading
         let carry: u8 = self.read_from_r8(C_ID).unwrap();
         let a: u8 = self.read_from_r8(A_ID).unwrap();
@@ -925,7 +925,7 @@ impl CPU {
 	    ProgramCounter::Next(1)
     }
 
-    pub fn and_r(&self) -> ProgramCounter {
+    pub fn and_r(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let idx: u8 = self.get_r8_from();
@@ -948,7 +948,7 @@ impl CPU {
 
 	// ADD A, n: add immediate operand n to register A.
 	// Cycles: 2
-	pub fn and_n(&self) -> ProgramCounter {
+	pub fn and_n(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let r: u8 = self.get_n();
@@ -968,7 +968,7 @@ impl CPU {
 	    ProgramCounter::Next(2)
 	}
 
-    pub fn and_hl(&self) -> ProgramCounter {
+    pub fn and_hl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
         let r: u8 = self.mem[self.reg.HL as usize];
@@ -988,7 +988,7 @@ impl CPU {
 	    ProgramCounter::Next(1)
     }
 
-    pub fn or_r(&self) -> ProgramCounter {
+    pub fn or_r(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let idx: u8 = self.get_r8_from();
@@ -1010,7 +1010,7 @@ impl CPU {
 
 	// ADD A, n: add immediate operand n to register A.
 	// Cycles: 2
-	pub fn or_n(&self) -> ProgramCounter {
+	pub fn or_n(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let r: u8 = self.get_n();
@@ -1030,7 +1030,7 @@ impl CPU {
 	    ProgramCounter::Next(2)
 	}
 
-    pub fn or_hl(&self) -> ProgramCounter {
+    pub fn or_hl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
         let r: u8 = self.mem[self.reg.HL as usize];
@@ -1050,7 +1050,7 @@ impl CPU {
 	    ProgramCounter::Next(1)
     }
 
-    pub fn xor_r(&self) -> ProgramCounter {
+    pub fn xor_r(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let idx: u8 = self.get_r8_from();
@@ -1073,7 +1073,7 @@ impl CPU {
 
 	// ADD A, n: add immediate operand n to register A.
 	// Cycles: 2
-	pub fn xor_n(&self) -> ProgramCounter {
+	pub fn xor_n(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let r: u8 = self.get_n();
@@ -1093,7 +1093,7 @@ impl CPU {
 	    ProgramCounter::Next(2)
 	}
 
-    pub fn xor_hl(&self) -> ProgramCounter {
+    pub fn xor_hl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
         let r: u8 = self.mem[self.reg.HL as usize];
@@ -1113,7 +1113,7 @@ impl CPU {
 	    ProgramCounter::Next(1)
     }
 
-    pub fn cp_r(&self) -> ProgramCounter {
+    pub fn cp_r(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let idx: u8 = self.get_r8_from();
@@ -1134,7 +1134,7 @@ impl CPU {
 	}
 
 	// Cycles: 2
-	pub fn cp_n(&self) -> ProgramCounter {
+	pub fn cp_n(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let r: u8 = self.get_n();
@@ -1153,7 +1153,7 @@ impl CPU {
 	    ProgramCounter::Next(2)
 	}
 
-    pub fn cp_hl(&self) -> ProgramCounter {
+    pub fn cp_hl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
         let r: u8 = self.mem[self.reg.HL as usize];
@@ -1172,7 +1172,7 @@ impl CPU {
 	    ProgramCounter::Next(1)
     }
 
-    pub fn inc_r(&self) -> ProgramCounter {
+    pub fn inc_r(&mut self) -> ProgramCounter {
 	    // reading
 	    let idx: u8 = self.get_r8_to();
 	    let r: u8 = self.read_from_r8(idx).unwrap();
@@ -1191,7 +1191,7 @@ impl CPU {
 	    ProgramCounter::Next(1)
 	}
 
-	pub fn inc_hl(&self) -> ProgramCounter {
+	pub fn inc_hl(&mut self) -> ProgramCounter {
 	    // reading
 	    let idx: u8 = self.get_r8_to();
 	    let r: u8 = self.mem[self.reg.HL as usize];
@@ -1210,7 +1210,7 @@ impl CPU {
 	    ProgramCounter::Next(1)
 	}
 
-	pub fn dec_r(&self) -> ProgramCounter {
+	pub fn dec_r(&mut self) -> ProgramCounter {
 	    // reading
 	    let idx: u8 = self.get_r8_to();
 	    let r: u8 = self.read_from_r8(idx).unwrap();
@@ -1229,7 +1229,7 @@ impl CPU {
 	    ProgramCounter::Next(1)
 	}
 
-	pub fn dec_hl(&self) -> ProgramCounter {
+	pub fn dec_hl(&mut self) -> ProgramCounter {
 	    // reading
 	    let idx: u8 = self.get_r8_to();
 	    let r: u8 = self.mem[self.reg.HL as usize];
@@ -1250,7 +1250,7 @@ impl CPU {
 
 	// 2.4 16-bit intstructions
 
-	pub fn add_hlss(&self) -> ProgramCounter {
+	pub fn add_hlss(&mut self) -> ProgramCounter {
 		// reading
 	    let idx: u8 = (self.get_r8_to() & 0b110) >> 1;
 	    let r: u16 = self.read_from_r16(idx).unwrap();
@@ -1271,7 +1271,7 @@ impl CPU {
 	    ProgramCounter::Next(1)
 	}
 
-	pub fn add_spe(&self) -> ProgramCounter {
+	pub fn add_spe(&mut self) -> ProgramCounter {
 		// reading
 	    let r: u16 = self.get_n() as u16;
 	    let sp: u16 = self.read_from_r16(SP_ID).unwrap();
@@ -1292,7 +1292,7 @@ impl CPU {
 	    ProgramCounter::Next(2)
 	}
 
-	pub fn inc_ss(&self) -> ProgramCounter {
+	pub fn inc_ss(&mut self) -> ProgramCounter {
 		// reading
 	    let idx: u8 = (self.get_r8_to() & 0b110) >> 1;
 	    let r: u16 = self.get_n() as u16;
@@ -1305,7 +1305,7 @@ impl CPU {
 	    ProgramCounter::Next(1)
 	}
 
-	pub fn dec_ss(&self) -> ProgramCounter {
+	pub fn dec_ss(&mut self) -> ProgramCounter {
 		// reading
 	    let idx: u8 = (self.get_r8_to() & 0b110) >> 1;
 	    let r: u16 = self.get_n() as u16;
@@ -1323,7 +1323,7 @@ impl CPU {
     /// rlca: Rotates content of register A to the left. a7 <- a0
     /// is_left_rotate = true, has_carry = true
     /// 1-byte instruction
-    pub fn rlca(&self) -> ProgramCounter {
+    pub fn rlca(&mut self) -> ProgramCounter {
         self.rotate_r8(A_ID, true, true);
         
         ProgramCounter::Next(1)
@@ -1332,7 +1332,7 @@ impl CPU {
     /// rla: Rotates content of register A to the left. a7 <- cf
     /// is_left_rotate = true, has_carry = false
     /// 1-byte instruction.
-    pub fn rla(&self) -> ProgramCounter {
+    pub fn rla(&mut self) -> ProgramCounter {
         self.rotate_r8(A_ID, true, false);
 
         ProgramCounter::Next(1)
@@ -1341,7 +1341,7 @@ impl CPU {
     /// rrca: Rotates content of register A to the right. a0 <- a7
     /// is_left_rotate = false, has_carry = true.
     /// 1-byte instruction
-    pub fn rrca(&self) -> ProgramCounter {
+    pub fn rrca(&mut self) -> ProgramCounter {
         self.rotate_r8(A_ID, false, true);
 
         ProgramCounter::Next(1)
@@ -1350,7 +1350,7 @@ impl CPU {
     /// rra: Rotates content of register A to the right. a0 <- cf
     /// is_left_rotate = false, has_carry = false.
     /// 1-byte instruction
-    pub fn rra(&self) -> ProgramCounter {
+    pub fn rra(&mut self) -> ProgramCounter {
         self.rotate_r8(A_ID, false, false);
 
         ProgramCounter::Next(1)
@@ -1358,7 +1358,7 @@ impl CPU {
 
     /// rlc: Rotates content of either some register r or memory pointed to by HL, depending on
     /// opcode. to the left, with carry.
-    pub fn rlc(&self) -> ProgramCounter {
+    pub fn rlc(&mut self) -> ProgramCounter {
         self.reg.PC += 1;
         let r = self.get_r8_from();
         self.reg.PC -= 1;
@@ -1373,7 +1373,7 @@ impl CPU {
 
     /// rl: Rotates content of either some register r or memory pointed to by HL, depending on
     /// opcode. to the left, without carry.
-    pub fn rl(&self) -> ProgramCounter {
+    pub fn rl(&mut self) -> ProgramCounter {
         self.reg.PC += 1;
         let r = self.get_r8_from();
         self.reg.PC -= 1;
@@ -1388,7 +1388,7 @@ impl CPU {
     
     /// rrc: Rotates content of either some register r or memory pointed to by HL, depending on
     /// opcode. to the right, with carry.
-    pub fn rrc(&self) -> ProgramCounter {
+    pub fn rrc(&mut self) -> ProgramCounter {
         self.reg.PC += 1;
         let r = self.get_r8_from();
         self.reg.PC -= 1;
@@ -1403,7 +1403,7 @@ impl CPU {
 
     /// rr: Rotates content of either some register r or memory pointed to by HL, depending on
     /// opcode. to the right, without carry.
-    pub fn rr(&self) -> ProgramCounter {
+    pub fn rr(&mut self) -> ProgramCounter {
         self.reg.PC += 1;
         let r = self.get_r8_from();
         self.reg.PC -= 1;
@@ -1418,7 +1418,7 @@ impl CPU {
 
     /// SLA: Shift content of operand m to the left. Bit 7 is copied to CF, bit 0 is reset.
     /// 2-byte instruction
-    pub fn sla(&self) -> ProgramCounter {
+    pub fn sla(&mut self) -> ProgramCounter {
         self.reg.PC += 1;
         let r = self.get_r8_from();
         self.reg.PC -= 1;
@@ -1457,7 +1457,7 @@ impl CPU {
         
     /// SRA: Shift content of operand m to the right. Bit 0 is copied to CF, bit 7 stays the same!.
     /// 2-byte instruction
-    pub fn sra(&self) -> ProgramCounter {
+    pub fn sra(&mut self) -> ProgramCounter {
         self.reg.PC += 1;
         let r = self.get_r8_from();
         self.reg.PC -= 1;
@@ -1501,7 +1501,7 @@ impl CPU {
 
     /// SRL: Shift content of operand m to the right. Bit 0 is copied to CF, bit 7 is reset.
     /// 2-byte instruction
-    pub fn srl(&self) -> ProgramCounter {
+    pub fn srl(&mut self) -> ProgramCounter {
         self.reg.PC += 1;
         let r = self.get_r8_from();
         self.reg.PC -= 1;
@@ -1541,7 +1541,7 @@ impl CPU {
     /// SWAP: Shift content of lower-order 4 bits to higher-order 4 bits, and vice versa. Reset all
     /// flags except ZF.
     /// 2-byte instruction.
-    pub fn swap(&self) -> ProgramCounter {
+    pub fn swap(&mut self) -> ProgramCounter {
         self.reg.PC += 1;
         let r = self.get_r8_from();
         self.reg.PC -= 1;
@@ -1583,7 +1583,7 @@ impl CPU {
     
     /// bit_b_r: Copies bit_b of register r to Z flag.
     /// 2 bytes, 2 cycles
-    pub fn bit_b_r(&self) -> ProgramCounter {
+    pub fn bit_b_r(&mut self) -> ProgramCounter {
         let br_info = self.get_n();
         let b = (br_info & 0x38) >> 3;
         let r = br_info & 0x07;
@@ -1601,13 +1601,13 @@ impl CPU {
 
     /// jp_nn: unconditional jump to absolute address specified by 16-bit immediate. Set PC = nn
     /// 3-byte instruction, 4 cycles.
-    pub fn jp_nn(&self) -> ProgramCounter {
+    pub fn jp_nn(&mut self) -> ProgramCounter {
         ProgramCounter::Jump(self.get_nn())
     }
 
     /// jp_hl: unconditional jump to absolute address specified by 16-bit register HL. Set PC = HL.
     /// 1-byte instruction, 1 cycle.
-    pub fn jp_HL(&self) -> ProgramCounter {
+    pub fn jp_HL(&mut self) -> ProgramCounter {
         ProgramCounter::Jump(self.reg.HL)
     }
 
@@ -1615,7 +1615,7 @@ impl CPU {
     /// cc is 2-bit number that refers to:
     /// 00 -> Z == 0; 01 -> Z == 1; 10 -> C == 0; 11 -> C == 1
     /// 3-byte instruction
-    pub fn jp_cc_nn(&self) -> ProgramCounter {
+    pub fn jp_cc_nn(&mut self) -> ProgramCounter {
         let abs_addr = self.get_nn();
         let cc = self.check_cc();
         let mut pc_final: ProgramCounter;
@@ -1631,14 +1631,14 @@ impl CPU {
 
     /// jr_e: Unconditional jump to relative address specified by signed 8-bit operand e.
     /// 2 bytes, 3 cycles.
-    pub fn jr_e(&self) -> ProgramCounter {
+    pub fn jr_e(&mut self) -> ProgramCounter {
         let e = self.get_n() as i8; // idk if this works
         ProgramCounter::Next(e) // idk if this works also... needa try implementing ProgramCounter enum.
     }
 
     /// jr_cc_e: Conditional jump to relative address specified by signed 8-bit operand e, depending on condition cc.
     /// 2 bytes, 2 cycles if cc == false, 3 cycles if cc == true.
-    pub fn jr_cc_e(&self) -> ProgramCounter {
+    pub fn jr_cc_e(&mut self) -> ProgramCounter {
         let e = self.get_n() as i8;
         let cc = self.check_cc();
         let mut pc_final: ProgramCounter;
@@ -1654,7 +1654,7 @@ impl CPU {
 
     /// call_nn: unconditional function call to absolute address specified by 16-bit operand nn
     /// 3 bytes. 6 cycles
-    pub fn call_nn(&self) -> ProgramCounter {
+    pub fn call_nn(&mut self) -> ProgramCounter {
         let nn = self.get_nn();
         self.push_u16(self.reg.PC); // Push PC onto the stacc
         
@@ -1664,7 +1664,7 @@ impl CPU {
     /// call_cc_nn: Conditional function call to absolute address specified by 16-bit operand nn,
     /// depending on condition cc.
     /// 3 bytes, 3 cycles if cc == false, 6 cycles if cc ==  true
-    pub fn call_cc_nn(&self) -> ProgramCounter {
+    pub fn call_cc_nn(&mut self) -> ProgramCounter {
         let nn = self.get_nn();
         let cc = self.check_cc();
 
@@ -1682,7 +1682,7 @@ impl CPU {
 
     /// ret: Unconditional return from a function. Pop PC from stack.
     /// 1 byte, 4 cycles.
-    pub fn ret(&self) -> ProgramCounter {
+    pub fn ret(&mut self) -> ProgramCounter {
         let pop_val = self.pop_u16();
 
         ProgramCounter::Jump(pop_val)
@@ -1691,7 +1691,7 @@ impl CPU {
     /// ret_cc: Conditional return from a function, depending on condition cc.
     /// Only pop if cc is true.
     /// 1 byte, 2 cycles if cc = false, 5 cycles if cc = true
-    pub fn ret_cc(&self) -> ProgramCounter {
+    pub fn ret_cc(&mut self) -> ProgramCounter {
         let cc = self.check_cc();
         let mut pc_final: ProgramCounter;
 
@@ -1708,7 +1708,7 @@ impl CPU {
     /// reti: Unconditional return from a function. Enables IME signal.
     /// IME is Interrupt Master Enable. When this is enabled, interrupts can happen
     /// same as ret, but set register IME.
-    pub fn reti(&self) -> ProgramCounter {
+    pub fn reti(&mut self) -> ProgramCounter {
         let pop_val = self.pop_u16();
         self.reg.IME = 1;
 
@@ -1719,7 +1719,7 @@ impl CPU {
     /// opcode specifies rst_address in xxx: bits 3 4 5. Each combination of xxx indicates an
     /// address.
     /// 1 byte, 4 cycles.
-    pub fn rst_n(&self) -> ProgramCounter {
+    pub fn rst_n(&mut self) -> ProgramCounter {
         // push pc onto stack
         self.push_u16(self.reg.PC);
 
@@ -1746,7 +1746,7 @@ impl CPU {
     /// halt: CPU enters "halt mode" and stops system clock. Oscillator circuit and LCD Controller
     /// continue to operate. "halt mode" can be cancelled with an interrupt or reset signal.
     /// PC is halted as well. After interrupted / reset, program starts from PC address.
-    pub fn halt(&self) -> ProgramCounter {
+    pub fn halt(&mut self) -> ProgramCounter {
         self.halt_mode = true;
 
         ProgramCounter::Next(0)     // does not incrememt
@@ -1755,7 +1755,7 @@ impl CPU {
     /// stop: CPU enters "stop mode" and stops everything including system clock, 
     /// oscillator circuit and LCD Controller.
     /// 1 byte, 1 cycle
-    pub fn stop(&self) -> ProgramCounter {
+    pub fn stop(&mut self) -> ProgramCounter {
         self.stop_mode = true;
 
         ProgramCounter::Next(0)     // does not increment
@@ -1764,7 +1764,7 @@ impl CPU {
     /// di: Disables interrupt handling by setting IME = 0, cancelling any scheduled effects of the
     /// EI instruction if any.
     /// 1 byte, 1 cycle
-    pub fn di(&self) -> ProgramCounter {
+    pub fn di(&mut self) -> ProgramCounter {
         self.reg.IME = 0;
 
         ProgramCounter::Next(1)
@@ -1772,7 +1772,7 @@ impl CPU {
 
     /// ei: schedules interrupt handling to be enabled THE NEXT MACHINE CYCLE
     /// 1 byte, 1 cycle + 1 cycle for EI effect.
-    pub fn ei(&self) -> ProgramCounter {
+    pub fn ei(&mut self) -> ProgramCounter {
         self.reg.IME = 1;
 
         ProgramCounter::Next(1)
@@ -1780,7 +1780,7 @@ impl CPU {
 
     /// ccf: Flips carry flag, reset N and H flags
     /// 1 byte, 1 cycle.
-    pub fn ccf(&self) -> ProgramCounter {
+    pub fn ccf(&mut self) -> ProgramCounter {
         let c_bit = (self.reg.F & CF) >> 4;
         let z_bit = (self.reg.F & ZF) >> 7;
 
@@ -1792,7 +1792,7 @@ impl CPU {
 
     /// scf: Sets carry flag, reset N and H flags.
     /// 1 byte, 1 cycle
-    pub fn scf(&self) -> ProgramCounter {
+    pub fn scf(&mut self) -> ProgramCounter {
         let z_bit = (self.reg.F & ZF) >> 7;
 
         // set carry, reset n and h
@@ -1803,14 +1803,14 @@ impl CPU {
 
     /// nop: this doesn't do anything lmao, but add one cycle and increment PC by 1.
     /// 1 byte, 1 cycle
-    pub fn nop(&self) -> ProgramCounter {
+    pub fn nop(&mut self) -> ProgramCounter {
         ProgramCounter::Next(1)
     }
 
     /// daa: decimal adjust acc.
     /// This is binary arithmetic acting as binary numbers...
     /// 1 byte, 1 cycle.
-    pub fn daa(&self) -> ProgramCounter {
+    pub fn daa(&mut self) -> ProgramCounter {
         let mut a: u8 = self.read_from_r8(A_ID).unwrap();
 
         let is_addition: bool = (self.reg.F & NF) > 0;
@@ -1845,7 +1845,7 @@ impl CPU {
 
     /// cpl: flip all bits in the A-register, sets N and H to 1.
     /// 1 byte, 1 cycle
-    pub fn cpl(&self) -> ProgramCounter {
+    pub fn cpl(&mut self) -> ProgramCounter {
         let mut a: u8 = self.read_from_r8(A_ID).unwrap();
 
         let mut n = 0;
