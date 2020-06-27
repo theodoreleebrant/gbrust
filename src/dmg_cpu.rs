@@ -113,6 +113,10 @@ impl CPU {
             (0b00, 0b101, 0b111) => self.cpl(),
             (0b00, 0b110, 0b100) => self.inc_hl(),
             (0b00, 0b110, 0b101) => self.dec_hl(),
+            (0b00, 0b000, 0b111) => self.rlca(),
+            (0b00, 0b010, 0b111) => self.rla(),
+            (0b00, 0b001, 0b111) => self.rrca(),
+            (0b00, 0b011, 0b111) => self.rra(),
             
             (0b00, 0b000..0b110, 0b001) => self.inc_ss(),
             (0b00, 0b001..0b111, 0b011) => self.dec_ss(),
@@ -130,22 +134,22 @@ impl CPU {
 
             // opcodes starting with 10:
             (0b10, 0b000, 0b110) => self.add_ahl(),
+            (0b10, 0b001, 0b110) => self.adc_ahl(),
+            (0b10, 0b010, 0b110) => self.sub_hl(),
+            (0b10, 0b011, 0b110) => self.sbc_ahl(),
+            (0b10, 0b100, 0b110) => self.and_hl(),
+            (0b10, 0b110, 0b110) => self.or_hl(),
+            (0b10, 0b101, 0b110) => self.xor_hl(),
+            (0b10, 0b111, 0b110) => self.cp_hl(),
             (0b10, 0b000, 0b000..0b111) => self.add_ar(),
             (0b10, 0b001, 0b000..0b111) => self.adc_ar(),
-            (0b10, 0b001, 0b110) => self.adc_ahl(),
             (0b10, 0b010, 0b000..0b111) => self.sub_r(),
-            (0b10, 0b010, 0b110) => self.sub_hl(),
             (0b10, 0b011, 0b000..0b111) => self.sbc_ar(),
-            (0b10, 0b011, 0b110) => self.sbc_ahl(),
             (0b10, 0b100, 0b000..0b111) => self.and_r(),
-            (0b10, 0b100, 0b110) => self.and_hl(),
             (0b10, 0b110, 0b000..0b111) => self.or_r(),
-            (0b10, 0b110, 0b110) => self.or_hl(),
             (0b10, 0b101, 0b000..0b111) => self.xor_r(),
-            (0b10, 0b101, 0b110) => self.xor_hl(),
             (0b10, 0b111, 0b000..0b111) => self.cp_r(),
-            (0b10, 0b111, 0b110) => self.cp_hl(),
-
+            
             // opcodes starting with 11
             (0b11, 0b111, 0b010) => self.ld_A_addr_nn(),
             (0b11, 0b101, 0b010) => self.ld_addr_nn_A(),
@@ -154,8 +158,7 @@ impl CPU {
             (0b11, 0b110, 0b000) => self.ldh_A_addr_offset_n(),
             (0b11, 0b100, 0b000) => self.ldh_addr_offset_n_A(),
             (0b11, 0b111, 0b001) => self.ld_SP_HL(),
-            
-            (0b11, 0b000, 0b110) => self.add_an(),
+            (0b11, 0b000, 0b110) => self.add_an(), // arithmetic
             (0b11, 0b001, 0b110) => self.adc_an(),
             (0b11, 0b010, 0b110) => self.sub_n(),
             (0b11, 0b011, 0b110) => self.sbc_an(),
@@ -164,9 +167,6 @@ impl CPU {
             (0b11, 0b101, 0b110) => self.xor_n(),
             (0b11, 0b111, 0b110) => self.cp_n(),
             (0b11, 0b101, 0b000) => self.add_spe(),
-
-
-
             (0b11, 0b000, 0b011) => self.jp_nn(),
             (0b11, 0b101, 0b001) => self.jp_HL(),
             (0b11, 0b001, 0b101) => self.call_nn(),
@@ -174,6 +174,8 @@ impl CPU {
             (0b11, 0b011, 0b001) => self.reti(),
             (0b11, 0b110, 0b011) => self.di(),
             (0b11, 0b111, 0b011) => self.ei(),
+            (0b11, 0b001, 0b011) => self.execute_bc(self.reg.PC),
+            
             (0b11, 0b000..0b110, 0b101) => self.push_rr(),
             (0b11, 0b000..0b110, 0b001) => self.pop_rr(),
             (0b11, 0b000..0b011, 0b010) => self.jp_cc_nn(),
@@ -185,6 +187,9 @@ impl CPU {
 
     }
 
+    pub fn execute_bc(pc_current: u16) -> ProgramCounter {
+        ProgramCounter::Next(1)
+    }
 
     // Some reusable code (for opcodes)
     
