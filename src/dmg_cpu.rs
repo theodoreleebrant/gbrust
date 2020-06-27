@@ -19,6 +19,10 @@ const DE_ID: u8 = 0b01;
 const HL_ID: u8 = 0b10;
 const SP_ID: u8 = 0b11;
 
+// Interrupt Registers Address
+const IE: u16 = 0xFFFF;
+const IF: u16 = 0xFF0F;
+
 // Places to jump to during interrupts
 
 /// GB has 8 8-bit registers (including special flag register).
@@ -47,9 +51,33 @@ pub struct Registers {
 
 	// Registers for interrupt.
 	// IME: 0 -> Disable all Interrupts, 1 -> Enable all Interrupts enabled in IE
-	IE: u8,     // Interrupt Enable
-	IF: u8,     // Interrupt Flag
-	IME: u8,    // Enable / Disable all interrupts
+	IME: bool,    // Enable / Disable all interrupts
+}
+
+impl Registers {
+    pub fn new() -> Self {
+        // Values taken from gbc_rs repo adn matched with Pan Docs
+        // This is after start-up sequence
+        Registers {
+            A: 0x01,
+            B: 0x00,
+            C: 0x13,
+            D: 0x00,
+            E: 0xD8,
+            H: 0x01,
+            L: 0x4D,
+
+            BC: 0x0013,
+            DE: 0x00D8,
+            HL: 0x014D,
+
+            F: 0xB0,
+            SP: 0xFFFE,
+            PC: 0x0100,
+
+            IME: true,
+        }
+    }
 }
 
 pub struct CPU {
@@ -65,16 +93,26 @@ pub struct CPU {
 }
 
 pub enum ProgramCounter {
-    Next(i8),
+    Next(i16),
     Jump(u16),
 }
 
 impl CPU {
-    /*
     pub fn initialize() -> Self {
-        // Initializing a Gameboy CPU (initial state)
+        CPU {
+            reg: Registers::new(),
+            mem: [0; 65536],
+            stack: [0; 065536],
+            //interconnect: Interconnect::new(),
+
+            halt_mode: false,
+            stop_mode: false,
+
+            clock: 0,
+        }
     }
 
+/*
     pub fn step(&mut self) {
         // Each step of the gameboy cycle
     }
@@ -99,7 +137,7 @@ impl CPU {
         let is_0bb: bool = parts.2 & 0x04 == 0;  
         let is_1bb: bool = !is_0bb;
 
-        let next_pc = match parts {
+        let pc_change = match parts {
             // opcodes starting with 00
             (0b00, 0b110, 0b110, true) => self.ld_addr_HL_n(),
             (0b00, 0b001, 0b010, true) => self.ld_A_addr_BC(),
@@ -192,7 +230,11 @@ impl CPU {
             // The rest: panik
             _ => panic!("No such opcode"),
         };
-            
+        
+        match pc_change {
+            ProgramCounter::Next(val) => self.reg.PC = (self.reg.PC as i16 + val) as u16,
+            ProgramCounter::Jump(addr) => self.reg.PC = addr,
+        };
 
     }
 
@@ -1855,14 +1897,14 @@ impl CPU {
     /// jr_e: Unconditional jump to relative address specified by signed 8-bit operand e.
     /// 2 bytes, 3 cycles.
     pub fn jr_e(&mut self) -> ProgramCounter {
-        let e = self.get_n() as i8; // idk if this works
-        ProgramCounter::Next(e) // idk if this works also... needa try implementing ProgramCounter enum.
+        let e = self.get_n() as i16;
+        ProgramCounter::Next(e)
     }
 
     /// jr_cc_e: Conditional jump to relative address specified by signed 8-bit operand e, depending on condition cc.
     /// 2 bytes, 2 cycles if cc == false, 3 cycles if cc == true.
     pub fn jr_cc_e(&mut self) -> ProgramCounter {
-        let e = self.get_n() as i8;
+        let e = self.get_n() as i16;
         let cc = self.check_cc();
         let mut pc_final: ProgramCounter;
         
@@ -1933,7 +1975,7 @@ impl CPU {
     /// same as ret, but set register IME.
     pub fn reti(&mut self) -> ProgramCounter {
         let pop_val = self.pop_u16();
-        self.reg.IME = 1;
+        self.reg.IME = true;
 
         ProgramCounter::Jump(pop_val)
     }
@@ -1989,7 +2031,7 @@ impl CPU {
     /// EI instruction if any.
     /// 1 byte, 1 cycle
     pub fn di(&mut self) -> ProgramCounter {
-        self.reg.IME = 0;
+        self.reg.IME = false;
 
         ProgramCounter::Next(1)
     }
@@ -1997,7 +2039,7 @@ impl CPU {
     /// ei: schedules interrupt handling to be enabled THE NEXT MACHINE CYCLE
     /// 1 byte, 1 cycle + 1 cycle for EI effect.
     pub fn ei(&mut self) -> ProgramCounter {
-        self.reg.IME = 1;
+        self.reg.IME = true;
 
         ProgramCounter::Next(1)
     }
