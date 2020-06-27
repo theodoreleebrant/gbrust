@@ -65,7 +65,7 @@ pub struct CPU {
 }
 
 pub enum ProgramCounter {
-    Next(i8),
+    Next(i16),
     Jump(u16),
 }
 
@@ -99,7 +99,7 @@ impl CPU {
         let is_0bb: bool = parts.2 & 0x04 == 0;  
         let is_1bb: bool = !is_0bb;
 
-        let next_pc = match parts {
+        let pc_change = match parts {
             // opcodes starting with 00
             (0b00, 0b110, 0b110, true) => self.ld_addr_HL_n(),
             (0b00, 0b001, 0b010, true) => self.ld_A_addr_BC(),
@@ -192,7 +192,11 @@ impl CPU {
             // The rest: panik
             _ => panic!("No such opcode"),
         };
-            
+        
+        match pc_change {
+            ProgramCounter::Next(val) => self.reg.PC = (self.reg.PC as i16 + val) as u16,
+            ProgramCounter::Jump(addr) => self.reg.PC = addr,
+        };
 
     }
 
@@ -1855,14 +1859,14 @@ impl CPU {
     /// jr_e: Unconditional jump to relative address specified by signed 8-bit operand e.
     /// 2 bytes, 3 cycles.
     pub fn jr_e(&mut self) -> ProgramCounter {
-        let e = self.get_n() as i8; // idk if this works
-        ProgramCounter::Next(e) // idk if this works also... needa try implementing ProgramCounter enum.
+        let e = self.get_n() as i16;
+        ProgramCounter::Next(e)
     }
 
     /// jr_cc_e: Conditional jump to relative address specified by signed 8-bit operand e, depending on condition cc.
     /// 2 bytes, 2 cycles if cc == false, 3 cycles if cc == true.
     pub fn jr_cc_e(&mut self) -> ProgramCounter {
-        let e = self.get_n() as i8;
+        let e = self.get_n() as i16;
         let cc = self.check_cc();
         let mut pc_final: ProgramCounter;
         
