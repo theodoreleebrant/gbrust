@@ -83,6 +83,7 @@
 // }
 
 mod dmg_cpu;
+mod cart;
 
 fn main() {
 	println!("Hello World");
