@@ -197,7 +197,41 @@ impl CPU {
     }
 
     pub fn execute_bc(&mut self, pc_current: u16) -> ProgramCounter {
-        ProgramCounter::Next(1)
+        let suffix = self.mem[(pc_current + 1) as usize];
+        let parts = (
+            suffix >> 6, //  bit 76
+            (suffix & 0b0011_1000) >> 3, // bit 543
+            (suffix & 0b0000_0111), // bit 210
+        );
+        
+        let pc_change = match parts {
+            // starting with 00
+            (0b00, 0b000, _) => self.rlc(),
+            (0b00, 0b010, _) => self.rl(),
+            (0b00, 0b001, _) => self.rrc(),
+            (0b00, 0b011, _) => self.rr(),
+            (0b00, 0b100, _) => self.sla(),
+            (0b00, 0b101, _) => self.sra(),
+            (0b00, 0b111, _) => self.srl(),
+            (0b00, 0b110, _) => self.swap(),
+
+            // starting with 01
+            (0b01, _, 0b110) => self.bit_b_HL(),
+            (0b01, _, _) => self.bit_b_r(),
+
+            // starting with 10
+            (0b10, _, 0b110) => self.res_b_HL(),
+            (0b10, _, _) => self.res_b_r(),
+
+            // starting with 11
+            (0b11, _, 0b110) => self.set_b_HL(),
+            (0b11, _, _) => self.set_b_r(),
+            
+            // panik if no match
+            _ => panic!("No such opcode in BC"),
+        };
+
+        pc_change
     }
 
     // Some reusable code (for opcodes)
@@ -1693,7 +1727,7 @@ impl CPU {
 
     // CB (bit operation)
     
-    /// bit_b_r: Copies bit_b of register r to Z flag.
+    /// bit_b_r: Copies complement of bit_b of register r to Z flag.
     /// 2 bytes, 2 cycles
     pub fn bit_b_r(&mut self) -> ProgramCounter {
         let br_info = self.get_n();
@@ -1705,6 +1739,83 @@ impl CPU {
 
         // set the flag
         self.set_hnz(true, false, val == 0);
+
+        ProgramCounter::Next(2)
+    }
+
+    /// bit_b_HL: Copies complement of bit_b of memory content at HL to Z flag
+    /// 2 bytes, 3 cycles
+    pub fn bit_b_HL(&mut self) -> ProgramCounter {
+        let b_info = self.get_n();
+        let b = (b_info & 0x38) >> 3;
+        
+        let mut val: u8 = self.mem[self.reg.HL as usize];
+        val = (val >> b) & 0x01;
+
+        // set the flag
+        self.set_hnz(true, false, val == 0);
+
+        ProgramCounter::Next(2)
+    }
+    
+    /// set_b_r: Set bit_b of register r to 1.
+    /// 2 bytes, 2 cycles
+    pub fn set_b_r(&mut self) -> ProgramCounter {
+        let br_info = self.get_n();
+        let b = (br_info & 0x38) >> 3;
+        let r = br_info & 0x07;
+
+        let mut val: u8 = self.read_from_r8(r).unwrap();
+        val = val | (0x01 << b);
+
+        // write back to register
+        self.write_to_r8(r, val);
+
+        ProgramCounter::Next(2)
+    }
+
+    /// set_b_HL: set bit_b of memory content at HL to 1.
+    /// 2 bytes, 4 cycles
+    pub fn set_b_HL(&mut self) -> ProgramCounter {
+        let b_info = self.get_n();
+        let b = (b_info & 0x38) >> 3;
+        
+        let mut val: u8 = self.mem[self.reg.HL as usize];
+        val = val | (0x01 << b);
+
+        // write back
+        self.mem[self.reg.HL as usize] = val;
+
+        ProgramCounter::Next(2)
+    }
+
+    /// res_b_r: set bit_b of register r to 0.
+    /// 2 bytes, 2 cycles
+    pub fn res_b_r(&mut self) -> ProgramCounter {
+        let br_info = self.get_n();
+        let b = (br_info & 0x38) >> 3;
+        let r = br_info & 0x07;
+
+        let mut val: u8 = self.read_from_r8(r).unwrap();
+        val = val ^ (0x01 << b);
+
+        // write back to register
+        self.write_to_r8(r, val);
+
+        ProgramCounter::Next(2)
+    }
+
+    /// res_b_HL: set bit_b of memory content at HL to 0.
+    /// 2 bytes, 4 cycles
+    pub fn res_b_HL(&mut self) -> ProgramCounter {
+        let b_info = self.get_n();
+        let b = (b_info & 0x38) >> 3;
+        
+        let mut val: u8 = self.mem[self.reg.HL as usize];
+        val = val ^ (0x01 << b);
+
+        // write back
+        self.mem[self.reg.HL as usize] = val;
 
         ProgramCounter::Next(2)
     }
