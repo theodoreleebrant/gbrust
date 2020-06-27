@@ -90,14 +90,14 @@ impl CPU {
         let parts = (
             opcode >> 6, // bit 7 6
             (opcode & 0b0011_1000) >> 3, // bit 543
-            (opcode & 0b0000_0111) // bit 210
+            (opcode & 0b0000_0111) // bit 210,
         );
 
         let next_pc = match parts {
             // opcodes starting with 00
             (0b00, 0b110, 0b110) => self.ld_addr_HL_n(),
             (0b00, 0b001, 0b010) => self.ld_A_addr_BC(),
-            (0b00, 0b011. 0b010) => self.ld_A_addr_DE(),
+            (0b00, 0b011, 0b010) => self.ld_A_addr_DE(),
             (0b00, 0b000, 0b010) => self.ld_addr_BC_A(),
             (0b00, 0b010, 0b010) => self.ld_addr_DE_A(),
             (0b00, 0b111, 0b010) => self.ld_A_addr_HL_dec(),
@@ -118,19 +118,19 @@ impl CPU {
             (0b00, 0b001, 0b111) => self.rrca(),
             (0b00, 0b011, 0b111) => self.rra(),
             
-            (0b00, 0b000..0b110, 0b001) => self.inc_ss(),
-            (0b00, 0b001..0b111, 0b011) => self.dec_ss(),
-            (0b00, 0b001..0b111, 0b001) => self.add_hlss(),
-            (0b00, 0b000..0b111, 0b101) => self.dec_r(),
+            (0b00, 0b000..0b110, 0b001) => self.inc_ss(), // ss0
+            (0b00, 0b001..0b111, 0b011) => self.dec_ss(), // ss1
+            (0b00, 0b001..0b111, 0b001) => self.add_hlss(), // ss1
+            (0b00, 0b000..0b111, 0b101) => self.dec_r(),   
             (0b00, 0b000..0b111, 0b100) => self.inc_r(),
-            (0b00, 0b000..0b110, 0b001) => self.ld_rr_nn(),
-            (0b00, 0b100..0b111, 0b000) => self.jr_cc_e(),
-            (0b00, 0b000..0b111, 0b110) => self.ld_r_n(),
+            (0b00, 0b000..0b110, 0b001) => self.ld_rr_nn(), // rr0
+            (0b00, 0b100..0b111, 0b000) => self.jr_cc_e(),  // 1cc
+            (0b00, 0b000..0b111, 0b110) => self.ld_r_n(),   
 
             // opcodes starting with 01
-            (0b01, 0b110, 0b000..0b111) => self.ld_addr_HL_r(),
-            (0b01, 0b000..0b111, 0b110) => self.ld_r_addr_HL(),
-            (0b01, 0b000..0b111, 0b000..0b111) => self.ld_rx_ry(),
+            (0b01, 0b110, _) => self.ld_addr_HL_r(),
+            (0b01, _, 0b110) => self.ld_r_addr_HL(),
+            (0b01, _, _) => self.ld_rx_ry(),
 
             // opcodes starting with 10:
             (0b10, 0b000, 0b110) => self.add_ahl(),
@@ -141,14 +141,14 @@ impl CPU {
             (0b10, 0b110, 0b110) => self.or_hl(),
             (0b10, 0b101, 0b110) => self.xor_hl(),
             (0b10, 0b111, 0b110) => self.cp_hl(),
-            (0b10, 0b000, 0b000..0b111) => self.add_ar(),
-            (0b10, 0b001, 0b000..0b111) => self.adc_ar(),
-            (0b10, 0b010, 0b000..0b111) => self.sub_r(),
-            (0b10, 0b011, 0b000..0b111) => self.sbc_ar(),
-            (0b10, 0b100, 0b000..0b111) => self.and_r(),
-            (0b10, 0b110, 0b000..0b111) => self.or_r(),
-            (0b10, 0b101, 0b000..0b111) => self.xor_r(),
-            (0b10, 0b111, 0b000..0b111) => self.cp_r(),
+            (0b10, 0b000, _) => self.add_ar(),
+            (0b10, 0b001, _) => self.adc_ar(),
+            (0b10, 0b010, _) => self.sub_r(),
+            (0b10, 0b011, _) => self.sbc_ar(),
+            (0b10, 0b100, _) => self.and_r(),
+            (0b10, 0b110, _) => self.or_r(),
+            (0b10, 0b101, _) => self.xor_r(),
+            (0b10, 0b111, _) => self.cp_r(),
             
             // opcodes starting with 11
             (0b11, 0b111, 0b010) => self.ld_A_addr_nn(),
@@ -163,7 +163,7 @@ impl CPU {
             (0b11, 0b010, 0b110) => self.sub_n(),
             (0b11, 0b011, 0b110) => self.sbc_an(),
             (0b11, 0b100, 0b110) => self.and_n(),
-            (0b11, 0b110. 0b110) => self.or_n(),
+            (0b11, 0b110, 0b110) => self.or_n(),
             (0b11, 0b101, 0b110) => self.xor_n(),
             (0b11, 0b111, 0b110) => self.cp_n(),
             (0b11, 0b101, 0b000) => self.add_spe(),
@@ -176,13 +176,13 @@ impl CPU {
             (0b11, 0b111, 0b011) => self.ei(),
             (0b11, 0b001, 0b011) => self.execute_bc(self.reg.PC),
             
-            (0b11, 0b000..0b110, 0b101) => self.push_rr(),
-            (0b11, 0b000..0b110, 0b001) => self.pop_rr(),
-            (0b11, 0b000..0b011, 0b010) => self.jp_cc_nn(),
-            (0b11, 0b000..0b011, 0b100) => self.call_cc_nn(),
-            (0b11, 0b000..0b111, 0b111) => self.rst_n(),
-            (0b11, 0b000..0b011, 0b000) => self.ret_cc(),
-        }
+            (0b11, 0b000..0b110, 0b101) => self.push_rr(), // xx0
+            (0b11, 0b000..0b110, 0b001) => self.pop_rr(), // xx0
+            (0b11, 0b000..0b011, 0b010) => self.jp_cc_nn(), // 0cc
+            (0b11, 0b000..0b011, 0b100) => self.call_cc_nn(),// 0cc
+            (0b11, 0b000..0b111, 0b111) => self.rst_n(), 
+            (0b11, 0b000..0b011, 0b000) => self.ret_cc(),   // 0cc
+        };
             
 
     }
