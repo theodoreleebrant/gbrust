@@ -103,7 +103,8 @@ impl CPU {
             reg: Registers::new(),
             mem: [0; 65536],
             stack: [0; 065536],
-            
+            //interconnect: Interconnect::new(),
+
             halt_mode: false,
             stop_mode: false,
 
