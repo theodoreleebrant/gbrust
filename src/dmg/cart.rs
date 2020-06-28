@@ -7,7 +7,7 @@ use std::string::String;
 use super::dmg_cpu::*;
 
 pub struct Cart {
-    program: [u8; 65536],
+    program: Box<[u8]>,
 }
 
 #[derive(Debug)]
@@ -22,7 +22,7 @@ pub enum CartType {
 }
 
 impl Cart {
-    pub fn new(program: [u8; 65536]) -> Self {
+    pub fn new(program: Box<[u8]>) -> Self {
         Cart {
             program: program,
         }
