@@ -50,7 +50,7 @@ const BLACK: Color = Color {
     a: 255,
 };
 
-struct LCDC {
+struct Lcdc {
     lcd_display_enable: bool,
     window_tile_map_display_select: bool,
     window_display_enable: bool,
@@ -61,9 +61,9 @@ struct LCDC {
     bg_window_display_priority: bool,
 };
 
-impl LCDC {
+impl Lcdc {
     pub fn new() -> Self {
-        LCDC {
+        Lcdc {
             lcd_display_enable = true,
             window_tile_map_display_select = false,
             window_display_enable = false,
@@ -109,7 +109,7 @@ struct LCDStat {
 
 impl LCDStat {
     pub fn new() -> Self {
-        LCDC {
+        LCDStat {
             lcd_ly_coincidence_interrupt: false,    // RW
             mode_2_oam_interrupt: false,            // RW
             mode_1_vblank_interupt: false,          // RW
@@ -167,7 +167,7 @@ impl Mode {
 }
 
 pub struct PPU {
-    lcdc: LCDC,
+    lcdc: Lcdc,
     lcdstat: LCDStat,
     scx: u8,
     scy: u8,
@@ -180,7 +180,7 @@ pub struct PPU {
 impl PPU {
     pub fn new() -> Self {
         PPU {
-            lcdc: LCDC::new(),
+            lcdc: Lcdc::new(),
             lcdstat: LCDStat::new(),
             scx: 0,
             scy: 0,
@@ -226,6 +226,22 @@ impl PPU {
             0xFF4B => self.wx,
         }
     }
+
+    pub fn oam_dma_transfer(&mut self, oam: Box<[u8]>) {
+        self.oam = oam;
+    }
+
+    pub fn draw_scanline(&mut self) {
+        if self.lcdc.bg_window_display_priority {
+            self.render_tiles();
+        }
+
+        if self.lcdc.sprite_display_enable {
+            self.render_sprites();
+        }
+    }
+
+    
 
 
 }
