@@ -6,6 +6,7 @@ use std::string::String;
 
 use super::dmg_cpu::*;
 
+#[derive(Debug)]
 pub struct Cart {
     program: Box<[u8]>,
 }

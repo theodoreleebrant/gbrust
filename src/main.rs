@@ -13,6 +13,7 @@ use std::fs::File;
 use std::io::{Read, Write};
 
 mod dmg;
+pub use dmg::*;
 
 // use dmg::console::{Console,Button,ButtonState,InputEvent,Cart};
 
@@ -106,7 +107,7 @@ fn main() {
 
     println!("{:?}", cart);
 
-    let mut console = Console::new(cart);
+    // let mut console = Console::new(cart);
 
     let mut window = Window::new("rustgb",
                                  160,
@@ -116,13 +117,13 @@ fn main() {
 
     let sleep_time = std::time::Duration::from_millis(16);
 
-    let mut prev_keys = Vec::new();
+    // let mut prev_keys = Vec::new();
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
 
         let now = std::time::Instant::now();
 
-        console.run_for_one_frame(&mut VideoSink::new(&mut window));
+        // console.run_for_one_frame(&mut VideoSink::new(&mut window));
 
         /*
         if let Some(keys) = window.get_keys() {
@@ -140,7 +141,7 @@ fn main() {
         }
     }
 
-    if let Some(ram) = console.copy_cart_ram() {
-        save_bin(&save_ram_path, ram)
-    }
+    // if let Some(ram) = console.copy_cart_ram() {
+    //     save_bin(&save_ram_path, ram)
+    // }
 }
