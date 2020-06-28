@@ -98,6 +98,46 @@ impl LCDC {
     }
 }
 
+struct LCDStat {
+    lcd_ly_coincidence_interrupt: bool,
+    mode_2_oam_interrupt: bool,
+    mode_1_vblank_interupt: bool,
+    mode_0_hblank_interrupt: bool,
+    coincidence_flag: bool,
+    mode_flag: Mode,
+}
+
+impl LCDStat {
+    pub fn new() -> Self {
+        LCDC {
+            lcd_ly_coincidence_interrupt: false,    // RW
+            mode_2_oam_interrupt: false,            // RW
+            mode_1_vblank_interupt: false,          // RW
+            mode_0_hblank_interrupt: false,         // RW
+            coincidence_flag: false,                // R
+            mode_flag: Mode::vblank,                // R
+        } 
+    }
+
+    pub fn set_flag(&mut self, flags: u8) {
+        lcd_ly_coincidence_interrupt = (flags & 0x40) == 1;
+        mode_2_oam_interrupt = (flags & 0x20) == 1;
+        mode_1_vblank_interupt = (flags & 0x10) == 1;
+        mode_0_hblank_interrupt = (flags & 0x8) == 1;
+        //coincidence_flag read only
+        //mode_flag read only
+    }
+
+    pub fn get_flag(&mut self) -> u8 {
+        (lcd_ly_coincidence_interrupt as u8) << 6
+            + (mode_2_oam_interrupt as u8) << 5
+            + (mode_1_vblank_interupt as u8) << 4
+            + (mode_0_hblank_interrupt as u8) << 3
+            + (coincidence_flag as u8) << 2
+            + mode_flag.get_flags() 
+    }
+}
+
 enum Mode {
     hblank,
     vblank,
@@ -125,5 +165,3 @@ impl Mode {
         }
     }
 }
-
-
