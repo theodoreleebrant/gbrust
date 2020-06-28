@@ -167,15 +167,42 @@ impl Mode {
 }
 
 pub struct PPU {
+    lcdc: LCDC,
+    lcdstat: LCDStat,
     scx: u8,
     scy: u8,
     ly: u8,     // read-only?
-    lyc: bool,
+    lyc: u8,
     wy: u8,
     wx: u8,
 }
 
 impl PPU {
+    pub fn new() -> Self {
+        PPU {
+            lcdc: LCDC::new(),
+            lcdstat: LCDStat::new(),
+            scx: 0,
+            scy: 0,
+            ly: 0,
+            lyc: false,
+            wy: 0,
+            wx: 7,
+        }
+    }
+
+    pub fn write(&mut self, addr: u16) {
+        match addr {
+            0xFF40 => self.lcdc.set_flags(val),
+            0xFF41 => self.lcdstat.set_flags(val),
+            0xFF42 => self.scy = val,
+            0xFF43 => self.scx = val,
+            0xFF44 => self.ly = val,
+            0xFF45 => self.lyc = val,
+            0xFF4A => self.wy = val,
+            0xFF4B => self.wx = val,
+        }
+    }
 
 
 }
