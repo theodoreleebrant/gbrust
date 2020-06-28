@@ -241,7 +241,92 @@ impl PPU {
         }
     }
 
+    pub fn render_sprites(&mut self) {
+        let use_8x16 = self.lcdc.sprite_size;
+        
+        // maximum 40 sprites in the screen
+        for sprite in 0..40 { 
+            // each sprite takes up 4 bytes(8*8 pixel)
+            let index: u8 = sprite * 4;
+            // y-coordinate of top left corner
+            let y_pos = self.oam[index as usize].wrapping_sub(16); 
+            // x_coord of top left corner
+            let x_pos = self.oam[(index + 1) as usize].wrapping_sub(8);
+            // address of tile
+            let sprite_tile_addr = self.oam[(index + 2) as usize] as u16; 
+            // flags that represent attributes of sprite
+            let attributes = self.oam[(index + 3) as usize];
+            // extract info from attributes flag
+            let obj_to_bg_priority = (attributes & 0b1000_0000) >> 7;
+            let y_flip = (attributes & 0b0100_0000) >> 6;
+            let x_flip = (attributes & 0b0010_0000) >> 5;
+            let palette_num = (attributes & 0b0001_0000) >> 4;
+           
+            // will display the first 10 sprites appearing on this line
+            let scanline = self.ly;
+
+            let y_size = if use_8x16 { 16 } else { 8 };
+            let x_size = 8;
+
+            // Compares scanline to self.ly to find the 10 sprites on the line that appear first
+            // on OAM. (FE00-FE03 = first sprite, FE04 - FE07 2nd sprite and so on.
+            if scanline >= y_pos && scanline < (y_pos.wrapping_add(y_size)) {
+                // Finding out which line sprite is at in the OAM.
+                let line: i32 = scanline as i32 - y_pos as i32;
+                // if y_flip: mirror the line over the y-axis, so find in the other direction.
+                let line = if (y_flip as bool) {
+                    (line - y_size as i32) * (-1)
+                } else {
+                    line
+                };
+            
+                // each sprite is represented by 2 bytes, so distance is x2.
+                let line = line * 2;
+                
+                // addr = base_addr + wtf is going on
+                let sprite_addr = 0x8000 + (sprite_tile_addr * 16) + line as u16;
+                let lsb_line = self.read(sprite_addr as usize);
+                let msb_line = self.read((sprite_addr + 1) as usize);
+
+                // looking at every pair of bit from 7 to 0, if x_flip we look at them from 0 to 7.
+                for tile_pixel in (0..8).rev() {
+                    let color_bit = tile_pixel as i32;
+                    let color_bit = if x_flip as bool {
+                        (color_bit - 7) * (-1)
+                    } else {
+                        color_bit
+                    };
+
+                    // Put together the color bits
+                    let color_num = (((msb_line >> color_bit) & 0b01) << 1) | ((lsb_line >> color_bit) & 0b01);
+                    
+                    if color_num == 0 { // transparent, do not draw
+                        continue;
+                    }
+                    // get sprite color
+                    let color = self.get_color(color_num, palette_num);
+                    
+                    let x_pix = (0 as u8).wrapping_sub(tile_pixel as u8).wrapping_add(7); // ??
+                    let pixel = x_pos.wrapping_add(x_pix); //??
+                    
+                    if scanline > 143 || pixel > 159 {
+                        continue;
+                    }
+
+                    self.set_sprite_pixel(pixel as u32, scanline as u32, obj_to_bg_priority, color);
+                }
+            }
+        }
+    }
+
     
+
+
+
+
+
+
+
 
 
 }
