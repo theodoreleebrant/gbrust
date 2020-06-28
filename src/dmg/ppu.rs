@@ -188,11 +188,17 @@ impl PPU {
             lyc: false,
             wy: 0,
             wx: 7,
+            vram: [u8; VRAM_SIZE],
+            oam: [u8; OAM_SIZE),
         }
     }
 
     pub fn write(&mut self, addr: u16, val: u8) {
         match addr {
+            0x8000..0x97ff => { // tile data
+                let addr = addr - 0x8000;
+                self.vram[addr as usize] = val;
+            },
             0xFF40 => self.lcdc.set_flags(val),
             0xFF41 => self.lcdstat.set_flags(val),
             0xFF42 => self.scy = val,
@@ -206,6 +212,10 @@ impl PPU {
 
     pub fn read(&mut self, addr: u16) -> u8 {
         match addr {
+            0x8000..0x97ff => { // tile data
+                let addr = addr - 0x8000;
+                self.vram[addr as usize]
+            },  
             0xFF40 => self.lcdc.get_flags(),
             0xFF41 => self.lcdstat.get_flags(),
             0xFF42 => self.scy,
