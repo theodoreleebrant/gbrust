@@ -191,7 +191,7 @@ impl PPU {
         }
     }
 
-    pub fn write(&mut self, addr: u16) {
+    pub fn write(&mut self, addr: u16, val: u8) {
         match addr {
             0xFF40 => self.lcdc.set_flags(val),
             0xFF41 => self.lcdstat.set_flags(val),
@@ -201,6 +201,19 @@ impl PPU {
             0xFF45 => self.lyc = val,
             0xFF4A => self.wy = val,
             0xFF4B => self.wx = val,
+        }
+    }
+
+    pub fn read(&mut self, addr: u16) -> u8 {
+        match addr {
+            0xFF40 => self.lcdc.get_flags(),
+            0xFF41 => self.lcdstat.get_flags(),
+            0xFF42 => self.scy,
+            0xFF43 => self.scx,
+            0xFF44 => self.ly,
+            0xFF45 => self.lyc,
+            0xFF4A => self.wy,
+            0xFF4B => self.wx,
         }
     }
 
