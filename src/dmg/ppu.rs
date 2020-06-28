@@ -1,3 +1,22 @@
+pub const OAM_SIZE: usize = 0x100; // address for OAM
+const FRAMEBUFFER_SIZE: usize = DISPLAY_WIDTH * DISPLAY_HEIGHT; // address for the full frame
+
+const CLKS_SCREEN_REFRESH: u32 = 70224; // refresh every 70224 clks
+pub const DISPLAY_WIDTH: usize = 160;
+pub const DISPLAY_HEIGHT: usize = 144;
+
+pub const VRAM_SIZE: usize = 1024*16; // 16KB Vram
+
+const MODE_HBLANK: u32 = 0;
+const MODE_VBLANK: u32 = 1;
+const MODE_OAM: u32 = 2;
+const MODE_VRAM: u32 = 3;
+
+const HBLANK_CYCLES: u32 = 204;
+const VBLANK_CYCLES: u32 = 456;
+const OAM_CYCLES: u32 = 80;
+const VRAM_CYCLES: u32 = 172;
+
 #[derive(Debug,PartialEq,Eq)]
 struct Color {
     r: u8,
@@ -79,23 +98,44 @@ impl LCDC {
     }
 }
 
-pub const OAM_SIZE: usize = 0x100; // address for OAM
-const FRAMEBUFFER_SIZE: usize = DISPLAY_WIDTH * DISPLAY_HEIGHT; // address for the full frame
+struct LCDStat {
+    lcd_ly_coincidence_interrupt: bool,
+    mode_2_oam_interrupt: bool,
+    mode_1_vblank_interupt: bool,
+    mode_0_hblank_interrupt: bool,
+    coincidence_flag: bool,
+    mode_flag: Mode,
+}
 
-const CLKS_SCREEN_REFRESH: u32 = 70224; // refresh every 70224 clks
-pub const DISPLAY_WIDTH: usize = 160;
-pub const DISPLAY_HEIGHT: usize = 144;
+impl LCDStat {
+    pub fn new() -> Self {
+        LCDC {
+            lcd_ly_coincidence_interrupt: false,    // RW
+            mode_2_oam_interrupt: false,            // RW
+            mode_1_vblank_interupt: false,          // RW
+            mode_0_hblank_interrupt: false,         // RW
+            coincidence_flag: false,                // R
+            mode_flag: Mode::vblank,                // R
+        } 
+    }
 
-pub const VRAM_SIZE: usize = 1024*16; // 16KB Vram
+    pub fn set_flag(&mut self, flags: u8) {
+        lcd_ly_coincidence_interrupt = (flags & 0x40) == 1;
+        mode_2_oam_interrupt = (flags & 0x20) == 1;
+        mode_1_vblank_interupt = (flags & 0x10) == 1;
+        mode_0_hblank_interrupt = (flags & 0x8) == 1;
+        //coincidence_flag read only
+        //mode_flag read only
+    }
 
-const MODE_HBLANK: u32 = 0;
-const MODE_VBLANK: u32 = 1;
-const MODE_OAM: u32 = 2;
-const MODE_VRAM: u32 = 3;
-
-const HBLANK_CYCLES: u32 = 204;
-const VBLANK_CYCLES: u32 = 456;
-const OAM_CYCLES: u32 = 80;
-const VRAM_CYCLES: u32 = 172;
+    pub fn get_flag(&mut self) -> u8 {
+        (lcd_ly_coincidence_interrupt as u8) << 6
+            + (mode_2_oam_interrupt as u8) << 5
+            + (mode_1_vblank_interupt as u8) << 4
+            + (mode_0_hblank_interrupt as u8) << 3
+            + (coincidence_flag as u8) << 2
+            + mode_flag.get_flags() 
+    }
+}
 
 
