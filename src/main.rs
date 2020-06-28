@@ -14,7 +14,7 @@ use std::io::{Read, Write};
 
 mod dmg;
 
-use dmg::console::{Console,Button,ButtonState,InputEvent,Cart};
+// use dmg::console::{Console,Button,ButtonState,InputEvent,Cart};
 
 fn load_bin(path: &PathBuf) -> Box<[u8]> {
     let mut bytes = Vec::new();
@@ -27,7 +27,7 @@ fn save_bin(path: &PathBuf, bytes: Box<[u8]>) {
     let mut file = File::create(path).unwrap();
     file.write_all(&bytes).unwrap();
 }
-
+/*
 fn keycode_to_button(keycode: Key) -> Option<Button> {
     match keycode {
         Key::Space => Some(Button::A),
@@ -41,7 +41,9 @@ fn keycode_to_button(keycode: Key) -> Option<Button> {
         _ => None,
     }
 }
+*/
 
+/*
 fn make_events(current: Vec<Key>, prev: Vec<Key>) -> Vec<InputEvent> {
 
     let released: Vec<_> = prev.clone().into_iter().filter(|x| !current.contains(x)).collect();
@@ -62,6 +64,7 @@ fn make_events(current: Vec<Key>, prev: Vec<Key>) -> Vec<InputEvent> {
     }
     events
 }
+*/
 
 struct VideoSink<'a> {
     window: &'a mut Window
@@ -74,12 +77,13 @@ impl<'a> VideoSink<'a> {
         }
     }
 }
-
+/*
 impl<'a> dmg::console::VideoSink for VideoSink<'a> {
     fn frame_available(&mut self, frame: &Box<[u32]>) {
         self.window.update_with_buffer(frame)
     }
 }
+*/
 
 
 fn main() {
@@ -98,7 +102,7 @@ fn main() {
         None
     };
 
-    let cart = Cart::new(rom_binary, ram);
+    let cart = Cart::new(rom_binary);
 
     println!("{:?}", cart);
 
@@ -120,12 +124,14 @@ fn main() {
 
         console.run_for_one_frame(&mut VideoSink::new(&mut window));
 
+        /*
         if let Some(keys) = window.get_keys() {
             make_events(keys.clone(), prev_keys)
                 .into_iter()
                 .for_each(|e| console.handle_event(e));    
             prev_keys = keys
         }
+        */
 
         let elapsed = now.elapsed();
         if sleep_time > elapsed {
