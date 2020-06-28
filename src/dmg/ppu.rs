@@ -241,6 +241,107 @@ impl PPU {
         }
     }
 
+    pub fn render_tiles(&mut self) {
+        let scanline = self.ly;
+        let scroll_x = self.scx;
+        let scroll_y = self.scy;
+        let window_x = self.wx;
+        let window_y = self.wy.wrapping_sub(7);
+
+        // Window used if the flag in LCDC is true and the window is below scanline
+        let use_window = self.lcdc.window_display_enable && window_y <= scanline;
+
+        // Check which VRAM tile data is used
+        // Based on LCDC flag
+        // See VRAM Tile Data in PanDocs
+        let (tile_data, signed): (u16, bool) = if self.lcdc.bg_window_tile_data_select {
+            (0x8000, false)
+        } else {
+            (0x8800, true)
+        }   
+
+        // See VRAM Background Maps in PanDocs
+        let background_mem = if use_window {
+            // Window used. Background defaults to window tiles.
+            if self.lcdc.window_tile_map_display_select {
+                0x9c00
+            } else {
+                0x9800
+            }
+        } else {
+            // Window not used. Background tiles used.
+            if self.lcdc.bg_window_tile_data_select {
+                0x9c00
+            } else {
+                0x9800
+            }
+        }
+
+        // set the y-position (top row)
+        let y_pos = if use_window {
+            scanline.wrapping_sub(window_y)
+        } else {
+            scroll_y.wrapping_add(scanline)
+        }
+
+        // 32 tiles per row, 8 pixels each
+        let tile_row: u16 = (y_pos / 8) as u16 * 32;
+
+        // Display: 160 x 144 on the screen
+        // We do line by line
+        for pixel in 0..160 {
+            let pixel = pixel as u8;
+            
+            // Window used?
+            let x_pos = if use_window && pixel >= window_x {
+                pixel.wrapping_sub(window_x)
+            } else {
+                scroll_x.wrapping_add(scroll_x)
+            };
+
+            let tile_col: u16 = (x_pos / 8);
+
+            // Base address of the tile
+            let tile_address = background_mem + tile_row + tile_col;
+
+            // sets the offset from the base address
+            let tile_num: i16 = if !signed {
+                // u8 -> u16 (still unsigned) -> i16 (no op)
+                self.read(tile_address) as u16 as i16 
+            } else {
+                // u8 -> i8 (sign) -> i16
+                self.read(tile_address) as i8 as i16
+            };
+
+            // Actual tile location address
+            let tile_location: u16 = if !signed {
+                tile_data + (tile_num as u16 * 16)
+            } else {
+                tile_data + ((tile_num + 128) * 16) as u16
+            };
+
+            // Color code (position in memory): base address
+            let line = (y_pos as u16 % 8) * 2;
+
+            // Get a line of bytes that signifies the y-coordinate lsb/msb color
+            let lsb_line = self.read(line + tile_location);
+            let msb_line = self.read(line + tile_location + 1);
+
+            // See how many bits needed to locate the actual pixel's msb/lsb
+            // i.e. the pixel's location in the line
+            let color_bit = ((x_pos as i32 % 8) - 7) * -1;
+
+            // 0, 1, 2, or 3: white, light grey, dark grey, black
+            let color_num = (((msb_line >> color_bit) & 0b1) << 1) | ((lsb_line >> color_bit) & 0b1);
+
+            // get color from color enum
+            let color = self.get_color(color_num, self.bgp);
+
+            // set the pixel
+            self.set_pixel(pixel as u32, scanline as u32, color)
+        }
+    }
+    
     pub fn render_sprites(&mut self) {
         let use_8x16 = self.lcdc.sprite_size;
         
@@ -318,14 +419,6 @@ impl PPU {
             }
         }
     }
-
-    
-
-
-
-
-
-
 
 
 
