@@ -88,6 +88,10 @@ impl Cart {
         
         final_x == default
     }
+
+    pub fn read(&self, addr: u16) -> u8 {
+        self.program[addr as usize]
+    }
 }
 
 
