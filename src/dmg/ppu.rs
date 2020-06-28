@@ -75,7 +75,7 @@ impl LCDC {
         } 
     }
 
-    pub fn set_flag(&mut self, flags: u8) {
+    pub fn set_flags(&mut self, flags: u8) {
         self.lcd_display_enable = (flags & 0x80) == 1;
         self.window_tile_map_display_select: = (flags & 0x40) == 1;
         self.window_display_enable: = (flags & 0x20) == 1;
@@ -86,7 +86,7 @@ impl LCDC {
         self.bg_window_display_priority: = (flags & 0x01) == 1;
     }
 
-    pub fn get_flag(&mut self) -> u8 {
+    pub fn get_flags(&mut self) -> u8 {
         (lcd_display_enable as u8) << 7 
             + (window_tile_map_display_select as u8) << 6
             + (window_display_enable as u8) << 5
@@ -119,7 +119,7 @@ impl LCDStat {
         } 
     }
 
-    pub fn set_flag(&mut self, flags: u8) {
+    pub fn set_flags(&mut self, flags: u8) {
         lcd_ly_coincidence_interrupt = (flags & 0x40) == 1;
         mode_2_oam_interrupt = (flags & 0x20) == 1;
         mode_1_vblank_interupt = (flags & 0x10) == 1;
@@ -128,7 +128,7 @@ impl LCDStat {
         //mode_flag read only
     }
 
-    pub fn get_flag(&mut self) -> u8 {
+    pub fn get_flags(&mut self) -> u8 {
         (lcd_ly_coincidence_interrupt as u8) << 6
             + (mode_2_oam_interrupt as u8) << 5
             + (mode_1_vblank_interupt as u8) << 4
