@@ -1,8 +1,8 @@
 //#[macro_use]
 // see if there is any errors,
 // new syntax: use bitflags::fn_name
-// extern crate bitflags;
-// extern crate minifb;
+extern crate bitflags;
+extern crate minifb;
 
 use minifb::{Key, WindowOptions, Window};
 
@@ -14,7 +14,7 @@ use std::io::{Read, Write};
 
 mod dmg;
 
-use gbc::console::{Console,Button,ButtonState,InputEvent,Cart};
+use dmg::console::{Console,Button,ButtonState,InputEvent,Cart};
 
 fn load_bin(path: &PathBuf) -> Box<[u8]> {
     let mut bytes = Vec::new();
@@ -75,7 +75,7 @@ impl<'a> VideoSink<'a> {
     }
 }
 
-impl<'a> gbc::console::VideoSink for VideoSink<'a> {
+impl<'a> dmg::console::VideoSink for VideoSink<'a> {
     fn frame_available(&mut self, frame: &Box<[u32]>) {
         self.window.update_with_buffer(frame)
     }
