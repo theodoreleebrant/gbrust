@@ -165,3 +165,17 @@ impl Mode {
         }
     }
 }
+
+pub struct PPU {
+    scx: u8,
+    scy: u8,
+    ly: u8,     // read-only?
+    lyc: bool,
+    wy: u8,
+    wx: u8,
+}
+
+impl PPU {
+
+
+}
