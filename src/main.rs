@@ -77,7 +77,7 @@ impl<'a> VideoSink<'a> {
 
 impl<'a> dmg::console::VideoSink for VideoSink<'a> {
     fn frame_available(&mut self, frame: &Box<[u32]>) {
-        self.window.update_with_buffer(frame)
+        self.window.update_with_buffer(frame, 160, 144);
     }
 }
 
@@ -104,7 +104,7 @@ fn main() {
     println!("{:?}", cart);
 
     let mut console = Console::new(cart);
-
+    
     let mut window = Window::new("rustgb",
                                  160,
                                  144,
@@ -137,7 +137,7 @@ fn main() {
         }
     }
 
-    if let Some(ram) = console.copy_cart_ram() {
-        save_bin(&save_ram_path, ram)
-    }
+    // if let Some(ram) = console.copy_cart_ram() {
+    //     save_bin(&save_ram_path, ram)
+    // }
 }

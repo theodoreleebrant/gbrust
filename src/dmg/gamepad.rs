@@ -104,7 +104,7 @@ impl Gamepad {
     //     Interrupts::empty()
     // }
 
-    pub fn handle_event(&mut self, event: InputEvent) {
+    pub fn handle_event(&mut self, mut event: InputEvent) {
         use self::Button::*;
 
         match event.state {

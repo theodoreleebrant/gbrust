@@ -80,7 +80,7 @@ impl Registers {
     }
 }
 
-pub struct CPU {
+pub struct Cpu {
 	reg: Registers,     // Set of registers
 
 	mem: [u8; 65536],   // 64KB memory
@@ -97,9 +97,9 @@ pub enum ProgramCounter {
     Jump(u16),
 }
 
-impl CPU {
+impl Cpu {
     pub fn initialize() -> Self {
-        CPU {
+        Cpu {
             reg: Registers::new(),
             mem: [0; 65536],
             stack: [0; 065536],
@@ -2009,7 +2009,7 @@ impl CPU {
         ProgramCounter::Jump(addr)
     }
         
-    /// halt: CPU enters "halt mode" and stops system clock. Oscillator circuit and LCD Controller
+    /// halt: Cpu enters "halt mode" and stops system clock. Oscillator circuit and LCD Controller
     /// continue to operate. "halt mode" can be cancelled with an interrupt or reset signal.
     /// PC is halted as well. After interrupted / reset, program starts from PC address.
     pub fn halt(&mut self) -> ProgramCounter {
@@ -2018,7 +2018,7 @@ impl CPU {
         ProgramCounter::Next(0)     // does not incrememt
     }
     
-    /// stop: CPU enters "stop mode" and stops everything including system clock, 
+    /// stop: Cpu enters "stop mode" and stops everything including system clock, 
     /// oscillator circuit and LCD Controller.
     /// 1 byte, 1 cycle
     pub fn stop(&mut self) -> ProgramCounter {

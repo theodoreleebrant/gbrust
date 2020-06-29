@@ -1,6 +1,7 @@
 use super::ppu::Ppu;
-use super::dmg_cpu::CPU;
+use super::dmg_cpu::Cpu;
 use super::interconnect::Interconnect;
+pub use super::gamepad::{InputEvent,Gamepad,Button,ButtonState};
 
 pub use super::cart::Cart;
 
@@ -32,37 +33,37 @@ impl<'a> VideoSink for FrameHandler<'a> {
 }
 
 pub struct Console {
-    cpu: CPU,
+    cpu: Cpu,
     interconnect: Interconnect,
 }
 
 impl Console {
     pub fn new(cart: Cart) -> Console {
-        let interconnect = Interconnect::new(cart, Ppu::new());
+        let interconnect = Interconnect::new(cart, Ppu::new(), Gamepad::new());
         Console {
-            cpu: CPU::initialize(),
+            cpu: Cpu::initialize(),
             interconnect: interconnect,
         }
+    }
 
-        pub fn run_for_one_frame(&mut self, video_sink: &mut dyn VideoSink) {
-            let mut frame_handler = FrameHandler::new(video_sink);
-            while !frame_handler.frame_available {
-                // self.cpu.step(&mut frame_hander);
-                // TODO: implement step in cpu
-                frame_handler.frame_available = true; // just to end the loop for now
-            }
+    pub fn run_for_one_frame(&mut self, video_sink: &mut dyn VideoSink) {
+        let mut frame_handler = FrameHandler::new(video_sink);
+        while !frame_handler.frame_available {
+            // self.cpu.step(&mut frame_hander);
+            // TODO: implement step in cpu
+            frame_handler.frame_available = true; // just to end the loop for now
         }
-    /*  TODO: implement gamepad with handle_event?
-        pub fn handle_event(&mut self, input_event: InputEvent) {
-            self.interconnect.gamepad.handle_event(input_event);
-        }
-    */
+    }
+    
+    pub fn handle_event(&mut self, input_event: InputEvent) {
+        self.interconnect.gamepad.handle_event(input_event);
+    }
 
     /* TODO: implement copy_ram in interconnect?
         pub fn copy_cart_ram(&self) -> Option<Box<[u8]>> {
             self.interconnect.cart.copy_ram()
         }
     */
-    }
 }
+
 
