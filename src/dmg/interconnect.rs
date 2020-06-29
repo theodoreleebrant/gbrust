@@ -1,7 +1,7 @@
 use super::ppu::Ppu;
 use super::cart::Cart;
-use super::timer::Timer;
-use super::gamepad::Gamepad;
+// use super::timer::Timer;
+// use super::gamepad::Gamepad;
 
 const RAM_SIZE: usize = 32 * 1024; // Memory for the last 32KB as first 32KB is for ROM
 const ZERO_PAGE: usize = 0x7f;
@@ -19,8 +19,7 @@ pub struct Interconnect {
 }
 
 impl Interconnect {
-    pub fn new(gameboy_type: GameboyType,
-               cart: Cart,
+    pub fn new(cart: Cart,
                ppu: Ppu)
                -> Interconnect {
         Interconnect {
@@ -30,7 +29,7 @@ impl Interconnect {
             // timer: Timer::new(),
             // gamepad: gamepad,
             ram: vec![0; RAM_SIZE].into_boxed_slice(),
-            zero_page: vec![0; HW_IO_REG].into_boxed_slice(),
+            zero_page: vec![0; ZERO_PAGE].into_boxed_slice(),
             ppu_dma: 0,
             int_enable: 0,
             int_flags: 0,
@@ -63,8 +62,8 @@ impl Interconnect {
 
             // 0xFF00 - 0xFF7F: Hardware I/O Registers
             // Details http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf pg35
-            // 0xFF00: Gamepad
-            0xff00 => self.gamepad.read(),
+            // 0xFF00: Gamepad (TODO)
+            // 0xff00 => self.gamepad.read(),
 
             // 0xFF01 - 0xFF02: serial I/O, used for linking up to other gameboy
             0xff01..= 0xff02 => 0,
@@ -127,7 +126,7 @@ impl Interconnect {
             0xFF0F => self.int_flags = val,
             
             //0xFF10..= 0xFF3F => self.spu.write(addr, val),
-            0xFF10..0xFF3F => {},
+            0xFF10..=0xFF3F => {},
             
             // DMA Transfer, val is start address of DMA Transfer
             0xFF46 => {
@@ -147,7 +146,7 @@ impl Interconnect {
             // Tetris uses this address for some reason
             0xFF7F => {},
             // Set hwram
-            0xFF80..= 0xFFFE => self.hwram[(addr-0xFF80) as usize] = val,
+            0xFF80..= 0xFFFE => self.zero_page[(addr-0xFF80) as usize] = val,
             // Set interrupt enable flag 
             0xFFFF => self.int_enable = val,
             _ => {} // panic!("Write: addr not in range!! 0x{:x} - val: 0x{:x}", addr, val),
@@ -174,6 +173,6 @@ impl Interconnect {
         }
 
         // just sets OAM memory
-        self.ppu.oam_dma_transfer(oam)
+        self.ppu.oam_dma_transfer(oam.unbox());
     }
 }
