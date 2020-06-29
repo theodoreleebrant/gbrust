@@ -41,25 +41,25 @@ impl Interconnect {
     pub fn read(&mut self, addr: u16) -> u8 {
         match addr {
             // For more information: http://gameboy.mongenel.com/dmg/asmmemmap.html
-            0x0000...0x7fff => self.cart.read(addr), // Cartridge ROM
-            0x8000...0x9fff => self.ppu.read(addr), // Picture Processing Unit
-            0xa000...0xbfff => 0, // Cartridge swappable RAM
-            0xc000...0xdfff => self.ram[(addr - 0xc000) as usize], // Internal RAM
+            0x0000..= 0x7fff => self.cart.read(addr), // Cartridge ROM
+            0x8000..= 0x9fff => self.ppu.read(addr), // Picture Processing Unit
+            0xa000..= 0xbfff => 0, // Cartridge swappable RAM
+            0xc000..= 0xdfff => self.ram[(addr - 0xc000) as usize], // Internal RAM
             // Might cause problems in GBC implementation but for DMG should be ok
-            0xe000...0xfdff => self.read(addr - 0xe000 + 0xc000), 
+            0xe000..= 0xfdff => self.read(addr - 0xe000 + 0xc000), 
             // Echo memory. Just copies over 0xc000..oxcfff
 
             // PPU addresses
-            0xfe00...0xfe9f // Object Attribute Memory, in PPU / Sprite RAM
-                | 0xff40...0xff45 // LCDC, LCDStat, SCY, SCX, LY, LYC
-                | 0xff47...0xff4b // BGP, Object Palette Data 0-1, WY, WX, 
-                | 0xff68...0xff69 // LCD Color Palette for CGB
+            0xfe00..= 0xfe9f // Object Attribute Memory, in PPU / Sprite RAM
+                | 0xff40..= 0xff45 // LCDC, LCDStat, SCY, SCX, LY, LYC
+                | 0xff47..= 0xff4b // BGP, Object Palette Data 0-1, WY, WX, 
+                | 0xff68..= 0xff69 // LCD Color Palette for CGB
                 | 0xff4f => { // Destination Memory Bank
                 self.ppu.read(addr)
             }
 
             // Unused memory
-            0xfea0...0xfeff => 0,
+            0xfea0..= 0xfeff => 0,
 
             // 0xFF00 - 0xFF7F: Hardware I/O Registers
             // Details http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf pg35
@@ -67,7 +67,7 @@ impl Interconnect {
             0xff00 => self.gamepad.read(),
 
             // 0xFF01 - 0xFF02: serial I/O, used for linking up to other gameboy
-            0xff01...0xff02 => 0,
+            0xff01..= 0xff02 => 0,
             
             // 0xFF04: DIV/Divider Register, incremented 16384 times a second.
             //         Needs to be implemented in timer.
@@ -75,7 +75,7 @@ impl Interconnect {
             // 0xFF06: TMA / Timer Modulo - used when TIMA overflows.
             // 0xFF07: TAC / Timer Control. 3 bits: MSB is stop/start timer (0/1)
             //         2LSB is input clock speed (4096kHz, 262114 kHz, 65536kHz, 16384kHz)
-            0xff04...0xff07 => 0,
+            0xff04..= 0xff07 => 0,
 
             // 0xFF08 - 0xFFOE unused
 
@@ -86,14 +86,14 @@ impl Interconnect {
             0xffff => self.int_enable,
 
             // 0xFF10 - 0xFF3F: SPU (Not implemented yet)
-            0xff10...0xff3f => 0,
+            0xff10..= 0xff3f => 0,
 
             // http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf pg 55
             0xff46 => self.ppu_dma,
 
             // Unusable memory, used as a speed switch (TODO)
             // 0xff4d => 0, 
-            0xff80...0xfffe => self.zero_page[(addr - 0xff80) as usize],
+            0xff80..= 0xfffe => self.zero_page[(addr - 0xff80) as usize],
             
             _ => panic!("Read: addr not in range: 0x{:x}", addr),
         }
@@ -102,31 +102,31 @@ impl Interconnect {
     pub fn write(&mut self, addr: u16, val: u8) {
         match addr {
             // Cartridge rom
-            0x0000...0x7FFF => self.cart.write(addr, val),
+            0x0000..= 0x7FFF => self.cart.write(addr, val),
             // character ram (basically tile data)
-            0x8000...0x9FFF => self.ppu.write(addr, val),
+            0x8000..= 0x9FFF => self.ppu.write(addr, val),
             // Cartridge RAM to switch, now not available
-            0xA000...0xBFFF => {},
+            0xA000..= 0xBFFF => {},
             // Internal RAM (bank 0)
-            0xC000...0xCFFF => self.ram[(addr - 0xc000) as usize] = val,
+            0xC000..= 0xCFFF => self.ram[(addr - 0xc000) as usize] = val,
             // Internal RAM (Now fixed, will become switchable
-            0xD000...0xDFFF => self.ram[(addr - 0xc000) as usize] = val,
+            0xD000..= 0xDFFF => self.ram[(addr - 0xc000) as usize] = val,
             // Reserved part of RAM
-            0xE000...0xFDFF => self.write(addr - 0xe000 + 0xc000, val),
+            0xE000..= 0xFDFF => self.write(addr - 0xe000 + 0xc000, val),
 
             //0xFF00 => self.gamepad.write(val),
             0xFF00 => {},
 
             // Reserved memory for serial I/O Port
-            0xFF01...0xFF02 => {},
+            0xFF01..= 0xFF02 => {},
 
-            //0xFF04...0xFF07 =>self.timer.write(addr, val),
-            0xFF04...0xFF07 => {},
+            //0xFF04..= 0xFF07 =>self.timer.write(addr, val),
+            0xFF04..= 0xFF07 => {},
 
             // Serial Interrupt
             0xFF0F => self.int_flags = val,
             
-            //0xFF10...0xFF3F => self.spu.write(addr, val),
+            //0xFF10..= 0xFF3F => self.spu.write(addr, val),
             0xFF10..0xFF3F => {},
             
             // DMA Transfer, val is start address of DMA Transfer
@@ -136,7 +136,7 @@ impl Interconnect {
             }
 
             // VRAM Sprite Attribute Table
-            0xFE00...0xFE9F | 0xFF40...0xFF45 | 0xFF47...0xFF4B | 0xFF4F => {
+            0xFE00..= 0xFE9F | 0xFF40..= 0xFF45 | 0xFF47..= 0xFF4B | 0xFF4F => {
                         self.ppu.write(addr, val);
             }
 
@@ -147,7 +147,7 @@ impl Interconnect {
             // Tetris uses this address for some reason
             0xFF7F => {},
             // Set hwram
-            0xFF80...0xFFFE => self.hwram[(addr-0xFF80) as usize] = val,
+            0xFF80..= 0xFFFE => self.hwram[(addr-0xFF80) as usize] = val,
             // Set interrupt enable flag 
             0xFFFF => self.int_enable = val,
             _ => panic!("Write: addr not in range!! 0x{:x} - val: 0x{:x}", addr, val),
