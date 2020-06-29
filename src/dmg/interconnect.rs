@@ -95,7 +95,7 @@ impl Interconnect {
             // 0xff4d => 0, 
             0xff80..= 0xfffe => self.zero_page[(addr - 0xff80) as usize],
             
-            _ => panic!("Read: addr not in range: 0x{:x}", addr),
+            _ => 0 //panic!("Read: addr not in range: 0x{:x}", addr),
         }
     }
 
@@ -150,7 +150,7 @@ impl Interconnect {
             0xFF80..= 0xFFFE => self.hwram[(addr-0xFF80) as usize] = val,
             // Set interrupt enable flag 
             0xFFFF => self.int_enable = val,
-            _ => panic!("Write: addr not in range!! 0x{:x} - val: 0x{:x}", addr, val),
+            _ => {} // panic!("Write: addr not in range!! 0x{:x} - val: 0x{:x}", addr, val),
         }
     }
 
