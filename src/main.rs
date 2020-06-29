@@ -1,6 +1,3 @@
-//#[macro_use]
-// see if there is any errors,
-// new syntax: use bitflags::fn_name
 extern crate bitflags;
 extern crate minifb;
 
@@ -15,7 +12,7 @@ use std::io::{Read, Write};
 mod dmg;
 pub use dmg::*;
 
-// use dmg::console::{Console,Button,ButtonState,InputEvent,Cart};
+use dmg::console::{Console, Button,ButtonState,InputEvent, Cart}; 
 
 fn load_bin(path: &PathBuf) -> Box<[u8]> {
     let mut bytes = Vec::new();
@@ -28,7 +25,7 @@ fn save_bin(path: &PathBuf, bytes: Box<[u8]>) {
     let mut file = File::create(path).unwrap();
     file.write_all(&bytes).unwrap();
 }
-/*
+
 fn keycode_to_button(keycode: Key) -> Option<Button> {
     match keycode {
         Key::Space => Some(Button::A),
@@ -42,9 +39,7 @@ fn keycode_to_button(keycode: Key) -> Option<Button> {
         _ => None,
     }
 }
-*/
 
-/*
 fn make_events(current: Vec<Key>, prev: Vec<Key>) -> Vec<InputEvent> {
 
     let released: Vec<_> = prev.clone().into_iter().filter(|x| !current.contains(x)).collect();
@@ -65,7 +60,7 @@ fn make_events(current: Vec<Key>, prev: Vec<Key>) -> Vec<InputEvent> {
     }
     events
 }
-*/
+
 
 struct VideoSink<'a> {
     window: &'a mut Window
@@ -78,13 +73,14 @@ impl<'a> VideoSink<'a> {
         }
     }
 }
-/*
+
+
 impl<'a> dmg::console::VideoSink for VideoSink<'a> {
     fn frame_available(&mut self, frame: &Box<[u32]>) {
         self.window.update_with_buffer(frame)
     }
 }
-*/
+
 
 
 fn main() {
@@ -107,7 +103,7 @@ fn main() {
 
     println!("{:?}", cart);
 
-    // let mut console = Console::new(cart);
+    let mut console = Console::new(cart);
 
     let mut window = Window::new("rustgb",
                                  160,
@@ -117,22 +113,22 @@ fn main() {
 
     let sleep_time = std::time::Duration::from_millis(16);
 
-    // let mut prev_keys = Vec::new();
+    let mut prev_keys = Vec::new();
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
 
         let now = std::time::Instant::now();
 
-        // console.run_for_one_frame(&mut VideoSink::new(&mut window));
+        console.run_for_one_frame(&mut VideoSink::new(&mut window));
 
-        /*
+        
         if let Some(keys) = window.get_keys() {
             make_events(keys.clone(), prev_keys)
                 .into_iter()
                 .for_each(|e| console.handle_event(e));    
             prev_keys = keys
         }
-        */
+        
 
         let elapsed = now.elapsed();
         if sleep_time > elapsed {
@@ -141,7 +137,7 @@ fn main() {
         }
     }
 
-    // if let Some(ram) = console.copy_cart_ram() {
-    //     save_bin(&save_ram_path, ram)
-    // }
+    if let Some(ram) = console.copy_cart_ram() {
+        save_bin(&save_ram_path, ram)
+    }
 }
