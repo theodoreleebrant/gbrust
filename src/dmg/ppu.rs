@@ -171,7 +171,7 @@ impl Mode {
     }
 }
 
-pub struct PPU {
+pub struct Ppu {
     lcdc: Lcdc,
     lcdstat: LCDStat,
     scx: u8,
@@ -190,9 +190,9 @@ pub struct PPU {
 
 }
 
-impl PPU {
+impl Ppu {
     pub fn new() -> Self {
-        PPU {
+        Ppu {
             lcdc: Lcdc::new(),
             lcdstat: LCDStat::new(),
             scx: 0,
