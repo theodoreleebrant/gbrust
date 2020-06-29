@@ -98,7 +98,7 @@ impl Interconnect {
             _ => panic!("Read: addr not in range: 0x{:x}", addr),
         }
     }
-    
+
     pub fn write(&mut self, addr: u16, val: u8) {
         match addr {
             // Cartridge rom
@@ -140,8 +140,8 @@ impl Interconnect {
                         self.ppu.write(addr, val);
             }
 
-            // Speedswitch (GBC?)
-            0xFF4D => {},
+            // Speedswitch TODO, not implemented yet. Uses unused mem.
+            // 0xFF4D => {},
             // for update_ram_offset(GBC?)
             0xFF70 => {},
             // Tetris uses this address for some reason
@@ -152,5 +152,28 @@ impl Interconnect {
             0xFFFF => self.int_enable = val,
             _ => panic!("Write: addr not in range!! 0x{:x} - val: 0x{:x}", addr, val),
         }
+    }
+
+    fn ppu_dma_transfer(&mut self) {
+        // From PanDocs:
+        // Writing to this register launches a DMA transfer 
+        // from ROM or RAM to OAM memory (sprite attribute table). 
+        // The written value specifies the transfer source address 
+        // divided by 0x100, ie. source & destination are:
+        // Source:      XX00-XX9F   ;XX in range from 00-F1h
+        // Destination: FE00-FE9F
+
+        let dma_start = (self.ppu_dma as u16) << 8;
+        let dma_end = dma_start | 0x009f; //127, size of DMA
+
+        // OAM_SIZE in ppu is the address for OAM, 0x100
+        let mut oam = vec![0; super::ppu::OAM_SIZE].into_boxed_slice();
+
+        for a in dma_start..dma_end {
+            oam[(a - dma_start) as usize] = self.read(a)
+        }
+
+        // just sets OAM memory
+        self.ppu.oam_dma_transfer(oam)
     }
 }
