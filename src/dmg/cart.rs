@@ -29,6 +29,9 @@ impl Cart {
         }
     }
 
+    pub fn write(&self, addr: u16, val: u8) { // read only, does not do anything
+    }
+
     pub fn get_logo(&self) -> &[u8] {
         let slice = &self.program[0x0104..0x0133];
         slice
