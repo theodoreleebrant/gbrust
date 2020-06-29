@@ -98,7 +98,7 @@ impl Interconnect {
             _ => panic!("Read: addr not in range: 0x{:x}", addr),
         }
     }
-
+    
     pub fn write(&mut self, addr: u16, val: u8) {
         match addr {
             // Cartridge rom
