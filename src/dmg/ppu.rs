@@ -198,14 +198,15 @@ impl PPU {
             wy: 0,
             wx: 7,
             vram: [u8; VRAM_SIZE],
-            oam: [u8; OAM_SIZE),
+            oam: [u8; OAM_SIZE],
+            lcd_screen: [u8; DISPLAY_WIDTH * DISPLAY_HEIGHT], // array of bytes representing lcd_screen
         }
     }
 
     pub fn write(&mut self, addr: u16, val: u8) {
         match addr {
             0x8000..0x97ff => { // tile data
-                let addr = addr - 0x8000;
+                let addr = addr - TILE_BASE_ADDR;
                 self.vram[addr as usize] = val;
             },
             0xFF40 => self.lcdc.set_flags(val),
@@ -225,7 +226,7 @@ impl PPU {
     pub fn read(&mut self, addr: u16) -> u8 {
         match addr {
             0x8000..0x97ff => { // tile data
-                let addr = addr - 0x8000;
+                let addr = addr - TILE_BASE_ADDR;
                 self.vram[addr as usize]
             },  
             0xFF40 => self.lcdc.get_flags(),
@@ -427,12 +428,12 @@ impl PPU {
                     let color = self.get_color(color_num, palette_num);
                     
                     // x_pix goes opposite direction with tile_pixel (if tile_pixel goes from 7 to
-                    // 0, x_pix goes from 0 to 7
+                    // 0, x_pix goes from 0 to 7 (FIFO)
                     let x_pix = (0 as u8).wrapping_sub(tile_pixel as u8).wrapping_add(7);
                     // Go to the specific pixel's x-coordinate, y-coordinate is the scanline
                     let pixel_x = x_pos.wrapping_add(x_pix);
                    
-                    // scanline > 143 => VBlank
+                    // scanline > 143 => VBlank => Nothing in background
                     // pixel_x > 159 => not drawn
                     if scanline > 143 || pixel_x > 159 {
                         continue;
@@ -467,14 +468,31 @@ impl PPU {
     }
 
     pub fn set_sprite_pixel(&mut self, pixel_x: u32, y_line: u32, priority: bool, color: Color) {
-        // offset: Where pixel is relative to base addr. Each line = 10 sprites, each sprite takes
-        // up 16 bytes
-        let offset = ((y_line * 160) + x) as usize;
-        let pixel = Color {
-            
+        // tile_index: from coordinates, derive index of tile in array of bytes representing lcd_screen. 
+        // Each y coordinate can contain 160 (display width) tiles
+        let tile_index = ((y_line * DISPLAY_WIDTH) + pixel_x) as usize;
 
+        let prev_pixel = Color {
+            a: (self.lcd_tiles[lcd_screen] >> 24) as u8,
+            r: (self.lcd_tiles[lcd_screen] >> 16) as u8,
+            g: (self.lcd_tiles[lcd_screen] >> 8) as u8,
+            b: self.lcd_tiles[lcd_screen] as u8,
+        };
 
+        // if color of previous tile is not white and it has higher priority, don't draw next tile
+        if prev_pixel != WHITE && priority {
+            return;
+        } else {
+            self.set_pixel(pixel_x, y_line, color)
+        }
+    }
 
+    pub fn set_pixel(&mut self, x: u32, y: u32, color: Color) {
+        let lcd_screen = ((y * DISPLAY_WIDTH) + x) as usize;
+        
+        let c = ((color.a as u32) << 24) | ((color.r as u32) << 16) | ((color.g as u32) << 8) | (color.b as u32);
+
+        self.lcd_tiles[lcd_screen] = c;
     }
 
 }
