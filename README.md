@@ -52,10 +52,10 @@ This project is indebted to the numerous documentations as well as other similar
 
 
 Other Gameboy emulators written in Rust:
-[by simias](https://github.com/simias/gb-rs)
-[by ev-wilt](https://github.com/ev-wilt/rusty_boy_DMG)
+[by simias](https://github.com/simias/gb-rs)  
+[by ev-wilt](https://github.com/ev-wilt/rusty_boy_DMG)  
 [by dimitribobkov](https://github.com/dimitribobkov/gameboy)
 
 Other projects:
-[Blargg's test suite](https://gbdev.gg8.se/files/roms/blargg-gb-tests/) - Used for testing components of the Gameboy.
+[Blargg's test suite](https://gbdev.gg8.se/files/roms/blargg-gb-tests/) - Used for testing components of the Gameboy.  
 [Yet another CHIP-8 Rust Emulator](https://github.com/theodoreleebrant/YARC) - Used to model the structure of this emulator
