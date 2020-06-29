@@ -17,6 +17,10 @@ const VBLANK_CYCLES: u32 = 456;
 const OAM_CYCLES: u32 = 80;
 const VRAM_CYCLES: u32 = 172;
 
+const SPRITES_PER_Y_LINE = 40;
+const TILE_BYTES = 16;
+const TILE_BASE_ADDR = 0x8000;
+
 #[derive(Debug,PartialEq,Eq)]
 struct Color {
     r: u8,
@@ -358,7 +362,7 @@ impl PPU {
         
         // maximum 40 sprites in the screen
         for sprite in 0..40 { 
-            // each sprite takes up 4 bytes(8*8 pixel)
+            // sprite information takes up 4 bytes in OAM
             let index: u8 = sprite * 4;
             // y-coordinate of top left corner
             let y_pos = self.oam[index as usize].wrapping_sub(16); 
@@ -393,8 +397,8 @@ impl PPU {
                     rank
                 };
                 // tile data is stored in Vram at base addr 0x8000, each tile is 16-byte long.
-                // From base addr, go to specified 16-byte tile, then identify the exact starting addr of sprite.
-                let sprite_addr = 0x8000 + (sprite_tile_addr * 16) + (rank as u16) * 2;
+                // From base addr, go to specified 16-byte tile, then identify the exact starting addr of sprite color info.
+                let sprite_addr = TILE_BASE_ADDR + (sprite_tile_addr * TILE_BYTES) + (rank as u16) * 2;
                 let lsb_line = self.read(sprite_addr as usize);
                 let msb_line = self.read((sprite_addr + 1) as usize);
 
@@ -462,8 +466,12 @@ impl PPU {
         }
     }
 
-    pub fn set_sprite_pixel(&mut self, pixel_x: u32, pixel_y: u32, priority: bool, color: Color) {
-        
+    pub fn set_sprite_pixel(&mut self, pixel_x: u32, y_line: u32, priority: bool, color: Color) {
+        // offset: Where pixel is relative to base addr. Each line = 10 sprites, each sprite takes
+        // up 16 bytes
+        let offset = ((y_line * 160) + x) as usize;
+        let pixel = Color {
+            
 
 
 
