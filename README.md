@@ -51,7 +51,7 @@ This project is indebted to the numerous documentations as well as other similar
 [Natesh's Dev Blog](https://nnarain.github.io/2016/09/09/Gameboy-LCD-Controller.html) - Used it to understand LCD controller for the Gameboy  
 
 
-Other Gameboy emulators written in Rust:
+Other Gameboy emulators written in Rust:  
 [by simias](https://github.com/simias/gb-rs)  
 [by ev-wilt](https://github.com/ev-wilt/rusty_boy_DMG)  
 [by dimitribobkov](https://github.com/dimitribobkov/gameboy)
