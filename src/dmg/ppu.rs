@@ -175,6 +175,11 @@ pub struct PPU {
     lyc: u8,
     wy: u8,
     wx: u8,
+
+    // information for palette
+    bgp: u8,    // BG Palette Data, addr at FF47
+    obp0: u8,   // Object Palette 0 Data, addr at FF48
+    obp1: u8,   // Object palette 1 data, addr at FF49
 }
 
 impl PPU {
@@ -207,6 +212,9 @@ impl PPU {
             0xFF45 => self.lyc = val,
             0xFF4A => self.wy = val,
             0xFF4B => self.wx = val,
+            0xFF47 => self.bgp = val,
+            0xFF48 => self.obp0 = val,
+            0xFF49 => self.obp1 = val,
         }
     }
 
@@ -224,6 +232,9 @@ impl PPU {
             0xFF45 => self.lyc,
             0xFF4A => self.wy,
             0xFF4B => self.wx,
+            0xFF47 => self.bgp,
+            0xFF48 => self.obp0,
+            0xFF49 => self.obp1,
         }
     }
 
@@ -343,7 +354,7 @@ impl PPU {
     }
     
     pub fn render_sprites(&mut self) {
-        let use_8x16 = self.lcdc.sprite_size;
+        let is_size_8x16: bool = self.lcdc.sprite_size;
         
         // maximum 40 sprites in the screen
         for sprite in 0..40 { 
@@ -361,31 +372,29 @@ impl PPU {
             let obj_to_bg_priority = (attributes & 0b1000_0000) >> 7;
             let y_flip = (attributes & 0b0100_0000) >> 6;
             let x_flip = (attributes & 0b0010_0000) >> 5;
-            let palette_num = (attributes & 0b0001_0000) >> 4;
+            let palette_bit = (attributes & 0b0001_0000) >> 4;
            
             // will display the first 10 sprites appearing on this line
             let scanline = self.ly;
 
-            let y_size = if use_8x16 { 16 } else { 8 };
+            let y_size = if is_size_8x16 { 16 } else { 8 };
             let x_size = 8;
 
             // Compares scanline to self.ly to find the 10 sprites on the line that appear first
-            // on OAM. (FE00-FE03 = first sprite, FE04 - FE07 2nd sprite and so on.
+            // on OAM. (FE00-FE03 = first sprite, FE04 - FE07 2nd sprite and so on. Rank is used to
+            // store order of appearance
             if scanline >= y_pos && scanline < (y_pos.wrapping_add(y_size)) {
                 // Finding out which line sprite is at in the OAM.
-                let line: i32 = scanline as i32 - y_pos as i32;
+                let rank: i32 = scanline as i32 - y_pos as i32;
                 // if y_flip: mirror the line over the y-axis, so find in the other direction.
-                let line = if (y_flip as bool) {
+                let rank = if (y_flip as bool) {
                     (line - y_size as i32) * (-1)
                 } else {
-                    line
+                    rank
                 };
-            
-                // each sprite is represented by 2 bytes, so distance is x2.
-                let line = line * 2;
-                
-                // addr = base_addr + wtf is going on
-                let sprite_addr = 0x8000 + (sprite_tile_addr * 16) + line as u16;
+                // tile data is stored in Vram at base addr 0x8000, each tile is 16-byte long.
+                // From base addr, go to specified 16-byte tile, then identify the exact starting addr of sprite.
+                let sprite_addr = 0x8000 + (sprite_tile_addr * 16) + (rank as u16) * 2;
                 let lsb_line = self.read(sprite_addr as usize);
                 let msb_line = self.read((sprite_addr + 1) as usize);
 
@@ -405,21 +414,59 @@ impl PPU {
                         continue;
                     }
                     // get sprite color
+                    let palette_num = if palette_bit == 0 {
+                        self.obp0
+                    } else {
+                        self.obp1
+                    };
+
                     let color = self.get_color(color_num, palette_num);
                     
-                    let x_pix = (0 as u8).wrapping_sub(tile_pixel as u8).wrapping_add(7); // ??
-                    let pixel = x_pos.wrapping_add(x_pix); //??
-                    
-                    if scanline > 143 || pixel > 159 {
+                    // x_pix goes opposite direction with tile_pixel (if tile_pixel goes from 7 to
+                    // 0, x_pix goes from 0 to 7
+                    let x_pix = (0 as u8).wrapping_sub(tile_pixel as u8).wrapping_add(7);
+                    // Go to the specific pixel's x-coordinate, y-coordinate is the scanline
+                    let pixel_x = x_pos.wrapping_add(x_pix);
+                   
+                    // scanline > 143 => VBlank
+                    // pixel_x > 159 => not drawn
+                    if scanline > 143 || pixel_x > 159 {
                         continue;
                     }
 
-                    self.set_sprite_pixel(pixel as u32, scanline as u32, obj_to_bg_priority, color);
+                    self.set_sprite_pixel(pixel_x as u32, scanline as u32, obj_to_bg_priority, color);
                 }
             }
         }
     }
 
+    pub fn get_color(color_id: u8, palette_num: u8) -> Color {
+        // Determine which bit to look at in palette num, based on color number 0 1 2 or 3
+        let (msb, lsb) = match color_id {
+            0 => (1, 0),
+            1 => (3, 2),
+            2 => (5, 4),
+            3 => (7, 6),
+        };
 
+        // put specified bits together from palette num
+        let color = (((palette_num >> msb) & 0x01) << 1) | ((palette_num >> lsb) & 0x01);
+        
+        // Return color based on specified number in color
+        match color  {
+            0 => WHITE,
+            1 => LIGHT_GRAY,
+            2 => DARK_GRAY,
+            3 => BLACK,
+            _ => panic!("Invalid color!!: 0x{:x}", color),
+        }
+    }
+
+    pub fn set_sprite_pixel(&mut self, pixel_x: u32, pixel_y: u32, priority: bool, color: Color) {
+        
+
+
+
+    }
 
 }
