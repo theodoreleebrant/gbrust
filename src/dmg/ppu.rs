@@ -63,19 +63,19 @@ struct Lcdc {
     sprite_size: bool,
     sprite_display_enable: bool,
     bg_window_display_priority: bool,
-};
+}
 
 impl Lcdc {
     pub fn new() -> Self {
         Lcdc {
-            lcd_display_enable = true,
-            window_tile_map_display_select = false,
-            window_display_enable = false,
-            bg_window_tile_data_select = true,
-            bg_tile_map_display_select = false,
-            sprite_size = false,
-            sprite_display_enable = false,
-            bg_window_display_priority = true,
+            lcd_display_enable : true,
+            window_tile_map_display_select : false,
+            window_display_enable : false,
+            bg_window_tile_data_select : true,
+            bg_tile_map_display_select : false,
+            sprite_size : false,
+            sprite_display_enable : false,
+            bg_window_display_priority : true,
         } 
     }
 
