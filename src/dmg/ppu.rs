@@ -7,22 +7,22 @@ pub const DISPLAY_HEIGHT: usize = 144;
 
 pub const VRAM_SIZE: usize = 1024*16; // 16KB Vram
 
-const MODE_HBLANK: u32 = 0;
-const MODE_VBLANK: u32 = 1;
-const MODE_OAM: u32 = 2;
-const MODE_VRAM: u32 = 3;
+const MODE_HBLANK: u8 = 0;
+const MODE_VBLANK: u8 = 1;
+const MODE_OAM: u8 = 2;
+const MODE_VRAM: u8 = 3;
 
 const HBLANK_CYCLES: u32 = 204;
 const VBLANK_CYCLES: u32 = 456;
 const OAM_CYCLES: u32 = 80;
 const VRAM_CYCLES: u32 = 172;
 
-const SPRITES_PER_Y_LINE = 40;
-const TILE_BYTES = 16;
-const TILE_BASE_ADDR = 0x8000;
+const SPRITES_PER_Y_LINE: u16 = 40;
+const TILE_BYTES: u16 = 16;
+const TILE_BASE_ADDR: u16 = 0x8000;
 
 #[derive(Debug,PartialEq,Eq)]
-struct Color {
+pub struct Color {
     r: u8,
     g: u8,
     b: u8,
@@ -81,24 +81,24 @@ impl Lcdc {
 
     pub fn set_flags(&mut self, flags: u8) {
         self.lcd_display_enable = (flags & 0x80) == 1;
-        self.window_tile_map_display_select: = (flags & 0x40) == 1;
-        self.window_display_enable: = (flags & 0x20) == 1;
-        self.bg_window_tile_data_select: = (flags & 0x10) == 1;
-        self.bg_tile_map_display_select: = (flags & 0x08) == 1;
-        self.sprite_size: = (flags & 0x04) == 1;
-        self.sprite_display_enable: = (flags & 0x02) == 1;
-        self.bg_window_display_priority: = (flags & 0x01) == 1;
+        self.window_tile_map_display_select = (flags & 0x40) == 1;
+        self.window_display_enable = (flags & 0x20) == 1;
+        self.bg_window_tile_data_select = (flags & 0x10) == 1;
+        self.bg_tile_map_display_select = (flags & 0x08) == 1;
+        self.sprite_size = (flags & 0x04) == 1;
+        self.sprite_display_enable = (flags & 0x02) == 1;
+        self.bg_window_display_priority = (flags & 0x01) == 1;
     }
 
     pub fn get_flags(&mut self) -> u8 {
-        (lcd_display_enable as u8) << 7 
-            + (window_tile_map_display_select as u8) << 6
-            + (window_display_enable as u8) << 5
-            + (bg_window_display_priority as u8) << 4
-            + (bg_tile_map_display_select as u8) << 3
-            + (sprite_size as u8) << 2
-            + (sprite_display_enable as u8) << 1
-            + (bg_window_display_priority as u8)
+        (self.lcd_display_enable as u8) << 7 
+            + (self.window_tile_map_display_select as u8) << 6
+            + (self.window_display_enable as u8) << 5
+            + (self.bg_window_display_priority as u8) << 4
+            + (self.bg_tile_map_display_select as u8) << 3
+            + (self.sprite_size as u8) << 2
+            + (self.sprite_display_enable as u8) << 1
+            + (self.bg_window_display_priority as u8)
     }
 }
 
@@ -124,21 +124,21 @@ impl LCDStat {
     }
 
     pub fn set_flags(&mut self, flags: u8) {
-        lcd_ly_coincidence_interrupt = (flags & 0x40) == 1;
-        mode_2_oam_interrupt = (flags & 0x20) == 1;
-        mode_1_vblank_interupt = (flags & 0x10) == 1;
-        mode_0_hblank_interrupt = (flags & 0x8) == 1;
+        self.lcd_ly_coincidence_interrupt = (flags & 0x40) == 1;
+        self.mode_2_oam_interrupt = (flags & 0x20) == 1;
+        self.mode_1_vblank_interupt = (flags & 0x10) == 1;
+        self.mode_0_hblank_interrupt = (flags & 0x8) == 1;
         //coincidence_flag read only
         //mode_flag read only
     }
 
     pub fn get_flags(&mut self) -> u8 {
-        (lcd_ly_coincidence_interrupt as u8) << 6
-            + (mode_2_oam_interrupt as u8) << 5
-            + (mode_1_vblank_interupt as u8) << 4
-            + (mode_0_hblank_interrupt as u8) << 3
-            + (coincidence_flag as u8) << 2
-            + mode_flag.get_flags() 
+        (self.lcd_ly_coincidence_interrupt as u8) << 6
+            + (self.mode_2_oam_interrupt as u8) << 5
+            + (self.mode_1_vblank_interupt as u8) << 4
+            + (self.mode_0_hblank_interrupt as u8) << 3
+            + (self.coincidence_flag as u8) << 2
+            + self.mode_flag.get_flags() 
     }
 }
 
@@ -166,6 +166,7 @@ impl Mode {
             MODE_VBLANK => Mode::vblank,
             MODE_OAM => Mode::oam,
             MODE_VRAM => Mode::vram,
+            _ => panic!("Unknown mode code"),
         }
     }
 }
@@ -179,11 +180,14 @@ pub struct PPU {
     lyc: u8,
     wy: u8,
     wx: u8,
-
     // information for palette
     bgp: u8,    // BG Palette Data, addr at FF47
     obp0: u8,   // Object Palette 0 Data, addr at FF48
     obp1: u8,   // Object palette 1 data, addr at FF49
+    vram: [u8; VRAM_SIZE],
+    oam: [u8; OAM_SIZE],
+    lcd_tiles: [u32; DISPLAY_WIDTH * DISPLAY_HEIGHT], // array of bytes representing all lcd tiles
+
 }
 
 impl PPU {
@@ -194,18 +198,21 @@ impl PPU {
             scx: 0,
             scy: 0,
             ly: 0,
-            lyc: false,
+            lyc: 0,
             wy: 0,
             wx: 7,
-            vram: [u8; VRAM_SIZE],
-            oam: [u8; OAM_SIZE],
-            lcd_screen: [u8; DISPLAY_WIDTH * DISPLAY_HEIGHT], // array of bytes representing lcd_screen
+            bgp: 0,
+            obp0: 0,
+            obp1: 0,
+            vram: [0; VRAM_SIZE],
+            oam: [0; OAM_SIZE],
+            lcd_tiles: [0; DISPLAY_WIDTH * DISPLAY_HEIGHT], // array of bytes representing lcd_screen
         }
     }
 
     pub fn write(&mut self, addr: u16, val: u8) {
         match addr {
-            0x8000..0x97ff => { // tile data
+            0x8000...0x97ff => { // tile data
                 let addr = addr - TILE_BASE_ADDR;
                 self.vram[addr as usize] = val;
             },
@@ -220,12 +227,13 @@ impl PPU {
             0xFF47 => self.bgp = val,
             0xFF48 => self.obp0 = val,
             0xFF49 => self.obp1 = val,
+            _ => panic!("Unsupported address to write to"),
         }
     }
 
     pub fn read(&mut self, addr: u16) -> u8 {
         match addr {
-            0x8000..0x97ff => { // tile data
+            0x8000...0x97ff => { // tile data
                 let addr = addr - TILE_BASE_ADDR;
                 self.vram[addr as usize]
             },  
@@ -240,10 +248,11 @@ impl PPU {
             0xFF47 => self.bgp,
             0xFF48 => self.obp0,
             0xFF49 => self.obp1,
+            _ => panic!("Unsupported address to write to"),
         }
     }
 
-    pub fn oam_dma_transfer(&mut self, oam: Box<[u8]>) {
+    pub fn oam_dma_transfer(&mut self, oam: [u8; OAM_SIZE]) {
         self.oam = oam;
     }
 
@@ -274,7 +283,7 @@ impl PPU {
             (0x8000, false)
         } else {
             (0x8800, true)
-        }   
+        };   
 
         // See VRAM Background Maps in PanDocs
         let background_mem = if use_window {
@@ -291,14 +300,14 @@ impl PPU {
             } else {
                 0x9800
             }
-        }
+        };
 
         // set the y-position (top row)
         let y_pos = if use_window {
             scanline.wrapping_sub(window_y)
         } else {
             scroll_y.wrapping_add(scanline)
-        }
+        };
 
         // 32 tiles per row, 8 pixels each
         let tile_row: u16 = (y_pos / 8) as u16 * 32;
@@ -315,7 +324,7 @@ impl PPU {
                 scroll_x.wrapping_add(scroll_x)
             };
 
-            let tile_col: u16 = (x_pos / 8);
+            let tile_col: u16 = (x_pos / 8) as u16;
 
             // Base address of the tile
             let tile_address = background_mem + tile_row + tile_col;
@@ -392,21 +401,21 @@ impl PPU {
                 // Finding out which line sprite is at in the OAM.
                 let rank: i32 = scanline as i32 - y_pos as i32;
                 // if y_flip: mirror the line over the y-axis, so find in the other direction.
-                let rank = if (y_flip as bool) {
-                    (line - y_size as i32) * (-1)
+                let rank = if y_flip > 0 {
+                    (rank - y_size as i32) * (-1)
                 } else {
                     rank
                 };
                 // tile data is stored in Vram at base addr 0x8000, each tile is 16-byte long.
                 // From base addr, go to specified 16-byte tile, then identify the exact starting addr of sprite color info.
                 let sprite_addr = TILE_BASE_ADDR + (sprite_tile_addr * TILE_BYTES) + (rank as u16) * 2;
-                let lsb_line = self.read(sprite_addr as usize);
-                let msb_line = self.read((sprite_addr + 1) as usize);
+                let lsb_line = self.read(sprite_addr as u16);
+                let msb_line = self.read((sprite_addr + 1) as u16);
 
                 // looking at every pair of bit from 7 to 0, if x_flip we look at them from 0 to 7.
                 for tile_pixel in (0..8).rev() {
                     let color_bit = tile_pixel as i32;
-                    let color_bit = if x_flip as bool {
+                    let color_bit = if x_flip > 0 {
                         (color_bit - 7) * (-1)
                     } else {
                         color_bit
@@ -439,19 +448,20 @@ impl PPU {
                         continue;
                     }
 
-                    self.set_sprite_pixel(pixel_x as u32, scanline as u32, obj_to_bg_priority, color);
+                    self.set_sprite_pixel(pixel_x as u32, scanline as u32, obj_to_bg_priority > 0, color);
                 }
             }
         }
     }
 
-    pub fn get_color(color_id: u8, palette_num: u8) -> Color {
+    pub fn get_color(&mut self, color_id: u8, palette_num: u8) -> Color {
         // Determine which bit to look at in palette num, based on color number 0 1 2 or 3
         let (msb, lsb) = match color_id {
             0 => (1, 0),
             1 => (3, 2),
             2 => (5, 4),
             3 => (7, 6),
+            _ => panic!("Unsupported color"),
         };
 
         // put specified bits together from palette num
@@ -470,13 +480,13 @@ impl PPU {
     pub fn set_sprite_pixel(&mut self, pixel_x: u32, y_line: u32, priority: bool, color: Color) {
         // tile_index: from coordinates, derive index of tile in array of bytes representing lcd_screen. 
         // Each y coordinate can contain 160 (display width) tiles
-        let tile_index = ((y_line * DISPLAY_WIDTH) + pixel_x) as usize;
+        let tile_index = ((y_line * DISPLAY_WIDTH as u32) + pixel_x) as usize;
 
         let prev_pixel = Color {
-            a: (self.lcd_tiles[lcd_screen] >> 24) as u8,
-            r: (self.lcd_tiles[lcd_screen] >> 16) as u8,
-            g: (self.lcd_tiles[lcd_screen] >> 8) as u8,
-            b: self.lcd_tiles[lcd_screen] as u8,
+            a: (self.lcd_tiles[tile_index] >> 24) as u8,
+            r: (self.lcd_tiles[tile_index] >> 16) as u8,
+            g: (self.lcd_tiles[tile_index] >> 8) as u8,
+            b: self.lcd_tiles[tile_index] as u8,
         };
 
         // if color of previous tile is not white and it has higher priority, don't draw next tile
@@ -488,11 +498,11 @@ impl PPU {
     }
 
     pub fn set_pixel(&mut self, x: u32, y: u32, color: Color) {
-        let lcd_screen = ((y * DISPLAY_WIDTH) + x) as usize;
+        let tile_index = ((y * DISPLAY_WIDTH as u32) + x) as usize;
         
         let c = ((color.a as u32) << 24) | ((color.r as u32) << 16) | ((color.g as u32) << 8) | (color.b as u32);
 
-        self.lcd_tiles[lcd_screen] = c;
+        self.lcd_tiles[tile_index] = c;
     }
 
 }
