@@ -166,13 +166,13 @@ impl Interconnect {
         let dma_end = dma_start | 0x009f; //127, size of DMA
 
         // OAM_SIZE in ppu is the address for OAM, 0x100
-        let mut oam = vec![0; super::ppu::OAM_SIZE].into_boxed_slice();
+        let mut oam = [0; super::ppu::OAM_SIZE];
 
         for a in dma_start..dma_end {
             oam[(a - dma_start) as usize] = self.read(a)
         }
 
         // just sets OAM memory
-        self.ppu.oam_dma_transfer(oam.unbox());
+        self.ppu.oam_dma_transfer(oam);
     }
 }
