@@ -118,10 +118,14 @@ pub fn read(addr: u16) -> u16 {
         0xff80..=0xfffe => 14,
         
         //should be readable, not implemented?
-        0xff03 | 0xff08 | 0xff09 => 15,
+        0xff03 
+            | 0xff08..=0xff09 
+            | 0xff0a..=0xff0e 
+            | 0xff4c..=0xff67 
+            | 0xff6a..=0xff7f
+            => 15,
 
-        _ => addr
-        // panic!("Read: addr not in range: 0x{:x}", addr),
+        _ =>  panic!("Read: addr not in range: 0x{:x}", addr),
     }
 }
 
