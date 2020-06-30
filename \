@@ -128,7 +128,7 @@ impl Cpu {
     }
 
     // Implement how to handle interrupts, depending on registers IME, IF, IE
-    pub fn handle_interrupt(&mut self) -> u32 {
+    pub fn handle_interrupt(&mut self) {
         // int_flags(IF) indicate the interrupt signals requested.
         // int_enable(IE) indicate which I/O device can send interrupt.
         // all_ints: I/O devices with enabled interrupt AND sending signal.
@@ -156,16 +156,16 @@ impl Cpu {
             _ => panic!("Invalid interrupt! {:x}", int),
         };
         
-        // After handling request, reset correspoding bit
+        // After handling request, reset that bit
         self.interconnect.int_flags &= 0xff << (interrupt_bit + 1);
-        // reset ime
+        // disable all interrupt until further notice
         self.ime = false;
 
         let pc = self.reg.pc;
         self.push_u16(pc);
-        self.reg.pc = int_hardware as u16;
+        self.reg.pc = int_hardware;
 
-        20 // y tho, in PanDoc says 5 machine cycles. TODO: confirm this
+        20
     }
 
     pub fn execute_opcode(&mut self) -> u32 {
