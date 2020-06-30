@@ -1,3 +1,6 @@
+use super::Interrupts;
+use super::console::VideoSink;
+
 pub const OAM_SIZE: usize = 0x100; // address for OAM
 // const FRAMEBUFFER_SIZE: usize = DISPLAY_WIDTH * DISPLAY_HEIGHT; // address for the full frame,
 // not used at the moment
@@ -252,6 +255,12 @@ impl Ppu {
             0xFF49 => self.obp1,
             _ => panic!("Unsupported address to write to"),
         }
+    }
+
+    pub fn cycle_flush(&mut self, cycle_count: u32, video_sink: &mut dyn VideoSink) -> Interrupts {
+        Interrupts::empty() // temporary, will change later        
+
+
     }
 
     pub fn oam_dma_transfer(&mut self, oam: [u8; OAM_SIZE]) {
