@@ -1,10 +1,10 @@
 // Cartride file!!
 // Handles all reading files
-use std::fmt;
+// use std::fmt;  Unused for now, removed to not incur the wrath of compiler
 use std::fmt::Debug;
 use std::string::String;
 
-use super::dmg_cpu::*;
+// use super::dmg_cpu::*;
 
 #[derive(Debug)]
 pub struct Cart {
@@ -19,7 +19,7 @@ pub enum DestinationCode {
 
 // will be more in the future
 pub enum CartType {
-    ROM_ONLY,
+    RomOnly,
 }
 
 impl Cart {
@@ -29,7 +29,8 @@ impl Cart {
         }
     }
 
-    pub fn write(&self, addr: u16, val: u8) { // read only, does not do anything
+    pub fn write(&self, _addr: u16, _val: u8) { 
+        // Gameboy: read only, does not do anything
     }
 
     pub fn get_logo(&self) -> &[u8] {
@@ -48,7 +49,7 @@ impl Cart {
 
     pub fn get_type(&self) -> CartType {
         match self.program[0x0147] {
-            0x00 => CartType::ROM_ONLY,
+            0x00 => CartType::RomOnly,
             _ => panic!("Haven't developed MBCs yet!"),
         }
     }
@@ -84,7 +85,7 @@ impl Cart {
         let default = self.program[0x014D];
 
         let mut x: i16 = 0;
-        let mut final_x: u8;
+        let final_x: u8;
         for i in 0x0134..0x014C {
             x = x - (self.program[i] as i16) - 1;
         }

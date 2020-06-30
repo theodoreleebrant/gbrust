@@ -42,7 +42,7 @@ pub struct Registers {
 	// 16-bit pair registers
 	BC: u16,
 	DE: u16,
-	HL: u16,
+	hl: u16,
 
 	// Special registers
 	F: u8,      // Special flag register
@@ -69,7 +69,7 @@ impl Registers {
 
             BC: 0x0013,
             DE: 0x00D8,
-            HL: 0x014D,
+            hl: 0x014D,
 
             F: 0xB0,
             SP: 0xFFFE,
@@ -139,6 +139,7 @@ impl Cpu {
 
         let pc_change = match parts {
             // opcodes starting with 00
+<<<<<<< HEAD
             (0b00, 0b110, 0b110, _, _) => self.ld_addr_HL_n(),
             (0b00, 0b001, 0b010, _, _) => self.ld_A_addr_BC(),
             (0b00, 0b011, 0b010, _, _) => self.ld_A_addr_DE(),
@@ -195,6 +196,7 @@ impl Cpu {
             (0b10, 0b111, _, _, _) => self.cp_r(),
             
             // opcodes starting with 11
+<<<<<<< HEAD
             (0b11, 0b111, 0b010, _, _) => self.ld_A_addr_nn(),
             (0b11, 0b101, 0b010, _, _) => self.ld_addr_nn_A(),
             (0b11, 0b110, 0b010, _, _) => self.ldh_A_addr_offset_C(),
@@ -258,15 +260,15 @@ impl Cpu {
             (0b00, 0b110, _) => self.swap(),
 
             // starting with 01
-            (0b01, _, 0b110) => self.bit_b_HL(),
+            (0b01, _, 0b110) => self.bit_b_hl(),
             (0b01, _, _) => self.bit_b_r(),
 
             // starting with 10
-            (0b10, _, 0b110) => self.res_b_HL(),
+            (0b10, _, 0b110) => self.res_b_hl(),
             (0b10, _, _) => self.res_b_r(),
 
             // starting with 11
-            (0b11, _, 0b110) => self.set_b_HL(),
+            (0b11, _, 0b110) => self.set_b_hl(),
             (0b11, _, _) => self.set_b_r(),
             
             // panik if no match
@@ -370,7 +372,7 @@ impl Cpu {
                 self.reg.E = lsb;
             },
             HL_ID => {
-                self.reg.HL = content;
+                self.reg.hl = content;
                 self.reg.H = msb;
                 self.reg.L = lsb;
             },
@@ -388,7 +390,7 @@ impl Cpu {
         match r16_id {
             BC_ID => result = self.reg.BC,
             DE_ID => result = self.reg.DE,
-            HL_ID => result = self.reg.HL,
+            HL_ID => result = self.reg.hl,
             SP_ID => result = self.reg.SP,
             _ => return None,
         }
@@ -447,7 +449,7 @@ impl Cpu {
     
     pub fn rotate_r8(&mut self, r8_id: u8, is_rotate_left: bool, has_carry: bool) {
         let mut data: u8;
-        let mut c: bool;
+        let c: bool;
 
         match self.read_from_r8(r8_id) {
             Some(value) => data = value,
@@ -495,7 +497,7 @@ impl Cpu {
     
     pub fn rotate_mem(&mut self, addr: u16, is_left_rotate: bool, has_carry: bool) {
         let mut data = self.mem[addr as usize];
-        let mut c: bool;
+        let c: bool;
         let bit_cf = (self.reg.F & CF) >> 4;
     
         if is_left_rotate {
@@ -560,7 +562,7 @@ impl Cpu {
         // extract cc from opcode
         let opcode = self.mem[self.reg.PC as usize];
         let cc: u8 = (opcode & 0b00011000) >> 3;
-        let mut result: bool;
+        let result: bool;
         
         // match cc with respective outcomes
         match cc {
@@ -629,10 +631,10 @@ impl Cpu {
     /// ld_r_addr_HL: loads contents of memory specified at (HL) to register r. 1-byte instruction
     /// @param r: 8-bit register ID
     // Cycles: 2
-    pub fn ld_r_addr_HL(&mut self) -> ProgramCounter {
+    pub fn ld_r_addr_hl(&mut self) -> ProgramCounter {
         let r = self.get_r8_to();
 
-        self.load_mem_to_r8(r, self.reg.HL);
+        self.load_mem_to_r8(r, self.reg.hl);
 
         ProgramCounter::Next(1)
     }
@@ -641,10 +643,10 @@ impl Cpu {
     /// 1-byte instruction.
     /// @param: r: ID of 8-bit register
     // Cycles: 2
-    pub fn ld_addr_HL_r(&mut self) -> ProgramCounter {
+    pub fn ld_addr_hl_r(&mut self) -> ProgramCounter {
         let r = self.get_r8_from();
     
-        self.save_r8_to_mem(r, self.reg.HL);
+        self.save_r8_to_mem(r, self.reg.hl);
         
         ProgramCounter::Next(1)
     }
@@ -653,10 +655,10 @@ impl Cpu {
     /// 2-byte instruction.
     /// @param n: 8-bit immediate.
     // Cycles: 3
-    pub fn ld_addr_HL_n(&mut self) -> ProgramCounter {
+    pub fn ld_addr_hl_n(&mut self) -> ProgramCounter {
         let n = self.get_n();
 
-        self.mem[self.reg.HL as usize] = n;
+        self.mem[self.reg.hl as usize] = n;
 
         ProgramCounter::Next(2)
     }
@@ -739,9 +741,9 @@ impl Cpu {
     /// ld_A_addr_HL_inc: Load content of memory specified by HL into register A, then increment
     /// content in HL.
     /// 1-byte instruction.
-    pub fn ld_A_addr_HL_inc(&mut self) -> ProgramCounter {
-        self.load_mem_to_r8(A_ID, self.reg.HL);
-        self.reg.HL += 1;
+    pub fn ld_A_addr_hl_inc(&mut self) -> ProgramCounter {
+        self.load_mem_to_r8(A_ID, self.reg.hl);
+        self.reg.hl += 1;
 
         ProgramCounter::Next(1)
     }
@@ -749,9 +751,9 @@ impl Cpu {
     /// ld_A_addr_HL_dec: Load content of memory specified by HL into register A, then deccrement
     /// content in HL.
     /// 1-byte instruction.
-    pub fn ld_A_addr_HL_dec(&mut self) -> ProgramCounter {
-        self.load_mem_to_r8(A_ID, self.reg.HL);
-        self.reg.HL -= 1;
+    pub fn ld_A_addr_hl_dec(&mut self) -> ProgramCounter {
+        self.load_mem_to_r8(A_ID, self.reg.hl);
+        self.reg.hl -= 1;
 
         ProgramCounter::Next(1)
     }
@@ -775,9 +777,9 @@ impl Cpu {
     /// ld_addr_HL_A_inc: Load content of register A into memory specified by HL, then increment
     /// content in HL.
     /// 1-byte instruction.
-    pub fn ld_addr_HL_A_inc(&mut self) -> ProgramCounter {
-        self.save_r8_to_mem(A_ID, self.reg.HL);
-        self.reg.HL += 1;
+    pub fn ld_addr_hl_A_inc(&mut self) -> ProgramCounter {
+        self.save_r8_to_mem(A_ID, self.reg.hl);
+        self.reg.hl += 1;
 
         ProgramCounter::Next(1)
     }
@@ -785,9 +787,9 @@ impl Cpu {
     /// ld_addr_HL_A_dec: Load content of register A into memory specified by HL, then deccrement
     /// content in HL.
     /// 1-byte instruction.
-    pub fn ld_addr_HL_A_dec(&mut self) -> ProgramCounter {
-        self.save_r8_to_mem(A_ID, self.reg.HL);
-        self.reg.HL -= 1;
+    pub fn ld_addr_hl_A_dec(&mut self) -> ProgramCounter {
+        self.save_r8_to_mem(A_ID, self.reg.hl);
+        self.reg.hl -= 1;
 
         ProgramCounter::Next(1)
     }
@@ -818,8 +820,8 @@ impl Cpu {
 
     /// ld_SP_HL: load data from HL register to SP register.
     /// 1-byte instruction
-    pub fn ld_SP_HL(&mut self) -> ProgramCounter {
-        self.reg.SP = self.reg.HL;
+    pub fn ld_SP_hl(&mut self) -> ProgramCounter {
+        self.reg.SP = self.reg.hl;
 
         ProgramCounter::Next(1)
     }
@@ -898,7 +900,7 @@ impl Cpu {
     pub fn add_ahl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
-        let r: u8 = self.mem[self.reg.HL as usize];
+        let r: u8 = self.mem[self.reg.hl as usize];
 
         // processing
         let res: u16 = (a as u16) + (r as u16);
@@ -967,7 +969,7 @@ impl Cpu {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
         let carry: u8 = self.read_from_r8(C_ID).unwrap();
-        let r: u8 = self.mem[self.reg.HL as usize];
+        let r: u8 = self.mem[self.reg.hl as usize];
 
         // processing
         let res: u16 = (a as u16) + (r as u16) + (carry as u16);
@@ -1030,7 +1032,7 @@ impl Cpu {
     pub fn sub_hl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
-        let r: u8 = self.mem[self.reg.HL as usize];
+        let r: u8 = self.mem[self.reg.hl as usize];
 
         // processing
 	    let res: u8 = a.wrapping_sub(r);
@@ -1096,7 +1098,7 @@ impl Cpu {
         // reading
         let carry: u8 = self.read_from_r8(C_ID).unwrap();
         let a: u8 = self.read_from_r8(A_ID).unwrap();
-        let r: u8 = self.mem[self.reg.HL as usize];
+        let r: u8 = self.mem[self.reg.hl as usize];
 
         // processing
 	    let res: u8 = a.wrapping_sub(r).wrapping_sub(carry);
@@ -1159,7 +1161,7 @@ impl Cpu {
     pub fn and_hl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
-        let r: u8 = self.mem[self.reg.HL as usize];
+        let r: u8 = self.mem[self.reg.hl as usize];
 
         // processing
 	    let res: u8 = a & r;
@@ -1221,7 +1223,7 @@ impl Cpu {
     pub fn or_hl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
-        let r: u8 = self.mem[self.reg.HL as usize];
+        let r: u8 = self.mem[self.reg.hl as usize];
 
         // processing
 	    let res: u8 = a | r;
@@ -1284,7 +1286,7 @@ impl Cpu {
     pub fn xor_hl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
-        let r: u8 = self.mem[self.reg.HL as usize];
+        let r: u8 = self.mem[self.reg.hl as usize];
 
         // processing
 	    let res: u8 = a ^ r;
@@ -1344,7 +1346,7 @@ impl Cpu {
     pub fn cp_hl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
-        let r: u8 = self.mem[self.reg.HL as usize];
+        let r: u8 = self.mem[self.reg.hl as usize];
 
         // processing
 	    let res: u8 = a.wrapping_sub(r);
@@ -1381,8 +1383,7 @@ impl Cpu {
 
 	pub fn inc_hl(&mut self) -> ProgramCounter {
 	    // reading
-	    let idx: u8 = self.get_r8_to();
-	    let r: u8 = self.mem[self.reg.HL as usize];
+	    let r: u8 = self.mem[self.reg.hl as usize];
 
 	    // processing
 	    let res: u8 = if r == std::u8::MAX {0} else {r + 1};
@@ -1392,7 +1393,7 @@ impl Cpu {
 	    let n: bool = false;
 	    let z: bool = res == 0;
 
-	    self.mem[self.reg.HL as usize] = res;
+	    self.mem[self.reg.hl as usize] = res;
 	    self.set_hnz(h, n, z);
 
 	    ProgramCounter::Next(1)
@@ -1419,8 +1420,7 @@ impl Cpu {
 
 	pub fn dec_hl(&mut self) -> ProgramCounter {
 	    // reading
-	    let idx: u8 = self.get_r8_to();
-	    let r: u8 = self.mem[self.reg.HL as usize];
+	    let r: u8 = self.mem[self.reg.hl as usize];
 
 	    // processing
 	    let res: u8 = if r == 0 {std::u8::MAX} else {r - 1};
@@ -1430,7 +1430,7 @@ impl Cpu {
 	    let n: bool = true;
 	    let z: bool = res == 0;
 
-	    self.mem[self.reg.HL as usize] = res;
+	    self.mem[self.reg.hl as usize] = res;
 	    self.set_hnz(h, n, z);
 
 	    ProgramCounter::Next(1)
@@ -1552,7 +1552,7 @@ impl Cpu {
         self.reg.PC -= 1;
 
         match r {
-            0x06 => self.rotate_mem(self.reg.HL, true, true),
+            0x06 => self.rotate_mem(self.reg.hl, true, true),
             _ => self.rotate_r8(r, true, true),
         }
 
@@ -1567,7 +1567,7 @@ impl Cpu {
         self.reg.PC -= 1;
 
         match r {
-            0x06 => self.rotate_mem(self.reg.HL, true, false),
+            0x06 => self.rotate_mem(self.reg.hl, true, false),
             _ => self.rotate_r8(r, true, false),
         }
 
@@ -1582,7 +1582,7 @@ impl Cpu {
         self.reg.PC -= 1;
 
         match r {
-            0x06 => self.rotate_mem(self.reg.HL, false, true),
+            0x06 => self.rotate_mem(self.reg.hl, false, true),
             _ => self.rotate_r8(r, false, true),
         }
 
@@ -1597,7 +1597,7 @@ impl Cpu {
         self.reg.PC -= 1;
 
         match r {
-            0x06 => self.rotate_mem(self.reg.HL, false, false),
+            0x06 => self.rotate_mem(self.reg.hl, false, false),
             _ => self.rotate_r8(r, false, false),
         }
 
@@ -1612,18 +1612,18 @@ impl Cpu {
         self.reg.PC -= 1;
 
         let mut data: u8;
-        let mut bit_7: u8;
+        let bit_7: u8;
 
         match r {
             0x06 => {
-                data = self.mem[self.reg.HL as usize];
+                data = self.mem[self.reg.hl as usize];
                 bit_7 = (data & 0x80) >> 7;
                 
                 // processing
                 data = data << 1;
                 
                 // write back
-                self.mem[self.reg.HL as usize] = data;
+                self.mem[self.reg.hl as usize] = data;
             },
             _ => {
                 data = self.read_from_r8(r).unwrap();
@@ -1651,30 +1651,30 @@ impl Cpu {
         self.reg.PC -= 1;
 
         let mut data: u8;
-        let mut bit_0: u8;
-        let mut bit_7: u8;
+        let bit_0: u8;
+        let bit_7: u8;
 
         match r {
             0x06 => {
-                data = self.mem[self.reg.HL as usize];
+                data = self.mem[self.reg.hl as usize];
                 bit_7 = (data & 0x80) >> 7;
-                bit_0 = (data & 0x01);
+                bit_0 = data & 0x01;
                 
                 // processing
                 data = data >> 1;
-                data |= (bit_7 << 7);
+                data |= bit_7 << 7;
                 
                 // write back
-                self.mem[self.reg.HL as usize] = data;
+                self.mem[self.reg.hl as usize] = data;
             },
             _ => {
                 data = self.read_from_r8(r).unwrap();
                 bit_7 = (data & 0x80) >> 7;
-                bit_0 = (data & 0x01);
+                bit_0 = data & 0x01;
                 
                 // processing
                 data = data << 1;
-                data |= (bit_7 << 7);
+                data |= bit_7 << 7;
 
                 // write back
                 self.write_to_r8(r, data);
@@ -1699,18 +1699,18 @@ impl Cpu {
 
         match r {
             0x06 => {
-                data = self.mem[self.reg.HL as usize];
-                bit_0 = (data & 0x01);
+                data = self.mem[self.reg.hl as usize];
+                bit_0 = data & 0x01;
                 
                 // processing
                 data = data >> 1;
                 
                 // write back
-                self.mem[self.reg.HL as usize] = data;
+                self.mem[self.reg.hl as usize] = data;
             },
             _ => {
                 data = self.read_from_r8(r).unwrap();
-                bit_0 = (data & 0x01);
+                bit_0 = data & 0x01;
                 
                 // processing
                 data = data << 1;
@@ -1739,7 +1739,7 @@ impl Cpu {
         match r {
             0x06 => {
                 // read
-                data = self.mem[self.reg.HL as usize];
+                data = self.mem[self.reg.hl as usize];
                 
                 // process
                 let lower = data & 0x0F;
@@ -1747,7 +1747,7 @@ impl Cpu {
                 data = (lower << 4) | higher;
 
                 // write back
-                self.mem[self.reg.HL as usize] = data;
+                self.mem[self.reg.hl as usize] = data;
             },
             _ => {
                 // read
@@ -1787,11 +1787,11 @@ impl Cpu {
 
     /// bit_b_HL: Copies complement of bit_b of memory content at HL to Z flag
     /// 2 bytes, 3 cycles
-    pub fn bit_b_HL(&mut self) -> ProgramCounter {
+    pub fn bit_b_hl(&mut self) -> ProgramCounter {
         let b_info = self.get_n();
         let b = (b_info & 0x38) >> 3;
         
-        let mut val: u8 = self.mem[self.reg.HL as usize];
+        let mut val: u8 = self.mem[self.reg.hl as usize];
         val = (val >> b) & 0x01;
 
         // set the flag
@@ -1818,15 +1818,15 @@ impl Cpu {
 
     /// set_b_HL: set bit_b of memory content at HL to 1.
     /// 2 bytes, 4 cycles
-    pub fn set_b_HL(&mut self) -> ProgramCounter {
+    pub fn set_b_hl(&mut self) -> ProgramCounter {
         let b_info = self.get_n();
         let b = (b_info & 0x38) >> 3;
         
-        let mut val: u8 = self.mem[self.reg.HL as usize];
+        let mut val: u8 = self.mem[self.reg.hl as usize];
         val = val | (0x01 << b);
 
         // write back
-        self.mem[self.reg.HL as usize] = val;
+        self.mem[self.reg.hl as usize] = val;
 
         ProgramCounter::Next(2)
     }
@@ -1849,15 +1849,15 @@ impl Cpu {
 
     /// res_b_HL: set bit_b of memory content at HL to 0.
     /// 2 bytes, 4 cycles
-    pub fn res_b_HL(&mut self) -> ProgramCounter {
+    pub fn res_b_hl(&mut self) -> ProgramCounter {
         let b_info = self.get_n();
         let b = (b_info & 0x38) >> 3;
         
-        let mut val: u8 = self.mem[self.reg.HL as usize];
+        let mut val: u8 = self.mem[self.reg.hl as usize];
         val = val ^ (0x01 << b);
 
         // write back
-        self.mem[self.reg.HL as usize] = val;
+        self.mem[self.reg.hl as usize] = val;
 
         ProgramCounter::Next(2)
     }
@@ -1872,8 +1872,8 @@ impl Cpu {
 
     /// jp_hl: unconditional jump to absolute address specified by 16-bit register HL. Set PC = HL.
     /// 1-byte instruction, 1 cycle.
-    pub fn jp_HL(&mut self) -> ProgramCounter {
-        ProgramCounter::Jump(self.reg.HL)
+    pub fn jp_hl(&mut self) -> ProgramCounter {
+        ProgramCounter::Jump(self.reg.hl)
     }
 
     /// jp_cc_nn: Conditional jump to absolute address nn, depending on condition cc.
@@ -1883,7 +1883,7 @@ impl Cpu {
     pub fn jp_cc_nn(&mut self) -> ProgramCounter {
         let abs_addr = self.get_nn();
         let cc = self.check_cc();
-        let mut pc_final: ProgramCounter;
+        let pc_final: ProgramCounter;
 
         if cc {
             pc_final = ProgramCounter::Jump(abs_addr);
@@ -1906,7 +1906,7 @@ impl Cpu {
     pub fn jr_cc_e(&mut self) -> ProgramCounter {
         let e = self.get_n() as i16;
         let cc = self.check_cc();
-        let mut pc_final: ProgramCounter;
+        let pc_final: ProgramCounter;
         
         if cc {
             pc_final = ProgramCounter::Next(e);
@@ -1933,7 +1933,7 @@ impl Cpu {
         let nn = self.get_nn();
         let cc = self.check_cc();
 
-        let mut pc_final: ProgramCounter;
+        let pc_final: ProgramCounter;
 
         if cc { // execute function call
             self.push_u16(self.reg.PC);
@@ -1958,7 +1958,7 @@ impl Cpu {
     /// 1 byte, 2 cycles if cc = false, 5 cycles if cc = true
     pub fn ret_cc(&mut self) -> ProgramCounter {
         let cc = self.check_cc();
-        let mut pc_final: ProgramCounter;
+        let pc_final: ProgramCounter;
 
         if cc {
             let pop_val = self.pop_u16();
@@ -1990,7 +1990,7 @@ impl Cpu {
 
         let xxx = self.get_r8_to(); // same bits
         let pc_msb: u16 = 0x00;
-        let mut pc_lsb: u16;
+        let pc_lsb: u16;
 
         match xxx {
             0 => pc_lsb = 0x00,
@@ -2085,12 +2085,12 @@ impl Cpu {
         let mut has_carry: bool = false;
 
         if is_addition { // after addition, adjust if half-carry occured or if results out of bounds.
-            if (a > 0x90 || c_flag) {
+            if a > 0x90 || c_flag {
                 a += 0x60;
                 has_carry = true;
             }
 
-            if ((a & 0x0F) > 0x09 || h_flag) {
+            if (a & 0x0F) > 0x09 || h_flag {
                 a += 0x06;
             }
         } else { // after subtraction, adjust if half-carry occured.

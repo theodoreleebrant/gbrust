@@ -119,7 +119,7 @@ impl LCDStat {
             mode_1_vblank_interupt: false,          // RW
             mode_0_hblank_interrupt: false,         // RW
             coincidence_flag: false,                // R
-            mode_flag: Mode::vblank,                // R
+            mode_flag: Mode::Vblank,                // R
         } 
     }
 
@@ -143,29 +143,29 @@ impl LCDStat {
 }
 
 enum Mode {
-    hblank,
-    vblank,
-    oam,
-    vram,
+    Hblank,
+    Vblank,
+    Oam,
+    Vram,
 }
 
 impl Mode {
     fn get_flags(&self) -> u8 {
         let flag = match self {
-            Mode::hblank => MODE_HBLANK,
-            Mode::vblank => MODE_VBLANK,
-            Mode::oam => MODE_OAM,
-            Mode::vram => MODE_VRAM,
+            Mode::Hblank => MODE_HBLANK,
+            Mode::Vblank => MODE_VBLANK,
+            Mode::Oam => MODE_OAM,
+            Mode::Vram => MODE_VRAM,
         };
         flag as u8
     }
 
     fn get_mode(code: u8) -> Self {
         match code {
-            MODE_HBLANK => Mode::hblank,
-            MODE_VBLANK => Mode::vblank,
-            MODE_OAM => Mode::oam,
-            MODE_VRAM => Mode::vram,
+            MODE_HBLANK => Mode::Hblank,
+            MODE_VBLANK => Mode::Vblank,
+            MODE_OAM => Mode::Oam,
+            MODE_VRAM => Mode::Vram,
             _ => panic!("Unknown mode code"),
         }
     }
@@ -212,7 +212,7 @@ impl Ppu {
 
     pub fn write(&mut self, addr: u16, val: u8) {
         match addr {
-            0x8000...0x97ff => { // tile data
+            0x8000..=0x97ff => { // tile data
                 let addr = addr - TILE_BASE_ADDR;
                 self.vram[addr as usize] = val;
             },
@@ -233,7 +233,7 @@ impl Ppu {
 
     pub fn read(&mut self, addr: u16) -> u8 {
         match addr {
-            0x8000...0x97ff => { // tile data
+            0x8000..=0x97ff => { // tile data
                 let addr = addr - TILE_BASE_ADDR;
                 self.vram[addr as usize]
             },  
