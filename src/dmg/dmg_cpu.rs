@@ -122,7 +122,7 @@ impl Cpu {
         // elapsed_cycles calculates how many cycles are spent carrying out the instruction and
         // corresponding interrupt (if produced) = time to execute + time to handle interrupt
         let elapsed_cycles = {
-            sself.execute_instruction() + self.handle_interrupt() 
+            self.execute_instruction() + self.handle_interrupt() 
         };
         self.interconnect.cycle_flush(elapsed_cycles, video_sink);
         
@@ -620,7 +620,7 @@ impl Cpu {
     
     /// ld_rx_ry: load contents of ry to rx. 1-byte instruction
     /// @param rx, ry: ID for register rx and ry (8-bit)
-    // Cycles: 2
+    // Cycles: 1
     pub fn ld_rx_ry(&mut self) -> ProgramCounter {
         let rx = self.get_r8_to();
         let ry =  self.get_r8_from();
@@ -630,7 +630,7 @@ impl Cpu {
             None => (),
         }
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 1)
     }
 
     /// ld_r_n: Load 8-bit data n into register r. 2-byte instruction
@@ -642,7 +642,7 @@ impl Cpu {
 
         self.write_to_r8(r, n);
 
-        ProgramCounter::Next(2)
+        ProgramCounter::Next(2, 2)
     }
 
     /// ld_r_addr_hl: loads contents of memory specified at (HL) to register r. 1-byte instruction
@@ -653,7 +653,7 @@ impl Cpu {
 
         self.load_mem_to_r8(r, self.reg.hl);
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 2)
     }
 
     /// ld_addr_hl_r: stores contents of register r into memory specified by register pair HL.
@@ -665,7 +665,7 @@ impl Cpu {
     
         self.save_r8_to_mem(r, self.reg.hl);
         
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 2)
     }
 
     /// ld_addr_hl_n: stores 8-bit immediate data in memory specified by register pair HL.
@@ -677,7 +677,7 @@ impl Cpu {
 
         self.mem[self.reg.hl as usize] = n;
 
-        ProgramCounter::Next(2)
+        ProgramCounter::Next(2, 3)
     }
 
     /// ld_a_addr_bc: Load contents of memory specified by BC into A.
@@ -686,7 +686,7 @@ impl Cpu {
     pub fn ld_a_addr_bc(&mut self) -> ProgramCounter {
         self.load_mem_to_r8(A_ID, self.reg.bc);
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 2)
     }
 
     /// ld_a_addr_de: Load contents of memory specified by DE into A.
@@ -694,7 +694,7 @@ impl Cpu {
     pub fn ld_a_addr_de(&mut self) -> ProgramCounter {
         self.load_mem_to_r8(A_ID, self.reg.de);
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 2)
     }
 
     /// ldh_a_addr_offset_c: Load contents of memory specified by C + 0xFF00 into A.
@@ -702,7 +702,7 @@ impl Cpu {
     pub fn ldh_a_addr_offset_c(&mut self) -> ProgramCounter {
         self.load_mem_to_r8(A_ID, 0xFF00 + (self.reg.c as u16));
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 2)
     }
 
     /// ldh_addr_offset_c_a: Load contents of A into memory specified by 0xFF00 + C.
@@ -710,17 +710,17 @@ impl Cpu {
     pub fn ldh_addr_offset_c_a(&mut self) -> ProgramCounter {
         self.save_r8_to_mem(A_ID, 0xFF00 + (self.reg.c as u16));
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 2)
     }
 
-    /// ldh_a_addr_offset_nn: Load contents of memory specified by nn + 0xFF00 into A.
+    /// ldh_a_addr_offset_n: Load contents of memory specified by nn + 0xFF00 into A.
     /// 1-byte instruction
     pub fn ldh_a_addr_offset_n(&mut self) -> ProgramCounter {
         let n = self.get_n();
 
         self.load_mem_to_r8(A_ID, 0xFF00 + (n as u16));
         
-        ProgramCounter::Next(2)
+        ProgramCounter::Next(2, 3)
     }
     
     /// ldh_addr_offset_n_a: Load contents of A into memory specified by 0xFF00 + n.
@@ -730,7 +730,7 @@ impl Cpu {
 
         self.save_r8_to_mem(A_ID, 0xFF00 + (n as u16));
 
-        ProgramCounter::Next(2)
+        ProgramCounter::Next(2, 3)
     }
 
     /// ld_a_addr_nn: Load content at memory specified by address nn into register A.
@@ -741,7 +741,7 @@ impl Cpu {
 
         self.load_mem_to_r8(A_ID, nn);
 
-        ProgramCounter::Next(3)
+        ProgramCounter::Next(3, 4)
     }
 
     /// ld_addr_nn_a: Save content of register A into memory specified by address nn.
@@ -752,7 +752,7 @@ impl Cpu {
 
         self.save_r8_to_mem(A_ID, nn);
     
-        ProgramCounter::Next(3)
+        ProgramCounter::Next(3, 4)
     } 
 
     /// ld_a_addr_hl_inc: Load content of memory specified by HL into register A, then increment
@@ -762,7 +762,7 @@ impl Cpu {
         self.load_mem_to_r8(A_ID, self.reg.hl);
         self.reg.hl += 1;
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 2)
     }
 
     /// ld_a_addr_hl_dec: Load content of memory specified by HL into register A, then deccrement
@@ -772,7 +772,7 @@ impl Cpu {
         self.load_mem_to_r8(A_ID, self.reg.hl);
         self.reg.hl -= 1;
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 2)
     }
 
     /// ld_addr_bc_a: Save content of register A to memory specified by BC.
@@ -780,7 +780,7 @@ impl Cpu {
     pub fn ld_addr_bc_a(&mut self) -> ProgramCounter {
         self.save_r8_to_mem(A_ID, self.reg.bc);
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 2)
     }
 
     /// ld_addr_de_a: Save content of register A to memory specified by DE.
@@ -788,7 +788,7 @@ impl Cpu {
     pub fn ld_addr_de_a(&mut self) -> ProgramCounter {
         self.save_r8_to_mem(A_ID, self.reg.de);
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 2)
     }
 
     /// ld_addr_hl_a_inc: Load content of register A into memory specified by HL, then increment
@@ -798,7 +798,7 @@ impl Cpu {
         self.save_r8_to_mem(A_ID, self.reg.hl);
         self.reg.hl += 1;
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 2)
     }
 
     /// ld_addr_hl_a_dec: Load content of register A into memory specified by HL, then deccrement
@@ -808,7 +808,7 @@ impl Cpu {
         self.save_r8_to_mem(A_ID, self.reg.hl);
         self.reg.hl -= 1;
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 2)
     }
 
     // 16-bit load instructions
@@ -822,7 +822,7 @@ impl Cpu {
         
         self.write_to_r16(rr, nn);
 
-        ProgramCounter::Next(3)
+        ProgramCounter::Next(3, 3)
     }
 
     /// ld_addr_nn_sp: load lower-byte of SP to (nn), load higher-byte of SP to (nn+1)
@@ -832,7 +832,7 @@ impl Cpu {
 
         self.save_r16_to_mem(SP_ID, nn);
 
-        ProgramCounter::Next(3)
+        ProgramCounter::Next(3, 5)
     }
 
     /// ld_sp_hl: load data from HL register to SP register.
@@ -840,7 +840,7 @@ impl Cpu {
     pub fn ld_sp_hl(&mut self) -> ProgramCounter {
         self.reg.sp = self.reg.hl;
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 2)
     }
 
     /// push_rr: push data from register rr to stack memory
@@ -851,7 +851,7 @@ impl Cpu {
 
         self.push_u16(val);
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 4)
     }
 
     /// pop_rr: pop data from stack to the 16-bit register rr.
@@ -862,7 +862,7 @@ impl Cpu {
         
         self.write_to_r16(rr, val_pop);
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 3)
     }
 
 
@@ -888,7 +888,7 @@ impl Cpu {
 	    self.write_a(to_write);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 1)
 	}
 
 	// ADD A, n: add immediate operand n to register A.
@@ -911,7 +911,7 @@ impl Cpu {
 	    self.write_a(to_write);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(2)
+	    ProgramCounter::Next(2, 2)
 	}
 
     pub fn add_ahl(&mut self) -> ProgramCounter {
@@ -932,7 +932,7 @@ impl Cpu {
 	    self.write_a(to_write);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 2)
     }
         
     pub fn adc_ar(&mut self) -> ProgramCounter {
@@ -955,7 +955,7 @@ impl Cpu {
 	    self.write_a(to_write);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 1)
 	}
 
 	// ADD A, n: add immediate operand n to register A.
@@ -979,7 +979,7 @@ impl Cpu {
 	    self.write_a(to_write);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(2)
+	    ProgramCounter::Next(2, 2)
 	}
 
     pub fn adc_ahl(&mut self) -> ProgramCounter {
@@ -1001,7 +1001,7 @@ impl Cpu {
 	    self.write_a(to_write);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 2)
     }
 
     pub fn sub_r(&mut self) -> ProgramCounter {
@@ -1022,7 +1022,7 @@ impl Cpu {
 	    self.write_a(res);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 1)
 	}
 
 	// Cycles: 2
@@ -1043,7 +1043,7 @@ impl Cpu {
 	    self.write_a(res);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(2)
+	    ProgramCounter::Next(2, 2)
 	}
 
     pub fn sub_hl(&mut self) -> ProgramCounter {
@@ -1063,7 +1063,7 @@ impl Cpu {
 	    self.write_a(res);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 2)
     }
         
     pub fn sbc_ar(&mut self) -> ProgramCounter {
@@ -1085,7 +1085,7 @@ impl Cpu {
 	    self.write_a(res);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 1)
 	}
 
 	// ADD A, n: add immediate operand n to register A.
@@ -1108,7 +1108,7 @@ impl Cpu {
 	    self.write_a(res);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(2)
+	    ProgramCounter::Next(2, 2)
 	}
 
     pub fn sbc_ahl(&mut self) -> ProgramCounter {
@@ -1129,7 +1129,7 @@ impl Cpu {
 	    self.write_a(res);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 2)
     }
 
     pub fn and_r(&mut self) -> ProgramCounter {
@@ -1150,7 +1150,7 @@ impl Cpu {
 	    self.write_a(res);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 1)
 	}
 
 	// ADD A, n: add immediate operand n to register A.
@@ -1172,7 +1172,7 @@ impl Cpu {
 	    self.write_a(res);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(2)
+	    ProgramCounter::Next(2, 2)
 	}
 
     pub fn and_hl(&mut self) -> ProgramCounter {
@@ -1192,7 +1192,7 @@ impl Cpu {
 	    self.write_a(res);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 2)
     }
 
     pub fn or_r(&mut self) -> ProgramCounter {
@@ -1212,7 +1212,7 @@ impl Cpu {
 	    self.write_a(res);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 1)
 	}
 
 	// ADD A, n: add immediate operand n to register A.
@@ -1234,7 +1234,7 @@ impl Cpu {
 	    self.write_a(res);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(2)
+	    ProgramCounter::Next(2, 2)
 	}
 
     pub fn or_hl(&mut self) -> ProgramCounter {
@@ -1254,7 +1254,7 @@ impl Cpu {
 	    self.write_a(res);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 2)
     }
 
     pub fn xor_r(&mut self) -> ProgramCounter {
@@ -1275,7 +1275,7 @@ impl Cpu {
 	    self.write_a(res);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 1)
 	}
 
 	// ADD A, n: add immediate operand n to register A.
@@ -1297,7 +1297,7 @@ impl Cpu {
 	    self.write_a(res);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(2)
+	    ProgramCounter::Next(2, 2)
 	}
 
     pub fn xor_hl(&mut self) -> ProgramCounter {
@@ -1317,7 +1317,7 @@ impl Cpu {
 	    self.write_a(res);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 2)
     }
 
     pub fn cp_r(&mut self) -> ProgramCounter {
@@ -1337,7 +1337,7 @@ impl Cpu {
 
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 1)
 	}
 
 	// Cycles: 2
@@ -1357,7 +1357,7 @@ impl Cpu {
 
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(2)
+	    ProgramCounter::Next(2, 2)
 	}
 
     pub fn cp_hl(&mut self) -> ProgramCounter {
@@ -1376,7 +1376,7 @@ impl Cpu {
 
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 2)
     }
 
     pub fn inc_r(&mut self) -> ProgramCounter {
@@ -1395,7 +1395,7 @@ impl Cpu {
 	    self.write_to_r8(idx, res);
 	    self.set_hnz(h, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 1)
 	}
 
 	pub fn inc_hl(&mut self) -> ProgramCounter {
@@ -1413,7 +1413,7 @@ impl Cpu {
 	    self.mem[self.reg.hl as usize] = res;
 	    self.set_hnz(h, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 3)
 	}
 
 	pub fn dec_r(&mut self) -> ProgramCounter {
@@ -1432,7 +1432,7 @@ impl Cpu {
 	    self.write_to_r8(idx, res);
 	    self.set_hnz(h, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 1)
 	}
 
 	pub fn dec_hl(&mut self) -> ProgramCounter {
@@ -1450,7 +1450,7 @@ impl Cpu {
 	    self.mem[self.reg.hl as usize] = res;
 	    self.set_hnz(h, n, z);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 3)
 	}
 
 	// 2.4 16-bit intstructions
@@ -1473,7 +1473,7 @@ impl Cpu {
 	    self.write_to_r16(HL_ID, to_write);
 	    self.set_hcn(h, c, n);
 
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 2)
 	}
 
 	pub fn add_spe(&mut self) -> ProgramCounter {
@@ -1494,7 +1494,7 @@ impl Cpu {
 	    self.write_to_r16(SP_ID, to_write);
 	    self.set_hcnz(h, c, n, z);
 
-	    ProgramCounter::Next(2)
+	    ProgramCounter::Next(2, 4)
 	}
 
 	pub fn inc_ss(&mut self) -> ProgramCounter {
@@ -1507,7 +1507,7 @@ impl Cpu {
 
 	    self.write_to_r16(idx, res);
 	    
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 2)
 	}
 
 	pub fn dec_ss(&mut self) -> ProgramCounter {
@@ -1520,7 +1520,7 @@ impl Cpu {
 
 	    self.write_to_r16(idx, res);
 	    
-	    ProgramCounter::Next(1)
+	    ProgramCounter::Next(1, 2)
 	}
 
     // 2.5 Shift and Rotate instructions
@@ -1531,7 +1531,7 @@ impl Cpu {
     pub fn rlca(&mut self) -> ProgramCounter {
         self.rotate_r8(A_ID, true, true);
         
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 1)
     }
 
     /// rla: Rotates content of register A to the left. a7 <- cf
@@ -1540,7 +1540,7 @@ impl Cpu {
     pub fn rla(&mut self) -> ProgramCounter {
         self.rotate_r8(A_ID, true, false);
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 1)
     }
 
     /// rrca: Rotates content of register A to the right. a0 <- a7
@@ -1549,7 +1549,7 @@ impl Cpu {
     pub fn rrca(&mut self) -> ProgramCounter {
         self.rotate_r8(A_ID, false, true);
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 1)
     }
 
     /// rra: Rotates content of register A to the right. a0 <- cf
@@ -1558,7 +1558,7 @@ impl Cpu {
     pub fn rra(&mut self) -> ProgramCounter {
         self.rotate_r8(A_ID, false, false);
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 1)
     }
 
     /// rlc: Rotates content of either some register r or memory pointed to by HL, depending on
@@ -1568,12 +1568,18 @@ impl Cpu {
         let r = self.get_r8_from();
         self.reg.pc -= 1;
 
-        match r {
-            0x06 => self.rotate_mem(self.reg.hl, true, true),
-            _ => self.rotate_r8(r, true, true),
-        }
+        let cycles = match r {
+            0x06 => {
+                self.rotate_mem(self.reg.hl, true, true);
+                4
+            },
+            _ => {
+                self.rotate_r8(r, true, true);
+                2
+            }
+        };
 
-        ProgramCounter::Next(2)
+        ProgramCounter::Next(2, cycles)
     }
 
     /// rl: Rotates content of either some register r or memory pointed to by HL, depending on
@@ -1583,12 +1589,18 @@ impl Cpu {
         let r = self.get_r8_from();
         self.reg.pc -= 1;
 
-        match r {
-            0x06 => self.rotate_mem(self.reg.hl, true, false),
-            _ => self.rotate_r8(r, true, false),
-        }
+        let cycles = match r {
+            0x06 => {
+                self.rotate_mem(self.reg.hl, true, false);
+                4
+            },
+            _ => {
+                self.rotate_r8(r, true, false);
+                2
+            },
+        };
 
-        ProgramCounter::Next(2)
+        ProgramCounter::Next(2, cycles)
     }
     
     /// rrc: Rotates content of either some register r or memory pointed to by HL, depending on
@@ -1598,12 +1610,18 @@ impl Cpu {
         let r = self.get_r8_from();
         self.reg.pc -= 1;
 
-        match r {
-            0x06 => self.rotate_mem(self.reg.hl, false, true),
-            _ => self.rotate_r8(r, false, true),
-        }
+        let cycles = match r {
+            0x06 => {
+                self.rotate_mem(self.reg.hl, false, true);
+                4
+            },
+            _ => {
+                self.rotate_r8(r, false, true);
+                2
+            },
+        };
 
-        ProgramCounter::Next(2)
+        ProgramCounter::Next(2, cycles)
     }
 
     /// rr: Rotates content of either some register r or memory pointed to by HL, depending on
@@ -1613,12 +1631,18 @@ impl Cpu {
         let r = self.get_r8_from();
         self.reg.pc -= 1;
 
-        match r {
-            0x06 => self.rotate_mem(self.reg.hl, false, false),
-            _ => self.rotate_r8(r, false, false),
-        }
+        let cycles = match r {
+            0x06 => {
+                self.rotate_mem(self.reg.hl, false, false);
+                4
+            },
+            _ => {
+                self.rotate_r8(r, false, false);
+                2
+            },
+        };
 
-        ProgramCounter::Next(2)
+        ProgramCounter::Next(2, cycles)
     }
 
     /// SLA: Shift content of operand m to the left. Bit 7 is copied to CF, bit 0 is reset.
@@ -1631,7 +1655,7 @@ impl Cpu {
         let mut data: u8;
         let bit_7: u8;
 
-        match r {
+        let cycles = match r {
             0x06 => {
                 data = self.mem[self.reg.hl as usize];
                 bit_7 = (data & 0x80) >> 7;
@@ -1641,6 +1665,7 @@ impl Cpu {
                 
                 // write back
                 self.mem[self.reg.hl as usize] = data;
+                4
             },
             _ => {
                 data = self.read_from_r8(r).unwrap();
@@ -1651,13 +1676,14 @@ impl Cpu {
                 
                 // write back
                 self.write_to_r8(r, data);
+                2
             },
-        }
+        };
 
         // set flags
         self.set_hcnz(false, bit_7 > 0, false, data == 0);
 
-        ProgramCounter::Next(2)
+        ProgramCounter::Next(2, cycles)
     }
         
     /// SRA: Shift content of operand m to the right. Bit 0 is copied to CF, bit 7 stays the same!.
@@ -1671,7 +1697,7 @@ impl Cpu {
         let bit_0: u8;
         let bit_7: u8;
 
-        match r {
+        let cycles = match r {
             0x06 => {
                 data = self.mem[self.reg.hl as usize];
                 bit_7 = (data & 0x80) >> 7;
@@ -1683,6 +1709,8 @@ impl Cpu {
                 
                 // write back
                 self.mem[self.reg.hl as usize] = data;
+                
+                4
             },
             _ => {
                 data = self.read_from_r8(r).unwrap();
@@ -1695,13 +1723,15 @@ impl Cpu {
 
                 // write back
                 self.write_to_r8(r, data);
+                
+                2
             },
-        }
+        };
 
         // set flags
         self.set_hcnz(false, bit_0 > 0, false, data == 0);
 
-        ProgramCounter::Next(2)
+        ProgramCounter::Next(2, cycles)
     }
 
     /// SRL: Shift content of operand m to the right. Bit 0 is copied to CF, bit 7 is reset.
@@ -1714,7 +1744,7 @@ impl Cpu {
         let mut data: u8;
         let bit_0: u8;
 
-        match r {
+        let cycles = match r {
             0x06 => {
                 data = self.mem[self.reg.hl as usize];
                 bit_0 = data & 0x01;
@@ -1724,6 +1754,7 @@ impl Cpu {
                 
                 // write back
                 self.mem[self.reg.hl as usize] = data;
+                4
             },
             _ => {
                 data = self.read_from_r8(r).unwrap();
@@ -1734,13 +1765,14 @@ impl Cpu {
 
                 // write back
                 self.write_to_r8(r, data);
+                2
             },
-        }
+        };
 
         // set flags
         self.set_hcnz(false, bit_0 > 0, false, data == 0);
 
-        ProgramCounter::Next(2)
+        ProgramCounter::Next(2, cycles)
     }
 
     /// SWAP: Shift content of lower-order 4 bits to higher-order 4 bits, and vice versa. Reset all
@@ -1753,7 +1785,7 @@ impl Cpu {
 
         let mut data: u8;
        
-        match r {
+        let cycles = match r {
             0x06 => {
                 // read
                 data = self.mem[self.reg.hl as usize];
@@ -1765,6 +1797,7 @@ impl Cpu {
 
                 // write back
                 self.mem[self.reg.hl as usize] = data;
+                4
             },
             _ => {
                 // read
@@ -1777,11 +1810,12 @@ impl Cpu {
                 
                 // write back
                 self.write_to_r8(r, data);
+                2
             }
-        }
+        };
         self.set_hcnz(false, false, false, data == 0);
         
-        ProgramCounter::Next(2)
+        ProgramCounter::Next(2, cycles)
     }
 
     // CB (bit operation)
@@ -1799,7 +1833,7 @@ impl Cpu {
         // set the flag
         self.set_hnz(true, false, val == 0);
 
-        ProgramCounter::Next(2)
+        ProgramCounter::Next(2, 2)
     }
 
     /// bit_b_hl: Copies complement of bit_b of memory content at HL to Z flag
@@ -1814,7 +1848,7 @@ impl Cpu {
         // set the flag
         self.set_hnz(true, false, val == 0);
 
-        ProgramCounter::Next(2)
+        ProgramCounter::Next(2, 3)
     }
     
     /// set_b_r: Set bit_b of register r to 1.
@@ -1830,7 +1864,7 @@ impl Cpu {
         // write back to register
         self.write_to_r8(r, val);
 
-        ProgramCounter::Next(2)
+        ProgramCounter::Next(2, 2)
     }
 
     /// set_b_hl: set bit_b of memory content at HL to 1.
@@ -1845,7 +1879,7 @@ impl Cpu {
         // write back
         self.mem[self.reg.hl as usize] = val;
 
-        ProgramCounter::Next(2)
+        ProgramCounter::Next(2, 4)
     }
 
     /// res_b_r: set bit_b of register r to 0.
@@ -1861,7 +1895,7 @@ impl Cpu {
         // write back to register
         self.write_to_r8(r, val);
 
-        ProgramCounter::Next(2)
+        ProgramCounter::Next(2, 2)
     }
 
     /// res_b_hl: set bit_b of memory content at HL to 0.
@@ -1876,7 +1910,7 @@ impl Cpu {
         // write back
         self.mem[self.reg.hl as usize] = val;
 
-        ProgramCounter::Next(2)
+        ProgramCounter::Next(2, 4)
     }
 
     // 2.6 Control Flow Instruction
@@ -1884,13 +1918,13 @@ impl Cpu {
     /// jp_nn: unconditional jump to absolute address specified by 16-bit immediate. Set PC = nn
     /// 3-byte instruction, 4 cycles.
     pub fn jp_nn(&mut self) -> ProgramCounter {
-        ProgramCounter::Jump(self.get_nn())
+        ProgramCounter::Jump(self.get_nn(), 4)
     }
 
     /// jp_hl: unconditional jump to absolute address specified by 16-bit register HL. Set PC = HL.
     /// 1-byte instruction, 1 cycle.
     pub fn jp_hl(&mut self) -> ProgramCounter {
-        ProgramCounter::Jump(self.reg.hl)
+        ProgramCounter::Jump(self.reg.hl, 1)
     }
 
     /// jp_cc_nn: Conditional jump to absolute address nn, depending on condition cc.
@@ -1903,9 +1937,9 @@ impl Cpu {
         let pc_final: ProgramCounter;
 
         if cc {
-            pc_final = ProgramCounter::Jump(abs_addr);
+            pc_final = ProgramCounter::Jump(abs_addr, 4);
         } else {
-            pc_final = ProgramCounter::Next(3);
+            pc_final = ProgramCounter::Next(3, 3);
         }
 
         pc_final
@@ -1915,7 +1949,7 @@ impl Cpu {
     /// 2 bytes, 3 cycles.
     pub fn jr_e(&mut self) -> ProgramCounter {
         let e = self.get_n() as i16;
-        ProgramCounter::Next(e)
+        ProgramCounter::Next(e, 3)
     }
 
     /// jr_cc_e: Conditional jump to relative address specified by signed 8-bit operand e, depending on condition cc.
@@ -1926,9 +1960,9 @@ impl Cpu {
         let pc_final: ProgramCounter;
         
         if cc {
-            pc_final = ProgramCounter::Next(e);
+            pc_final = ProgramCounter::Next(e, 3);
         } else {
-            pc_final = ProgramCounter::Next(2);
+            pc_final = ProgramCounter::Next(2, 2);
         }
 
         pc_final
@@ -1940,7 +1974,7 @@ impl Cpu {
         let nn = self.get_nn();
         self.push_u16(self.reg.pc); // Push PC onto the stacc
         
-        ProgramCounter::Jump(nn)
+        ProgramCounter::Jump(nn, 6)
     }
 
     /// call_cc_nn: Conditional function call to absolute address specified by 16-bit operand nn,
@@ -1954,9 +1988,9 @@ impl Cpu {
 
         if cc { // execute function call
             self.push_u16(self.reg.pc);
-            pc_final = ProgramCounter::Jump(nn);
+            pc_final = ProgramCounter::Jump(nn, 6);
         } else {
-            pc_final = ProgramCounter::Next(3);
+            pc_final = ProgramCounter::Next(3, 3);
         }
 
         pc_final
@@ -1967,7 +2001,7 @@ impl Cpu {
     pub fn ret(&mut self) -> ProgramCounter {
         let pop_val = self.pop_u16();
 
-        ProgramCounter::Jump(pop_val)
+        ProgramCounter::Jump(pop_val, 4)
     }
 
     /// ret_cc: Conditional return from a function, depending on condition cc.
@@ -1979,9 +2013,9 @@ impl Cpu {
 
         if cc {
             let pop_val = self.pop_u16();
-            pc_final = ProgramCounter::Jump(pop_val);
+            pc_final = ProgramCounter::Jump(pop_val, 5);
         } else {
-            pc_final = ProgramCounter::Next(1);
+            pc_final = ProgramCounter::Next(1, 2);
         }
 
         pc_final
@@ -1994,7 +2028,7 @@ impl Cpu {
         let pop_val = self.pop_u16();
         self.reg.ime = true;
 
-        ProgramCounter::Jump(pop_val)
+        ProgramCounter::Jump(pop_val, 4)
     }
 
     /// rst_n: Unconditional function call to absolute fixed address defined by opcode.
@@ -2023,7 +2057,7 @@ impl Cpu {
 
         let addr = (pc_msb << 8) | pc_lsb;
 
-        ProgramCounter::Jump(addr)
+        ProgramCounter::Jump(addr, 4)
     }
         
     /// halt: Cpu enters "halt mode" and stops system clock. Oscillator circuit and LCD Controller
@@ -2032,7 +2066,7 @@ impl Cpu {
     pub fn halt(&mut self) -> ProgramCounter {
         self.halt_mode = true;
 
-        ProgramCounter::Next(0)     // does not incrememt
+        ProgramCounter::Next(0, 0)     // does not incrememt
     }
     
     /// stop: Cpu enters "stop mode" and stops everything including system clock, 
@@ -2041,7 +2075,7 @@ impl Cpu {
     pub fn stop(&mut self) -> ProgramCounter {
         self.stop_mode = true;
 
-        ProgramCounter::Next(0)     // does not increment
+        ProgramCounter::Next(0, 0)     // does not increment
     }
 
     /// di: Disables interrupt handling by setting IME = 0, cancelling any scheduled effects of the
@@ -2050,7 +2084,7 @@ impl Cpu {
     pub fn di(&mut self) -> ProgramCounter {
         self.reg.ime = false;
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 1)
     }
 
     /// ei: schedules interrupt handling to be enabled THE NEXT MACHINE CYCLE
@@ -2058,7 +2092,7 @@ impl Cpu {
     pub fn ei(&mut self) -> ProgramCounter {
         self.reg.ime = true;
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 1)
     }
 
     /// ccf: Flips carry flag, reset N and H flags
@@ -2069,7 +2103,7 @@ impl Cpu {
         // set all the flags
         self.set_hcn(false, c_bit == 0, false);
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 1)
     }
 
     /// scf: Sets carry flag, reset N and H flags.
@@ -2078,13 +2112,13 @@ impl Cpu {
         // set carry, reset n and h
         self.set_hcn(false, true, false);
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 1)
     }
 
     /// nop: this doesn't do anything lmao, but add one cycle and increment PC by 1.
     /// 1 byte, 1 cycle
     pub fn nop(&mut self) -> ProgramCounter {
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 1)
     }
 
     /// daa: decimal adjust acc.
@@ -2124,7 +2158,7 @@ impl Cpu {
         // Add set flags
         self.set_hcnz(has_carry, false, n_flag, a == 0);
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 1)
     }
 
     /// cpl: flip all bits in the A-register, sets N and H to 1.
@@ -2145,6 +2179,6 @@ impl Cpu {
         // Add set flags
         self.set_hnz(true, true, self.reg.f & ZF > 0);
 
-        ProgramCounter::Next(1)
+        ProgramCounter::Next(1, 1)
     }
 }
