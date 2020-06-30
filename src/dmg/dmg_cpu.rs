@@ -125,108 +125,108 @@ impl CPU {
     pub fn execute_opcode(&mut self) {
         let opcode: u8 = self.mem[self.reg.PC as usize];
         
+        let is_aa0: bool = (opcode & 0b0000_1000) == 0; 
+        let is_0bb: bool = (opcode & 0b0010_0000) == 0;  
+        
         let parts = (
             opcode >> 6, // bit 7 6
             (opcode & 0b0011_1000) >> 3, // bit 543
             (opcode & 0b0000_0111), // bit 210,
-            true   // for weird places, need to check condition
+            is_aa0,
+            is_0bb,
         );
 
-        let is_aa0: bool = parts.2 & 0x01 == 0; 
-        let is_aa1: bool = !is_aa0;
-        let is_0bb: bool = parts.2 & 0x04 == 0;  
-        let is_1bb: bool = !is_0bb;
 
         let pc_change = match parts {
             // opcodes starting with 00
-            (0b00, 0b110, 0b110, true) => self.ld_addr_HL_n(),
-            (0b00, 0b001, 0b010, true) => self.ld_A_addr_BC(),
-            (0b00, 0b011, 0b010, true) => self.ld_A_addr_DE(),
-            (0b00, 0b000, 0b010, true) => self.ld_addr_BC_A(),
-            (0b00, 0b010, 0b010, true) => self.ld_addr_DE_A(),
-            (0b00, 0b111, 0b010, true) => self.ld_A_addr_HL_dec(),
-            (0b00, 0b110, 0b010, true) => self.ld_addr_HL_A_dec(),
-            (0b00, 0b101, 0b010, true) => self.ld_A_addr_HL_inc(),
-            (0b00, 0b100, 0b010, true) => self.ld_addr_HL_A_inc(),
-            (0b00, 0b001, 0b000, true) => self.ld_addr_nn_SP(),
-            (0b00, 0b011, 0b000, true) => self.jr_e(),
-            (0b00, 0b111, 0b111, true) => self.ccf(),
-            (0b00, 0b110, 0b111, true) => self.scf(),
-            (0b00, 0b000, 0b000, true) => self.nop(),
-            (0b00, 0b100, 0b111, true) => self.daa(),
-            (0b00, 0b101, 0b111, true) => self.cpl(),
-            (0b00, 0b110, 0b100, true) => self.inc_hl(),
-            (0b00, 0b110, 0b101, true) => self.dec_hl(),
-            (0b00, 0b000, 0b111, true) => self.rlca(),
-            (0b00, 0b010, 0b111, true) => self.rla(),
-            (0b00, 0b001, 0b111, true) => self.rrca(),
-            (0b00, 0b011, 0b111, true) => self.rra(),
+            (0b00, 0b110, 0b110, _, _) => self.ld_addr_HL_n(),
+            (0b00, 0b001, 0b010, _, _) => self.ld_A_addr_BC(),
+            (0b00, 0b011, 0b010, _, _) => self.ld_A_addr_DE(),
+            (0b00, 0b000, 0b010, _, _) => self.ld_addr_BC_A(),
+            (0b00, 0b010, 0b010, _, _) => self.ld_addr_DE_A(),
+            (0b00, 0b111, 0b010, _, _) => self.ld_A_addr_HL_dec(),
+            (0b00, 0b110, 0b010, _, _) => self.ld_addr_HL_A_dec(),
+            (0b00, 0b101, 0b010, _, _) => self.ld_A_addr_HL_inc(),
+            (0b00, 0b100, 0b010, _, _) => self.ld_addr_HL_A_inc(),
+            (0b00, 0b001, 0b000, _, _) => self.ld_addr_nn_SP(),
+            (0b00, 0b011, 0b000, _, _) => self.jr_e(),
+            (0b00, 0b111, 0b111, _, _) => self.ccf(),
+            (0b00, 0b110, 0b111, _, _) => self.scf(),
+            (0b00, 0b000, 0b000, _, _) => self.nop(),
+            (0b00, 0b100, 0b111, _, _) => self.daa(),
+            (0b00, 0b101, 0b111, _, _) => self.cpl(),
+            (0b00, 0b110, 0b100, _, _) => self.inc_hl(),
+            (0b00, 0b110, 0b101, _, _) => self.dec_hl(),
+            (0b00, 0b000, 0b111, _, _) => self.rlca(),
+            (0b00, 0b010, 0b111, _, _) => self.rla(),
+            (0b00, 0b001, 0b111, _, _) => self.rrca(),
+            (0b00, 0b011, 0b111, _, _) => self.rra(),
             
-            (0b00, _, 0b001, is_aa0) => self.inc_ss(), // ss0
-            (0b00, _, 0b011, is_aa1) => self.dec_ss(), // ss1
-            (0b00, _, 0b001, is_aa1) => self.add_hlss(), // ss1
-            (0b00, _, 0b101, true) => self.dec_r(),   
-            (0b00, _, 0b100, true) => self.inc_r(),
-            (0b00, _, 0b001, is_aa0) => self.ld_rr_nn(), // rr0
-            (0b00, _, 0b000, is_1bb) => self.jr_cc_e(),  // 1cc
-            (0b00, _, 0b110, true) => self.ld_r_n(),   
+            (0b00, _, 0b011, true, _) => self.inc_ss(), // ss0
+            (0b00, _, 0b011, false, _) => self.dec_ss(), // ss1
+            (0b00, _, 0b001, false, _) => self.add_hlss(), // ss1
+            (0b00, _, 0b001, true, _) => self.ld_rr_nn(), // rr0
+            (0b00, _, 0b000, _, false) => self.jr_cc_e(),  // 1cc
+            (0b00, _, 0b110, _, _) => self.ld_r_n(),   
+            (0b00, _, 0b101, _, _) => self.dec_r(),   
+            (0b00, _, 0b100, _, _) => self.inc_r(),
 
             // opcodes starting with 01
-            (0b01, 0b110, _, true) => self.ld_addr_HL_r(),
-            (0b01, _, 0b110, true) => self.ld_r_addr_HL(),
-            (0b01, _, _, true) => self.ld_rx_ry(),
+            (0b01, 0b110, _, _, _) => self.ld_addr_HL_r(),
+            (0b01, _, 0b110, _, _) => self.ld_r_addr_HL(),
+            (0b01, _, _, _, _) => self.ld_rx_ry(),
 
             // opcodes starting with 10:
-            (0b10, 0b000, 0b110, true) => self.add_ahl(),
-            (0b10, 0b001, 0b110, true) => self.adc_ahl(),
-            (0b10, 0b010, 0b110, true) => self.sub_hl(),
-            (0b10, 0b011, 0b110, true) => self.sbc_ahl(),
-            (0b10, 0b100, 0b110, true) => self.and_hl(),
-            (0b10, 0b110, 0b110, true) => self.or_hl(),
-            (0b10, 0b101, 0b110, true) => self.xor_hl(),
-            (0b10, 0b111, 0b110, true) => self.cp_hl(),
-            (0b10, 0b000, _, true) => self.add_ar(),
-            (0b10, 0b001, _, true) => self.adc_ar(),
-            (0b10, 0b010, _, true) => self.sub_r(),
-            (0b10, 0b011, _, true) => self.sbc_ar(),
-            (0b10, 0b100, _, true) => self.and_r(),
-            (0b10, 0b110, _, true) => self.or_r(),
-            (0b10, 0b101, _, true) => self.xor_r(),
-            (0b10, 0b111, _, true) => self.cp_r(),
+            (0b10, 0b000, 0b110, _, _) => self.add_ahl(),
+            (0b10, 0b001, 0b110, _, _) => self.adc_ahl(),
+            (0b10, 0b010, 0b110, _, _) => self.sub_hl(),
+            (0b10, 0b011, 0b110, _, _) => self.sbc_ahl(),
+            (0b10, 0b100, 0b110, _, _) => self.and_hl(),
+            (0b10, 0b110, 0b110, _, _) => self.or_hl(),
+            (0b10, 0b101, 0b110, _, _) => self.xor_hl(),
+            (0b10, 0b111, 0b110, _, _) => self.cp_hl(),
+            (0b10, 0b000, _, _, _) => self.add_ar(),
+            (0b10, 0b001, _, _, _) => self.adc_ar(),
+            (0b10, 0b010, _, _, _) => self.sub_r(),
+            (0b10, 0b011, _, _, _) => self.sbc_ar(),
+            (0b10, 0b100, _, _, _) => self.and_r(),
+            (0b10, 0b110, _, _, _) => self.or_r(),
+            (0b10, 0b101, _, _, _) => self.xor_r(),
+            (0b10, 0b111, _, _, _) => self.cp_r(),
             
             // opcodes starting with 11
-            (0b11, 0b111, 0b010, true) => self.ld_A_addr_nn(),
-            (0b11, 0b101, 0b010, true) => self.ld_addr_nn_A(),
-            (0b11, 0b110, 0b010, true) => self.ldh_A_addr_offset_C(),
-            (0b11, 0b100, 0b010, true) => self.ldh_addr_offset_C_A(),
-            (0b11, 0b110, 0b000, true) => self.ldh_A_addr_offset_n(),
-            (0b11, 0b100, 0b000, true) => self.ldh_addr_offset_n_A(),
-            (0b11, 0b111, 0b001, true) => self.ld_SP_HL(),
-            (0b11, 0b000, 0b110, true) => self.add_an(), // arithmetic
-            (0b11, 0b001, 0b110, true) => self.adc_an(),
-            (0b11, 0b010, 0b110, true) => self.sub_n(),
-            (0b11, 0b011, 0b110, true) => self.sbc_an(),
-            (0b11, 0b100, 0b110, true) => self.and_n(),
-            (0b11, 0b110, 0b110, true) => self.or_n(),
-            (0b11, 0b101, 0b110, true) => self.xor_n(),
-            (0b11, 0b111, 0b110, true) => self.cp_n(),
-            (0b11, 0b101, 0b000, true) => self.add_spe(),
-            (0b11, 0b000, 0b011, true) => self.jp_nn(),
-            (0b11, 0b101, 0b001, true) => self.jp_HL(),
-            (0b11, 0b001, 0b101, true) => self.call_nn(),
-            (0b11, 0b001, 0b001, true) => self.ret(),
-            (0b11, 0b011, 0b001, true) => self.reti(),
-            (0b11, 0b110, 0b011, true) => self.di(),
-            (0b11, 0b111, 0b011, true) => self.ei(),
-            (0b11, 0b001, 0b011, true) => self.execute_bc(self.reg.PC),
+            (0b11, 0b111, 0b010, _, _) => self.ld_A_addr_nn(),
+            (0b11, 0b101, 0b010, _, _) => self.ld_addr_nn_A(),
+            (0b11, 0b110, 0b010, _, _) => self.ldh_A_addr_offset_C(),
+            (0b11, 0b100, 0b010, _, _) => self.ldh_addr_offset_C_A(),
+            (0b11, 0b110, 0b000, _, _) => self.ldh_A_addr_offset_n(),
+            (0b11, 0b100, 0b000, _, _) => self.ldh_addr_offset_n_A(),
+            (0b11, 0b111, 0b001, _, _) => self.ld_SP_HL(),
+            (0b11, 0b000, 0b110, _, _) => self.add_an(), // arithmetic
+            (0b11, 0b001, 0b110, _, _) => self.adc_an(),
+            (0b11, 0b010, 0b110, _, _) => self.sub_n(),
+            (0b11, 0b011, 0b110, _, _) => self.sbc_an(),
+            (0b11, 0b100, 0b110, _, _) => self.and_n(),
+            (0b11, 0b110, 0b110, _, _) => self.or_n(),
+            (0b11, 0b101, 0b110, _, _) => self.xor_n(),
+            (0b11, 0b111, 0b110, _, _) => self.cp_n(),
+            (0b11, 0b101, 0b000, _, _) => self.add_spe(),
+            (0b11, 0b000, 0b011, _, _) => self.jp_nn(),
+            (0b11, 0b101, 0b001, _, _) => self.jp_HL(),
+            (0b11, 0b001, 0b101, _, _) => self.call_nn(),
+            (0b11, 0b001, 0b001, _, _) => self.ret(),
+            (0b11, 0b011, 0b001, _, _) => self.reti(),
+            (0b11, 0b110, 0b011, _, _) => self.di(),
+            (0b11, 0b111, 0b011, _, _) => self.ei(),
+            (0b11, 0b001, 0b011, _, _) => self.execute_bc(self.reg.PC),
             
-            (0b11, _, 0b101, is_aa0) => self.push_rr(), // xx0
-            (0b11, _, 0b001, is_aa0) => self.pop_rr(), // xx0
-            (0b11, _, 0b010, is_0bb) => self.jp_cc_nn(), // 0cc
-            (0b11, _, 0b100, is_0bb) => self.call_cc_nn(),// 0cc
-            (0b11, _, 0b111, true) => self.rst_n(), 
-            (0b11, _, 0b000, is_0bb) => self.ret_cc(),   // 0cc
-        
+            (0b11, _, 0b101, true, _) => self.push_rr(), // xx0
+            (0b11, _, 0b001, true, _) => self.pop_rr(), // xx0
+            (0b11, _, 0b010, _, true) => self.jp_cc_nn(), // 0cc
+            (0b11, _, 0b100, _, true) => self.call_cc_nn(),// 0cc
+            (0b11, _, 0b000, _, true) => self.ret_cc(),   // 0cc
+            (0b11, _, 0b111, _, _) => self.rst_n(), 
+            
             // The rest: panik
             _ => panic!("No such opcode"),
         };
