@@ -1,6 +1,6 @@
 use super::ppu::Ppu;
 use super::cart::Cart;
-// use super::timer::Timer;
+use super::timer::Timer;
 use super::gamepad::Gamepad;
 
 const RAM_SIZE: usize = 32 * 1024; // Memory for the last 32KB as first 32KB is for ROM
@@ -16,6 +16,7 @@ pub struct Interconnect {
     pub int_flags: u8,
     ram_offset: usize,
     pub gamepad: Gamepad,
+    timer: Timer,
     // TODO: Sound Processing unit, gamepad, timer
 }
 
@@ -28,7 +29,7 @@ impl Interconnect {
             cart: cart,
             ppu: ppu,
             // spu: spu,
-            // timer: Timer::new(),
+            timer: Timer::new(),
             ram: vec![0; RAM_SIZE].into_boxed_slice(),
             zero_page: vec![0; ZERO_PAGE].into_boxed_slice(),
             ppu_dma: 0,

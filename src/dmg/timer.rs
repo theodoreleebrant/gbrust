@@ -1,6 +1,8 @@
 use std::u8;
 use super::Interrupts;
-use super::INT_TIMEROVERFLOW;
+// use super::INT_TIMEROVERFLOW;
+
+const INT_TIMEROVERFLOW: Interrupts = Interrupts::INT_TIMEROVERFLOW;
 
 // Clock speed
 // See PanDocs: https://gbdev.io/pandocs/#timer-and-divider-registers
