@@ -2047,11 +2047,10 @@ impl CPU {
     /// ccf: Flips carry flag, reset N and H flags
     /// 1 byte, 1 cycle.
     pub fn ccf(&mut self) -> ProgramCounter {
-        let c_bit = (self.reg.F & CF) >> 4;
-        let z_bit = (self.reg.F & ZF) >> 7;
+        let c_bit = self.reg.F & CF;
 
         // set all the flags
-        self.set_hcnz(false, c_bit == 0, false, z_bit == 1);
+        self.set_hcn(false, c_bit == 0, false);
 
         ProgramCounter::Next(1)
     }
@@ -2059,10 +2058,10 @@ impl CPU {
     /// scf: Sets carry flag, reset N and H flags.
     /// 1 byte, 1 cycle
     pub fn scf(&mut self) -> ProgramCounter {
-        let z_bit = (self.reg.F & ZF) >> 7;
+        let z_bit = self.reg.F & ZF;
 
         // set carry, reset n and h
-        self.set_hcnz(false, true, false, z_bit == 1);
+        self.set_hcn(false, true, false);
 
         ProgramCounter::Next(1)
     }
@@ -2082,6 +2081,7 @@ impl CPU {
         let is_addition: bool = (self.reg.F & NF) > 0;
         let c_flag: bool = (self.reg.F & CF) > 0;
         let h_flag: bool = (self.reg.F & HF) > 0;
+        let n_flag: bool = (self.reg.F & NF) > 0;
         let mut has_carry: bool = false;
 
         if is_addition { // after addition, adjust if half-carry occured or if results out of bounds.
@@ -2106,6 +2106,9 @@ impl CPU {
         // Write back data to reg A
         self.write_to_r8(A_ID, a);
 
+        // Add set flags
+        self.set_hcnz(has_carry, false, n_flag, a == 0);
+
         ProgramCounter::Next(1)
     }
 
@@ -2123,6 +2126,9 @@ impl CPU {
         }
 
         self.write_to_r8(A_ID, a);
+
+        // Add set flags
+        self.set_hnz(true, true, self.reg.F & ZF > 0);
 
         ProgramCounter::Next(1)
     }
