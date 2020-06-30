@@ -89,7 +89,7 @@ pub struct Cpu {
 	halt_mode: bool,    // true -> enter halt mode
 	stop_mode: bool,    // true -> enter stop mode
 
-	// clock: u8,          // For timing in GB, not used yet
+	interconnect: Interconnect, // in charge of everything else
 }
 
 pub enum ProgramCounter {
@@ -112,11 +112,10 @@ impl Cpu {
         }
     }
 
-/*
     pub fn step(&mut self) {
-        // Each step of the gameboy cycle
+        
     }
-
+/*
     pub fn handle_interrupt(&mut self) {
         // Implement how to handle interrupts, depending on registers IME, IF, IE
     }

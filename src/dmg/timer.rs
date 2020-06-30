@@ -83,16 +83,16 @@ impl Timer {
         }
     }
 
-    // Interrupt
-    // pub fn cycle_flush(&mut self, cycle_count: u32) -> Interrupts {
-    //     self.flush_div(cycle_count);
+     //Interrupt
+     pub fn cycle_flush(&mut self, cycle_count: u32) -> Interrupts {
+         self.flush_div(cycle_count);
 
-    //     if self.flush_tima(cycle_count) {
-    //         INT_TIMEROVERFLOW
-    //     } else {
-    //         Interrupts::empty()
-    //     }
-    // }
+         if self.flush_tima(cycle_count) {
+             INT_TIMEROVERFLOW
+         } else {
+             Interrupts::empty()
+         }
+     }
 
     fn flush_tima(&mut self, cycle_count: u32) -> bool {
         // returns if it overflows
