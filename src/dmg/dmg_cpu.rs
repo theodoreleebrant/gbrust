@@ -136,19 +136,17 @@ impl Cpu {
             is_0bb,
         );
 
-
         let pc_change = match parts {
             // opcodes starting with 00
-<<<<<<< HEAD
-            (0b00, 0b110, 0b110, _, _) => self.ld_addr_HL_n(),
+            (0b00, 0b110, 0b110, _, _) => self.ld_addr_hl_n(),
             (0b00, 0b001, 0b010, _, _) => self.ld_A_addr_BC(),
             (0b00, 0b011, 0b010, _, _) => self.ld_A_addr_DE(),
             (0b00, 0b000, 0b010, _, _) => self.ld_addr_BC_A(),
             (0b00, 0b010, 0b010, _, _) => self.ld_addr_DE_A(),
-            (0b00, 0b111, 0b010, _, _) => self.ld_A_addr_HL_dec(),
-            (0b00, 0b110, 0b010, _, _) => self.ld_addr_HL_A_dec(),
-            (0b00, 0b101, 0b010, _, _) => self.ld_A_addr_HL_inc(),
-            (0b00, 0b100, 0b010, _, _) => self.ld_addr_HL_A_inc(),
+            (0b00, 0b111, 0b010, _, _) => self.ld_A_addr_hl_dec(),
+            (0b00, 0b110, 0b010, _, _) => self.ld_addr_hl_A_dec(),
+            (0b00, 0b101, 0b010, _, _) => self.ld_A_addr_hl_inc(),
+            (0b00, 0b100, 0b010, _, _) => self.ld_addr_hl_A_inc(),
             (0b00, 0b001, 0b000, _, _) => self.ld_addr_nn_SP(),
             (0b00, 0b011, 0b000, _, _) => self.jr_e(),
             (0b00, 0b111, 0b111, _, _) => self.ccf(),
@@ -173,8 +171,8 @@ impl Cpu {
             (0b00, _, 0b100, _, _) => self.inc_r(),
 
             // opcodes starting with 01
-            (0b01, 0b110, _, _, _) => self.ld_addr_HL_r(),
-            (0b01, _, 0b110, _, _) => self.ld_r_addr_HL(),
+            (0b01, 0b110, _, _, _) => self.ld_addr_hl_r(),
+            (0b01, _, 0b110, _, _) => self.ld_r_addr_hl(),
             (0b01, _, _, _, _) => self.ld_rx_ry(),
 
             // opcodes starting with 10:
@@ -196,14 +194,13 @@ impl Cpu {
             (0b10, 0b111, _, _, _) => self.cp_r(),
             
             // opcodes starting with 11
-<<<<<<< HEAD
             (0b11, 0b111, 0b010, _, _) => self.ld_A_addr_nn(),
             (0b11, 0b101, 0b010, _, _) => self.ld_addr_nn_A(),
             (0b11, 0b110, 0b010, _, _) => self.ldh_A_addr_offset_C(),
             (0b11, 0b100, 0b010, _, _) => self.ldh_addr_offset_C_A(),
             (0b11, 0b110, 0b000, _, _) => self.ldh_A_addr_offset_n(),
             (0b11, 0b100, 0b000, _, _) => self.ldh_addr_offset_n_A(),
-            (0b11, 0b111, 0b001, _, _) => self.ld_SP_HL(),
+            (0b11, 0b111, 0b001, _, _) => self.ld_SP_hl(),
             (0b11, 0b000, 0b110, _, _) => self.add_an(), // arithmetic
             (0b11, 0b001, 0b110, _, _) => self.adc_an(),
             (0b11, 0b010, 0b110, _, _) => self.sub_n(),
@@ -214,7 +211,7 @@ impl Cpu {
             (0b11, 0b111, 0b110, _, _) => self.cp_n(),
             (0b11, 0b101, 0b000, _, _) => self.add_spe(),
             (0b11, 0b000, 0b011, _, _) => self.jp_nn(),
-            (0b11, 0b101, 0b001, _, _) => self.jp_HL(),
+            (0b11, 0b101, 0b001, _, _) => self.jp_hl(),
             (0b11, 0b001, 0b101, _, _) => self.call_nn(),
             (0b11, 0b001, 0b001, _, _) => self.ret(),
             (0b11, 0b011, 0b001, _, _) => self.reti(),
