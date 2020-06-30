@@ -1692,7 +1692,7 @@ impl Cpu {
         self.reg.pc -= 1;
 
         let mut data: u8;
-        let mut bit_0: u8;
+        let bit_0: u8;
 
         match r {
             0x06 => {
