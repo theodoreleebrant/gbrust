@@ -1,3 +1,5 @@
+use super::Interrupts;
+
 #[derive(Debug)]
 pub enum ButtonState {
     Up,
@@ -99,10 +101,9 @@ impl Gamepad {
         self.port = val & 0b0011_0000
     }
 
-    // Interrupt to be implemented
-    // pub fn cycle_flush(&mut self, _cycle_count: u32) -> Interrupts {
-    //     Interrupts::empty()
-    // }
+    pub fn cycle_flush(&mut self, _cycle_count: u32) -> Interrupts {
+        Interrupts::empty()
+    }
 
     pub fn handle_event(&mut self, mut event: InputEvent) {
         use self::Button::*;
