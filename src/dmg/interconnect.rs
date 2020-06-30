@@ -2,6 +2,7 @@ use super::ppu::Ppu;
 use super::cart::Cart;
 use super::timer::Timer;
 use super::gamepad::Gamepad;
+use super::console::VideoSink;
 
 const RAM_SIZE: usize = 32 * 1024; // Memory for the last 32KB as first 32KB is for ROM
 const ZERO_PAGE: usize = 0x7f;
@@ -150,6 +151,20 @@ impl Interconnect {
             0xFFFF => self.int_enable = val,
             _ => {} // panic!("Write: addr not in range!! 0x{:x} - val: 0x{:x}", addr, val),
         }
+    }
+    
+    pub fn cycle_flush(&mut self, cycle_count: u32, video_sink: &mut dyn VideoSink) {
+        // Obtain Interrupts object from ppu_ints, timer_ints, gamepad_ints. These will be
+        // interrupts that are requested.
+        let ppu_ints = self.ppu.cycle_flush(cycle_count, video_sink);
+        let timer_ints = self.timer.cycle_flush(cycle_count);
+        let gamepad_ints = self.gamepad.cycle_flush(cycle_count);
+
+        // summarize all requested interrupts
+        let all_interrupts = ppu_ints | timer_ints | gamepad_ints;
+
+        // send all requested interrupts
+        self.int_flags |= all_interrupts;
     }
 
     fn ppu_dma_transfer(&mut self) {
