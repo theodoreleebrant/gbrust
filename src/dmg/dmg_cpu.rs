@@ -120,7 +120,7 @@ impl Cpu {
         // elapsed_cycles calculates how many cycles are spent carrying out the instruction and
         // corresponding interrupt (if produced) = time to execute + time to handle interrupt
         let elapsed_cycles = {
-            self.execute_instruction() + self.handle_interrupt() 
+            self.execute_opcode() + self.handle_interrupt() 
         };
         self.interconnect.cycle_flush(elapsed_cycles, video_sink);
         
@@ -140,7 +140,7 @@ impl Cpu {
 
         // Either: ime = false which means ALL interrupts are disabled OR none of I/O devices
         // requested / are allowed to request interrupt 
-        if !self.ime || all_ints == 0 {
+        if !self.reg.ime || all_ints == 0 {
             return 0;
         }
         
@@ -153,13 +153,13 @@ impl Cpu {
             2 => 0x50,  // Timer Overflow
             3 => 0x58,  // Serial Transfer Complete
             4 => 0x60,  // P10-P13 Input Signal
-            _ => panic!("Invalid interrupt! {:x}", int),
+            _ => panic!("Invalid interrupt! {:x}", interrupt_bit),
         };
         
         // After handling request, reset correspoding bit
         self.interconnect.int_flags &= 0xff << (interrupt_bit + 1);
         // reset ime
-        self.ime = false;
+        self.reg.ime = false;
 
         let pc = self.reg.pc;
         self.push_u16(pc);
