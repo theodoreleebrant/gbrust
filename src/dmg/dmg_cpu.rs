@@ -113,8 +113,6 @@ impl Cpu {
 
             halt_mode: false,
             stop_mode: false,
-
-            // clock: 0,
         }
     }
 
