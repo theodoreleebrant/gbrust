@@ -98,9 +98,9 @@ pub struct Cpu {
 	pub interconnect: Interconnect, // in charge of everything else. Needs to be pub to be accessed by console
 }
 
-pub enum ProgramCounter {
-    Next(i16),
-    Jump(u16),
+pub enum ProgramCounter { // Each returned ProgramCounter will return number of bytes of instruction, then number of cycles 
+    Next(i16, u32),
+    Jump(u16, u32),
 }
 
 impl Cpu {
@@ -118,8 +118,15 @@ impl Cpu {
         }
     }
 
-    pub fn step(&mut self) {
+    pub fn step(&mut self, video_sink: &mut dyn VideoSink) -> u32 {
+        // elapsed_cycles calculates how many cycles are spent carrying out the instruction and
+        // corresponding interrupt (if produced) = time to execute + time to handle interrupt
+        let elapsed_cycles = {
+            sself.execute_instruction() + self.handle_interrupt() 
+        };
+        self.interconnect.cycle_flush(elapsed_cycles, video_sink);
         
+        elapsed_cycles        
     }
 /*
     pub fn handle_interrupt(&mut self) {
@@ -127,7 +134,7 @@ impl Cpu {
     }
 */
 
-    pub fn execute_opcode(&mut self) {
+    pub fn execute_opcode(&mut self) -> u32 {
         let opcode: u8 = self.mem[self.reg.pc as usize];
         
         let is_aa0: bool = (opcode & 0b0000_1000) == 0; 
@@ -235,10 +242,18 @@ impl Cpu {
             _ => panic!("No such opcode"),
         };
         
-        match pc_change {
-            ProgramCounter::Next(val) => self.reg.pc = (self.reg.pc as i16 + val) as u16,
-            ProgramCounter::Jump(addr) => self.reg.pc = addr,
+        let cycles_taken: u32 = match pc_change {
+            ProgramCounter::Next(bytes, cycles) => {
+                self.reg.pc = (self.reg.pc as i16 + bytes) as u16;
+                cycles
+            },
+            ProgramCounter::Jump(addr, cycles) => {
+                self.reg.pc = addr;
+                cycles
+            },
         };
+
+        cycles_taken
 
     }
 
