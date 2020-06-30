@@ -607,7 +607,7 @@ impl CPU {
         let ry =  self.get_r8_from();
 
         match self.read_from_r8(ry) {
-            Some(value) => self.write_to_r8(rx, ry),
+            Some(value) => self.write_to_r8(rx, value),
             None => (),
         }
 
