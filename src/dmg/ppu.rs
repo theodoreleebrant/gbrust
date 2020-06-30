@@ -1,7 +1,8 @@
 pub const OAM_SIZE: usize = 0x100; // address for OAM
-const FRAMEBUFFER_SIZE: usize = DISPLAY_WIDTH * DISPLAY_HEIGHT; // address for the full frame
+// const FRAMEBUFFER_SIZE: usize = DISPLAY_WIDTH * DISPLAY_HEIGHT; // address for the full frame,
+// not used at the moment
 
-const CLKS_SCREEN_REFRESH: u32 = 70224; // refresh every 70224 clks
+// const CLKS_SCREEN_REFRESH: u32 = 70224; // refresh every 70224 clks not used at the moment
 pub const DISPLAY_WIDTH: usize = 160;
 pub const DISPLAY_HEIGHT: usize = 144;
 
@@ -12,12 +13,12 @@ const MODE_VBLANK: u8 = 1;
 const MODE_OAM: u8 = 2;
 const MODE_VRAM: u8 = 3;
 
-const HBLANK_CYCLES: u32 = 204;
-const VBLANK_CYCLES: u32 = 456;
-const OAM_CYCLES: u32 = 80;
-const VRAM_CYCLES: u32 = 172;
-
-const SPRITES_PER_Y_LINE: u16 = 40;
+// const HBLANK_CYCLES: u32 = 204;
+// const VBLANK_CYCLES: u32 = 456;
+// const OAM_CYCLES: u32 = 80;
+// const VRAM_CYCLES: u32 = 172;
+// 
+// const SPRITES_PER_Y_LINE: u16 = 40;
 const TILE_BYTES: u16 = 16;
 const TILE_BASE_ADDR: u16 = 0x8000;
 
@@ -159,7 +160,7 @@ impl Mode {
         };
         flag as u8
     }
-
+/*
     fn get_mode(code: u8) -> Self {
         match code {
             MODE_HBLANK => Mode::Hblank,
@@ -169,6 +170,7 @@ impl Mode {
             _ => panic!("Unknown mode code"),
         }
     }
+*/
 }
 
 pub struct Ppu {
@@ -392,7 +394,6 @@ impl Ppu {
             let scanline = self.ly;
 
             let y_size = if is_size_8x16 { 16 } else { 8 };
-            let x_size = 8;
 
             // Compares scanline to self.ly to find the 10 sprites on the line that appear first
             // on OAM. (FE00-FE03 = first sprite, FE04 - FE07 2nd sprite and so on. Rank is used to

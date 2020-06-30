@@ -20,8 +20,8 @@ const HL_ID: u8 = 0b10;
 const SP_ID: u8 = 0b11;
 
 // Interrupt Registers Address
-const IE: u16 = 0xFFFF;
-const IF: u16 = 0xFF0F;
+// const IE: u16 = 0xFFFF;
+// const IF: u16 = 0xFF0F; // not used yet
 
 // Places to jump to during interrupts
 
@@ -89,7 +89,7 @@ pub struct Cpu {
 	halt_mode: bool,    // true -> enter halt mode
 	stop_mode: bool,    // true -> enter stop mode
 
-	clock: u8,          // For timing in GB
+	// clock: u8,          // For timing in GB, not used yet
 }
 
 pub enum ProgramCounter {
@@ -108,7 +108,7 @@ impl Cpu {
             halt_mode: false,
             stop_mode: false,
 
-            clock: 0,
+            // clock: 0,
         }
     }
 
@@ -1692,7 +1692,7 @@ impl Cpu {
         self.reg.pc -= 1;
 
         let mut data: u8;
-        let mut bit_0: u8;
+        let bit_0: u8;
 
         match r {
             0x06 => {
@@ -2055,8 +2055,6 @@ impl Cpu {
     /// scf: Sets carry flag, reset N and H flags.
     /// 1 byte, 1 cycle
     pub fn scf(&mut self) -> ProgramCounter {
-        let z_bit = self.reg.f & ZF;
-
         // set carry, reset n and h
         self.set_hcn(false, true, false);
 

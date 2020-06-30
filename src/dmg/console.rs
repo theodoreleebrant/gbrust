@@ -59,7 +59,7 @@ impl Console {
         self.interconnect.gamepad.handle_event(input_event);
     }
 
-    /* TODO: implement copy_ram in interconnect?
+    /* TODO: implement copy_ram in cart?
         pub fn copy_cart_ram(&self) -> Option<Box<[u8]>> {
             self.interconnect.cart.copy_ram()
         }

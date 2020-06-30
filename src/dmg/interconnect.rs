@@ -14,7 +14,6 @@ pub struct Interconnect {
     ppu_dma: u8, // DMA Transfer and Start Address, 0xFF46
     pub int_enable: u8,
     pub int_flags: u8,
-    ram_offset: usize,
     pub gamepad: Gamepad,
     timer: Timer,
     // TODO: Sound Processing unit, gamepad, timer
@@ -35,7 +34,6 @@ impl Interconnect {
             ppu_dma: 0,
             int_enable: 0,
             int_flags: 0,
-            ram_offset: 0,
             gamepad: gamepad,
         }
     }
