@@ -20,13 +20,11 @@ pub struct Interconnect {
 }
 
 impl Interconnect {
-    pub fn new(cart: Cart,
-               ppu: Ppu,
-               gamepad: Gamepad)
+    pub fn new(cart: Cart)
                -> Interconnect {
         Interconnect {
             cart: cart,
-            ppu: ppu,
+            ppu: Ppu::new(),
             // spu: spu,
             timer: Timer::new(),
             ram: vec![0; RAM_SIZE].into_boxed_slice(),
@@ -34,7 +32,7 @@ impl Interconnect {
             ppu_dma: 0,
             int_enable: 0,
             int_flags: 0,
-            gamepad: gamepad,
+            gamepad: Gamepad::new(),
         }
     }
 

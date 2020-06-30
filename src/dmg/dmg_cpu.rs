@@ -1,3 +1,9 @@
+use super::interconnect::Interconnect;
+use super::console::VideoSink;
+
+use std::u8;
+use std::u16;
+
 // Flags
 const ZF: u8 = 0x80; // 0b10000000
 const NF: u8 = 0x40; // 0b01000000
@@ -89,7 +95,7 @@ pub struct Cpu {
 	halt_mode: bool,    // true -> enter halt mode
 	stop_mode: bool,    // true -> enter stop mode
 
-	interconnect: Interconnect, // in charge of everything else
+	pub interconnect: Interconnect, // in charge of everything else. Needs to be pub to be accessed by console
 }
 
 pub enum ProgramCounter {
@@ -98,12 +104,12 @@ pub enum ProgramCounter {
 }
 
 impl Cpu {
-    pub fn initialize() -> Self {
+    pub fn new(interconnect: Interconnect) -> Self {
         Cpu {
             reg: Registers::new(),
             mem: [0; 65536],
             stack: [0; 065536],
-            //interconnect: Interconnect::new(),
+            interconnect: interconnect,
 
             halt_mode: false,
             stop_mode: false,

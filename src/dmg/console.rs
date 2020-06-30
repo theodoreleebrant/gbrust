@@ -34,15 +34,13 @@ impl<'a> VideoSink for FrameHandler<'a> {
 
 pub struct Console {
     cpu: Cpu,
-    interconnect: Interconnect,
 }
 
 impl Console {
     pub fn new(cart: Cart) -> Console {
-        let interconnect = Interconnect::new(cart, Ppu::new(), Gamepad::new());
+        let interconnect = Interconnect::new(cart);
         Console {
-            cpu: Cpu::initialize(),
-            interconnect: interconnect,
+            cpu: Cpu::new(interconnect),
         }
     }
 
@@ -56,12 +54,12 @@ impl Console {
     }
     
     pub fn handle_event(&mut self, input_event: InputEvent) {
-        self.interconnect.gamepad.handle_event(input_event);
+        self.cpu.interconnect.gamepad.handle_event(input_event);
     }
 
     /* TODO: implement copy_ram in cart?
         pub fn copy_cart_ram(&self) -> Option<Box<[u8]>> {
-            self.interconnect.cart.copy_ram()
+            self.cpu.interconnect.cart.copy_ram()
         }
     */
 }
