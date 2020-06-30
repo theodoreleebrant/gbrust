@@ -394,7 +394,6 @@ impl Ppu {
             let scanline = self.ly;
 
             let y_size = if is_size_8x16 { 16 } else { 8 };
-            let x_size = 8;
 
             // Compares scanline to self.ly to find the 10 sprites on the line that appear first
             // on OAM. (FE00-FE03 = first sprite, FE04 - FE07 2nd sprite and so on. Rank is used to
