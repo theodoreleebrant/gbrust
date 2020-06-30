@@ -76,7 +76,7 @@ impl Interconnect {
             // 0xFF06: TMA / Timer Modulo - used when TIMA overflows.
             // 0xFF07: TAC / Timer Control. 3 bits: MSB is stop/start timer (0/1)
             //         2LSB is input clock speed (4096kHz, 262114 kHz, 65536kHz, 16384kHz)
-            0xff04..= 0xff07 => 0,
+            0xff04..= 0xff07 => self.timer.read(addr),
 
             // 0xFF08 - 0xFFOE unused
 
@@ -122,7 +122,7 @@ impl Interconnect {
             0xFF01..= 0xFF02 => {},
 
             //0xFF04..= 0xFF07 =>self.timer.write(addr, val),
-            0xFF04..= 0xFF07 => {},
+            0xFF04..= 0xFF07 => self.timer.write(addr, val),
 
             // Serial Interrupt
             0xFF0F => self.int_flags = val,
