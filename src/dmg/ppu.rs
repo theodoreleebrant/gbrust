@@ -160,7 +160,7 @@ impl Mode {
         };
         flag as u8
     }
-
+/*
     fn get_mode(code: u8) -> Self {
         match code {
             MODE_HBLANK => Mode::Hblank,
@@ -170,6 +170,7 @@ impl Mode {
             _ => panic!("Unknown mode code"),
         }
     }
+*/
 }
 
 pub struct Ppu {
