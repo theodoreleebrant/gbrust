@@ -163,8 +163,8 @@ impl Interconnect {
         // summarize all requested interrupts
         let all_interrupts = ppu_ints | timer_ints | gamepad_ints;
 
-        // send all requested interrupts
-        self.int_flags |= all_interrupts;
+        // send all requested interrupts. .bits is a bitflags-supported method
+        self.int_flags |= all_interrupts.bits;
     }
 
     fn ppu_dma_transfer(&mut self) {
