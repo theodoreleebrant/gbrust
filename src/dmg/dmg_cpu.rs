@@ -1,5 +1,6 @@
 use super::interconnect::Interconnect;
 use super::console::VideoSink;
+use super::cart::Cart;
 
 use std::u8;
 use std::u16;
@@ -342,7 +343,11 @@ impl Cpu {
     /// write_to_r8: write content to appropriate 8-bit register based on register ID.
     /// @param r8_id: ID of register
     /// @param content: content to write to register
-    /// returns boolean to indicate ID is valid.
+    /// # Examples
+    ///
+    /// ```
+    /// assert_eq!(1, 0);
+    /// ```
     pub fn write_to_r8(&mut self, r8_id: u8, content: u8) {
         match r8_id {
             A_ID => self.reg.a = content,
@@ -367,7 +372,7 @@ impl Cpu {
                 self.reg.hl = (self.reg.hl & 0x00ff) | ((content as u16) << 8);
             },
             L_ID => {
-                self.reg.h = content;
+                self.reg.l = content;
                 self.reg.hl = (self.reg.hl & 0xff00) | (content as u16);
             },
             _ => panic!("Invalid register!"),
@@ -683,11 +688,11 @@ impl Cpu {
     // Cycles: 1
     pub fn ld_rx_ry(&mut self) -> ProgramCounter {
         let rx = self.get_r8_to();
-        let ry =  self.get_r8_from();
+        let ry = self.get_r8_from();
 
         match self.read_from_r8(ry) {
             Some(value) => self.write_to_r8(rx, value),
-            None => (),
+            None => {},
         }
 
         ProgramCounter::Next(1, 1)
@@ -2243,6 +2248,3 @@ impl Cpu {
     }
 }
 
-#[cfg(test)]
-#[path = "./cpu_test.rs"]
-mod test;
