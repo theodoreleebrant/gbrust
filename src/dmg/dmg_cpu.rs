@@ -338,12 +338,30 @@ impl Cpu {
     pub fn write_to_r8(&mut self, r8_id: u8, content: u8) {
         match r8_id {
             A_ID => self.reg.a = content,
-            B_ID => self.reg.b = content,
-            C_ID => self.reg.c = content,
-            D_ID => self.reg.d = content,
-            E_ID => self.reg.e = content,
-            H_ID => self.reg.h = content,
-            L_ID => self.reg.l = content,
+            B_ID => {
+                self.reg.b = content;
+                self.reg.bc = (self.reg.bc & 0x00ff) | ((content as u16) << 8);
+            },
+            C_ID => {
+                self.reg.c = content;
+                self.reg.bc = (self.reg.bc & 0xff00) | (content as u16);
+            },
+            D_ID => {
+                self.reg.b = content;
+                self.reg.bc = (self.reg.de & 0x00ff) | ((content as u16) << 8);
+            },
+            E_ID => {
+                self.reg.c = content;
+                self.reg.bc = (self.reg.de & 0xff00) | (content as u16);
+            },
+            H_ID => {
+                self.reg.b = content;
+                self.reg.bc = (self.reg.hl & 0x00ff) | ((content as u16) << 8);
+            },
+            L_ID => {
+                self.reg.c = content;
+                self.reg.bc = (self.reg.hl & 0xff00) | (content as u16);
+            },
             _ => panic!("Invalid register!"),
         }
     }
