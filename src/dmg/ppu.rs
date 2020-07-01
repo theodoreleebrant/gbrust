@@ -124,7 +124,7 @@ impl LCDStat {
             mode_1_vblank_interupt: false,          // RW
             mode_0_hblank_interrupt: false,         // RW
             coincidence_flag: false,                // R
-            mode_flag: Mode::Vblank,                // R
+            mode_flag: Mode::VBlank,                // R
         } 
     }
 
@@ -148,8 +148,8 @@ impl LCDStat {
 }
 
 enum Mode {
-    Hblank,
-    Vblank,
+    HBlank,
+    VBlank,
     Oam,
     Vram,
 }
@@ -157,8 +157,8 @@ enum Mode {
 impl Mode {
     fn get_flags(&self) -> u8 {
         let flag = match self {
-            Mode::Hblank => MODE_HBLANK,
-            Mode::Vblank => MODE_VBLANK,
+            Mode::HBlank => MODE_HBLANK,
+            Mode::VBlank => MODE_VBLANK,
             Mode::Oam => MODE_OAM,
             Mode::Vram => MODE_VRAM,
         };
@@ -267,8 +267,23 @@ impl Ppu {
     // for LCD Screen: VBlank Interrupt and LCDCStat interrupt. In each cycle_flush, conditions to
     // request these interrupts are checked and will be requested if satisfied
     pub fn cycle_flush(&mut self, cycle_count: u32, video_sink: &mut dyn VideoSink) -> Interrupts {
+        let mut interrupt = Interrupts::empty();
         self.mode_cycles += cycle_count;  
         
+        if self.lcdc.lcd_display_enable {
+            interrupt = match self.lcdstat.mode_flag {
+                Mode::HBlank => self.hblank_flush(),
+                Mode::VBlank => self.vblank_flush(),
+                Mode::Oam => self.oam_flush(),
+                Mode::Vram => self.vram_flush(),
+            };
+        } else {
+            if self.mode_cycles >= CLKS_SCREEN_REFRESH {
+                self.mode_cycles -= CLKS_SCREEN_REFRESH;
+            }
+        }
+
+        interrupt
     }
 
     // Functions to invoke, assuming seld.lcdc.lcd_display_enable = true
@@ -369,7 +384,7 @@ impl Ppu {
         // Only carry out flush if there are enough cycles available
         if self.mode_cycles >= VRAM_CYCLES {
             self.mode.cycles -= VRAM_CYCLES;
-            self.lcdstat.mode_flag = Mode::hblank;
+            self.lcdstat.mode_flag = Mode::HBlank;
         }
 
         Interrupts::empty()
