@@ -25,10 +25,6 @@ const DE_ID: u8 = 0b01;
 const HL_ID: u8 = 0b10;
 const SP_ID: u8 = 0b11;
 
-// Interrupt Registers Address
-// const IE: u16 = 0xFFFF;
-// const IF: u16 = 0xFF0F; // not used yet
-
 // Places to jump to during interrupts
 
 /// GB has 8 8-bit registers (including special flag register).
