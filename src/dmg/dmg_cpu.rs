@@ -1,5 +1,6 @@
 use super::interconnect::Interconnect;
 use super::console::VideoSink;
+use super::cart::Cart;
 
 use std::u8;
 use std::u16;
@@ -274,7 +275,15 @@ impl Cpu {
         
         let cycles_taken: u32 = match pc_change {
             ProgramCounter::Next(bytes, cycles) => {
-                self.reg.pc = (self.reg.pc as i16 + bytes) as u16;
+                let offset: u16;
+                if bytes < 0 {
+                    offset = (bytes * (-1)) as u16;
+                    self.reg.pc -= offset;
+                } else {
+                    offset = bytes as u16;
+                    self.reg.pc = self.reg.pc.wrapping_add(offset);
+                }
+                //println!("Next pc is: {:x}", self.reg.pc);
                 cycles
             },
             ProgramCounter::Jump(addr, cycles) => {
@@ -330,7 +339,11 @@ impl Cpu {
     /// write_to_r8: write content to appropriate 8-bit register based on register ID.
     /// @param r8_id: ID of register
     /// @param content: content to write to register
-    /// returns boolean to indicate ID is valid.
+    /// # Examples
+    ///
+    /// ```
+    /// assert_eq!(1, 0);
+    /// ```
     pub fn write_to_r8(&mut self, r8_id: u8, content: u8) {
         match r8_id {
             A_ID => self.reg.a = content,
@@ -343,20 +356,20 @@ impl Cpu {
                 self.reg.bc = (self.reg.bc & 0xff00) | (content as u16);
             },
             D_ID => {
-                self.reg.b = content;
-                self.reg.bc = (self.reg.de & 0x00ff) | ((content as u16) << 8);
+                self.reg.d = content;
+                self.reg.de = (self.reg.de & 0x00ff) | ((content as u16) << 8);
             },
             E_ID => {
-                self.reg.c = content;
-                self.reg.bc = (self.reg.de & 0xff00) | (content as u16);
+                self.reg.e = content;
+                self.reg.de = (self.reg.de & 0xff00) | (content as u16);
             },
             H_ID => {
-                self.reg.b = content;
-                self.reg.bc = (self.reg.hl & 0x00ff) | ((content as u16) << 8);
+                self.reg.h = content;
+                self.reg.hl = (self.reg.hl & 0x00ff) | ((content as u16) << 8);
             },
             L_ID => {
-                self.reg.c = content;
-                self.reg.bc = (self.reg.hl & 0xff00) | (content as u16);
+                self.reg.l = content;
+                self.reg.hl = (self.reg.hl & 0xff00) | (content as u16);
             },
             _ => panic!("Invalid register!"),
         }
@@ -671,11 +684,11 @@ impl Cpu {
     // Cycles: 1
     pub fn ld_rx_ry(&mut self) -> ProgramCounter {
         let rx = self.get_r8_to();
-        let ry =  self.get_r8_from();
+        let ry = self.get_r8_from();
 
         match self.read_from_r8(ry) {
             Some(value) => self.write_to_r8(rx, value),
-            None => (),
+            None => {},
         }
 
         ProgramCounter::Next(1, 1)
@@ -2114,7 +2127,7 @@ impl Cpu {
     pub fn halt(&mut self) -> ProgramCounter {
         self.halt_mode = true;
 
-        ProgramCounter::Next(0, 0)     // does not incrememt
+        ProgramCounter::Next(1, 0)     // does not incrememt
     }
     
     /// stop: Cpu enters "stop mode" and stops everything including system clock, 
@@ -2123,7 +2136,7 @@ impl Cpu {
     pub fn stop(&mut self) -> ProgramCounter {
         self.stop_mode = true;
 
-        ProgramCounter::Next(0, 0)     // does not increment
+        ProgramCounter::Next(1, 0)     // does not increment
     }
 
     /// di: Disables interrupt handling by setting IME = 0, cancelling any scheduled effects of the
@@ -2230,3 +2243,4 @@ impl Cpu {
         ProgramCounter::Next(1, 1)
     }
 }
+

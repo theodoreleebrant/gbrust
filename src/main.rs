@@ -79,7 +79,10 @@ impl<'a> VideoSink<'a> {
 
 impl<'a> dmg::console::VideoSink for VideoSink<'a> {
     fn frame_available(&mut self, frame: &Box<[u32]>) {
-        self.window.update_with_buffer(frame, 160, 144);
+        match self.window.update_with_buffer(frame, 160, 144) {
+            Ok(_val) => {},
+            Err(err_msg) => panic!(err_msg),
+        }
     }
 }
 
@@ -89,11 +92,11 @@ fn main() {
     let rom_path = PathBuf::from(env::args().nth(1).unwrap());
     let rom_binary = load_bin(&rom_path);
 
-    // let save_ram_path = {
-    //     let mut path = rom_path.clone();
-    //     path.set_extension("sav");
-    //     path
-    // };
+    let save_ram_path = {
+        let mut path = rom_path.clone();
+        path.set_extension("sav");
+        path
+    };
 
     // Unused for DMG
     // let ram = if save_ram_path.exists() {
@@ -139,6 +142,8 @@ fn main() {
             std::thread::sleep(sleep)
         }
     }
+
+    println!("Program exitted!");
 
     // if let Some(ram) = console.copy_cart_ram() {
     //     save_bin(&save_ram_path, ram)

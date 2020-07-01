@@ -1,11 +1,13 @@
 use super::Interrupts;
 use super::console::VideoSink;
 
-pub const OAM_SIZE: usize = 0x100; // address for OAM
-// const FRAMEBUFFER_SIZE: usize = DISPLAY_WIDTH * DISPLAY_HEIGHT; // address for the full frame,
-// not used at the moment
+const INT_VBLANK: Interrupts = Interrupts::INT_VBLANK;
+const INT_LCDSTAT: Interrupts = Interrupts::INT_LCDSTAT;
 
-// const CLKS_SCREEN_REFRESH: u32 = 70224; // refresh every 70224 clks not used at the moment
+pub const OAM_SIZE: usize = 0x100; // address for OAM
+const FRAMEBUFFER_SIZE: usize = DISPLAY_WIDTH * DISPLAY_HEIGHT; // address for the full frame,
+
+const CLKS_SCREEN_REFRESH: u32 = 70224; // refresh every 70224 clks not used at the moment
 pub const DISPLAY_WIDTH: usize = 160;
 pub const DISPLAY_HEIGHT: usize = 144;
 
@@ -16,12 +18,11 @@ const MODE_VBLANK: u8 = 1;
 const MODE_OAM: u8 = 2;
 const MODE_VRAM: u8 = 3;
 
-// const HBLANK_CYCLES: u32 = 204;
-// const VBLANK_CYCLES: u32 = 456;
-// const OAM_CYCLES: u32 = 80;
-// const VRAM_CYCLES: u32 = 172;
-// 
-// const SPRITES_PER_Y_LINE: u16 = 40;
+const HBLANK_CYCLES: u32 = 204;
+const VBLANK_CYCLES: u32 = 456;
+const OAM_CYCLES: u32 = 80;
+const VRAM_CYCLES: u32 = 172;
+ 
 const TILE_BYTES: u16 = 16;
 const TILE_BASE_ADDR: u16 = 0x8000;
 
@@ -123,7 +124,7 @@ impl LCDStat {
             mode_1_vblank_interupt: false,          // RW
             mode_0_hblank_interrupt: false,         // RW
             coincidence_flag: false,                // R
-            mode_flag: Mode::Vblank,                // R
+            mode_flag: Mode::VBlank,                // R
         } 
     }
 
@@ -147,8 +148,8 @@ impl LCDStat {
 }
 
 enum Mode {
-    Hblank,
-    Vblank,
+    HBlank,
+    VBlank,
     Oam,
     Vram,
 }
@@ -156,8 +157,8 @@ enum Mode {
 impl Mode {
     fn get_flags(&self) -> u8 {
         let flag = match self {
-            Mode::Hblank => MODE_HBLANK,
-            Mode::Vblank => MODE_VBLANK,
+            Mode::HBlank => MODE_HBLANK,
+            Mode::VBlank => MODE_VBLANK,
             Mode::Oam => MODE_OAM,
             Mode::Vram => MODE_VRAM,
         };
@@ -192,7 +193,9 @@ pub struct Ppu {
     vram: [u8; VRAM_SIZE],
     oam: [u8; OAM_SIZE],
     lcd_tiles: [u32; DISPLAY_WIDTH * DISPLAY_HEIGHT], // array of bytes representing all lcd tiles
-
+    cycles: u32, // cycles of an interrupt
+    mode_cycles: u32,    // keep track of cycles available for each mode
+    framebuffer: Box<[u32]>,    // To render images before showing to the screen
 }
 
 impl Ppu {
@@ -212,12 +215,15 @@ impl Ppu {
             vram: [0; VRAM_SIZE],
             oam: [0; OAM_SIZE],
             lcd_tiles: [0; DISPLAY_WIDTH * DISPLAY_HEIGHT], // array of bytes representing lcd_screen
+            cycles: 0,
+            mode_cycles: 0,
+            framebuffer: vec![0; FRAMEBUFFER_SIZE].into_boxed_slice(),
         }
     }
 
     pub fn write(&mut self, addr: u16, val: u8) {
         match addr {
-            0x8000..=0x97ff => { // tile data
+            0x8000..=0x9fff => { // tile data
                 let addr = addr - TILE_BASE_ADDR;
                 self.vram[addr as usize] = val;
             },
@@ -232,13 +238,13 @@ impl Ppu {
             0xFF47 => self.bgp = val,
             0xFF48 => self.obp0 = val,
             0xFF49 => self.obp1 = val,
-            _ => panic!("Unsupported address to write to"),
+            _ => panic!("Unsupported address to write to: 0x{:x}", addr),
         }
     }
 
     pub fn read(&mut self, addr: u16) -> u8 {
         match addr {
-            0x8000..=0x97ff => { // tile data
+            0x8000..=0x9fff => { // tile data
                 let addr = addr - TILE_BASE_ADDR;
                 self.vram[addr as usize]
             },  
@@ -253,15 +259,137 @@ impl Ppu {
             0xFF47 => self.bgp,
             0xFF48 => self.obp0,
             0xFF49 => self.obp1,
-            _ => panic!("Unsupported address to write to"),
+            _ => panic!("Unsupported address to read: 0x{:x}", addr),
         }
     }
 
+    // Cycle_flush: Function to generate interrupt signals. 2 types of interrupt signals available
+    // for LCD Screen: VBlank Interrupt and LCDCStat interrupt. In each cycle_flush, conditions to
+    // request these interrupts are checked and will be requested if satisfied
     pub fn cycle_flush(&mut self, cycle_count: u32, video_sink: &mut dyn VideoSink) -> Interrupts {
-        Interrupts::empty() // temporary, will change later        
+        let mut interrupt = Interrupts::empty();
+        self.mode_cycles += cycle_count;  
+        
+        if self.lcdc.lcd_display_enable {
+            interrupt = match self.lcdstat.mode_flag {
+                Mode::HBlank => self.hblank_flush(cycle_count, video_sink),
+                Mode::VBlank => self.vblank_flush(cycle_count),
+                Mode::Oam => self.oam_flush(cycle_count),
+                Mode::Vram => self.vram_flush(cycle_count),
+            };
+        } else {
+            if self.mode_cycles >= CLKS_SCREEN_REFRESH {
+                self.mode_cycles -= CLKS_SCREEN_REFRESH;
+            }
+        }
 
-
+        interrupt
     }
+
+    // Functions to invoke, assuming seld.lcdc.lcd_display_enable = true
+    
+    // Flush during hblank period
+    pub fn hblank_flush(&mut self, cycle_count: u32, video_sink: &mut dyn VideoSink) -> Interrupts {
+        let mut interrupt = Interrupts::empty(); // interrupt = 0x00
+
+        // Add cycle_count to LCD Clock (cycle)
+        self.cycles += cycle_count;
+        
+        let cycles = self.mode_cycles; // Number of cycles available to run this mode (mode 0)
+
+        // Only carry out flush if there are enough cycles available
+        if cycles >= HBLANK_CYCLES {
+            self.mode_cycles -= HBLANK_CYCLES;
+            
+            // Conditions to request LCDSTAT interrupt
+            self.lcdstat.coincidence_flag = self.ly == self.lyc; // Update coincidence flag by checking ly == lyc
+            if self.lcdstat.lcd_ly_coincidence_interrupt && self.lcdstat.coincidence_flag {
+                interrupt |= INT_LCDSTAT;
+            }
+            
+            self.lcdstat.mode_flag = if self.ly == 144 {
+                video_sink.frame_available(&self.framebuffer);
+                interrupt |= INT_VBLANK;
+                
+                if self.lcdstat.mode_1_vblank_interupt {
+                    interrupt |= INT_LCDSTAT;
+                }
+                
+                self.cycles = 0;
+                
+                Mode::VBlank
+            } else {
+                if self.lcdstat.mode_0_hblank_interrupt {
+                    interrupt |= INT_LCDSTAT;
+                }
+                self.draw_scanline();
+                Mode::Oam
+            };
+            self.ly += 1;
+        }
+
+        interrupt
+    }
+
+    pub fn vblank_flush(&mut self, cycle_count: u32) -> Interrupts {
+        let mut interrupt = Interrupts::empty(); // interrupt = 0x00
+
+        // Add cycle_count to LCD Clock (cycle)
+        self.cycles += cycle_count;
+        
+        let cycles = self.mode_cycles; // Number of cycles available to run this mode (mode 0)
+
+        // Only carry out flush if there are enough cycles available
+        if cycles >= VBLANK_CYCLES {
+            self.mode_cycles -= VBLANK_CYCLES;
+
+            // Check for conditions to set LCDStat interrupt
+            self.lcdstat.coincidence_flag = self.ly == self.lyc;
+            if self.lcdstat.coincidence_flag && self.lcdstat.lcd_ly_coincidence_interrupt {
+                interrupt |= INT_LCDSTAT;
+            }
+
+            self.ly += 1;
+            if self.ly == 154 { // ly = 154: end of V-Blank Period
+                self.lcdstat.mode_flag = Mode::Oam;
+                self.ly = 0;
+                
+                if self.lcdstat.mode_2_oam_interrupt {
+                    interrupt |= INT_LCDSTAT;
+                }
+            }
+
+        }
+
+        interrupt
+    }
+
+    pub fn oam_flush(&mut self, cycle_count: u32) -> Interrupts {
+        // Add cycle_count to LCD Clock (cycle)
+        self.cycles += cycle_count;
+        
+        // Only carry out flush if there are enough cycles available
+        if self.mode_cycles >= OAM_CYCLES {
+            self.mode_cycles -= OAM_CYCLES;
+            self.lcdstat.mode_flag = Mode::Vram;
+        }
+
+        Interrupts::empty()
+    }
+
+    pub fn vram_flush(&mut self, cycle_count: u32) -> Interrupts {
+        // Add cycle_count to LCD Clock (cycle)
+        self.cycles += cycle_count;
+        
+        // Only carry out flush if there are enough cycles available
+        if self.mode_cycles >= VRAM_CYCLES {
+            self.mode_cycles -= VRAM_CYCLES;
+            self.lcdstat.mode_flag = Mode::HBlank;
+        }
+
+        Interrupts::empty()
+    }
+
 
     pub fn oam_dma_transfer(&mut self, oam: [u8; OAM_SIZE]) {
         self.oam = oam;

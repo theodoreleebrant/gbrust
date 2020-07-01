@@ -1,4 +1,3 @@
-use super::ppu::Ppu;
 use super::dmg_cpu::Cpu;
 use super::interconnect::Interconnect;
 pub use super::gamepad::{InputEvent,Gamepad,Button,ButtonState};
@@ -47,9 +46,7 @@ impl Console {
     pub fn run_for_one_frame(&mut self, video_sink: &mut dyn VideoSink) {
         let mut frame_handler = FrameHandler::new(video_sink);
         while !frame_handler.frame_available {
-            // self.cpu.step(&mut frame_hander);
-            // TODO: implement step in cpu
-            frame_handler.frame_available = true; // just to end the loop for now
+            self.cpu.step(&mut frame_handler);
         }
     }
     
