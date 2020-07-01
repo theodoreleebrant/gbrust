@@ -79,7 +79,10 @@ impl<'a> VideoSink<'a> {
 
 impl<'a> dmg::console::VideoSink for VideoSink<'a> {
     fn frame_available(&mut self, frame: &Box<[u32]>) {
-        self.window.update_with_buffer(frame, 160, 144);
+        match self.window.update_with_buffer(frame, 160, 144) {
+            Ok(_val) => {},
+            Err(err_msg) => panic!(err_msg),
+        }
     }
 }
 
