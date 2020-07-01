@@ -92,11 +92,11 @@ fn main() {
     let rom_path = PathBuf::from(env::args().nth(1).unwrap());
     let rom_binary = load_bin(&rom_path);
 
-    // let save_ram_path = {
-    //     let mut path = rom_path.clone();
-    //     path.set_extension("sav");
-    //     path
-    // };
+    let save_ram_path = {
+        let mut path = rom_path.clone();
+        path.set_extension("sav");
+        path
+    };
 
     // Unused for DMG
     // let ram = if save_ram_path.exists() {
@@ -107,7 +107,7 @@ fn main() {
 
     let cart = Cart::new(rom_binary);
 
-    println!("{:?}", cart);
+    //println!("{:?}", cart);
 
     let mut console = Console::new(cart);
     
@@ -142,6 +142,8 @@ fn main() {
             std::thread::sleep(sleep)
         }
     }
+
+    println!("Program exitted!");
 
     // if let Some(ram) = console.copy_cart_ram() {
     //     save_bin(&save_ram_path, ram)

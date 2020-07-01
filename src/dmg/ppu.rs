@@ -223,7 +223,7 @@ impl Ppu {
 
     pub fn write(&mut self, addr: u16, val: u8) {
         match addr {
-            0x8000..=0x97ff => { // tile data
+            0x8000..=0x9fff => { // tile data
                 let addr = addr - TILE_BASE_ADDR;
                 self.vram[addr as usize] = val;
             },
@@ -238,13 +238,14 @@ impl Ppu {
             0xFF47 => self.bgp = val,
             0xFF48 => self.obp0 = val,
             0xFF49 => self.obp1 = val,
-            _ => panic!("Unsupported address to write to"),
+            _ => panic!("Unsupported address to write to: 0x{:x}", addr),
         }
     }
 
     pub fn read(&mut self, addr: u16) -> u8 {
+        println!("Reading at {:x}", addr);
         match addr {
-            0x8000..=0x97ff => { // tile data
+            0x8000..=0x9fff => { // tile data
                 let addr = addr - TILE_BASE_ADDR;
                 self.vram[addr as usize]
             },  
@@ -259,7 +260,7 @@ impl Ppu {
             0xFF47 => self.bgp,
             0xFF48 => self.obp0,
             0xFF49 => self.obp1,
-            _ => panic!("Unsupported address to write to"),
+            _ => panic!("Unsupported address to read: 0x{:x}", addr),
         }
     }
 

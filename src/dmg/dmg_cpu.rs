@@ -278,7 +278,15 @@ impl Cpu {
         
         let cycles_taken: u32 = match pc_change {
             ProgramCounter::Next(bytes, cycles) => {
-                self.reg.pc = (self.reg.pc as i16 + bytes) as u16;
+                let offset: u16;
+                if bytes < 0 {
+                    offset = (bytes * (-1)) as u16;
+                    self.reg.pc -= offset;
+                } else {
+                    offset = bytes as u16;
+                    self.reg.pc = self.reg.pc.wrapping_add(offset);
+                }
+                //println!("Next pc is: {:x}", self.reg.pc);
                 cycles
             },
             ProgramCounter::Jump(addr, cycles) => {
