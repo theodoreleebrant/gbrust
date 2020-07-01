@@ -2,10 +2,9 @@ use super::Interrupts;
 use super::console::VideoSink;
 
 pub const OAM_SIZE: usize = 0x100; // address for OAM
-// const FRAMEBUFFER_SIZE: usize = DISPLAY_WIDTH * DISPLAY_HEIGHT; // address for the full frame,
-// not used at the moment
+const FRAMEBUFFER_SIZE: usize = DISPLAY_WIDTH * DISPLAY_HEIGHT; // address for the full frame,
 
-// const CLKS_SCREEN_REFRESH: u32 = 70224; // refresh every 70224 clks not used at the moment
+ const CLKS_SCREEN_REFRESH: u32 = 70224; // refresh every 70224 clks not used at the moment
 pub const DISPLAY_WIDTH: usize = 160;
 pub const DISPLAY_HEIGHT: usize = 144;
 
@@ -192,7 +191,9 @@ pub struct Ppu {
     vram: [u8; VRAM_SIZE],
     oam: [u8; OAM_SIZE],
     lcd_tiles: [u32; DISPLAY_WIDTH * DISPLAY_HEIGHT], // array of bytes representing all lcd tiles
-
+    cycles: u8, // keep track of number of cycles
+    mode_cycles: u8,    // Keep track of timing in each interrupt mode
+    framebuffer: [u8; FRAMEBUFFER_SIZE],    // To render images before showing to the screen
 }
 
 impl Ppu {
@@ -212,6 +213,9 @@ impl Ppu {
             vram: [0; VRAM_SIZE],
             oam: [0; OAM_SIZE],
             lcd_tiles: [0; DISPLAY_WIDTH * DISPLAY_HEIGHT], // array of bytes representing lcd_screen
+            cycles: 0,
+            mode_cycles: 0,
+            framebuffer: [0; FRAMEBUFFER_SIZE],
         }
     }
 
