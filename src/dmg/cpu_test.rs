@@ -90,6 +90,7 @@ fn test_8bit_ld() {
     assert_eq!(get_from_hl(&cpu), N_DEF);
 }
 */
+/*
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -202,5 +203,4 @@ mod tests {
         assert_eq!(cpu.reg.a, MEM_HL_DEF);
     }
 
-    #[test]
-}
+}*/
