@@ -243,7 +243,6 @@ impl Ppu {
     }
 
     pub fn read(&mut self, addr: u16) -> u8 {
-        println!("Reading at {:x}", addr);
         match addr {
             0x8000..=0x9fff => { // tile data
                 let addr = addr - TILE_BASE_ADDR;
