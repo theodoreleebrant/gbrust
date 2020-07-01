@@ -1,15 +1,30 @@
 // Cartride file!!
 // Handles all reading files
 // use std::fmt;  Unused for now, removed to not incur the wrath of compiler
+use std::fmt;
 use std::fmt::Debug;
 use std::string::String;
 
 // use super::dmg_cpu::*;
-
 #[derive(Debug)]
 pub struct Cart {
     program: Box<[u8]>,
 }
+/* // Don't enable for bootrom test. Bootrom program is only 256 bytes long, does not contain info below
+impl Debug for Cart {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f,
+               "Cart {{
+        title: {},
+        size: {:?},
+        destination_code: {:?},
+        }}", 
+                self.get_title(),
+                self.get_rom_size(),
+                self.get_dest())
+    }
+}
+*/
 
 #[derive(Debug)]
 pub enum DestinationCode {

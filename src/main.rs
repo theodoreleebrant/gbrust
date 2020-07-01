@@ -107,7 +107,7 @@ fn main() {
 
     let cart = Cart::new(rom_binary);
 
-    //println!("{:?}", cart);
+    println!("{:?}", cart);
 
     let mut console = Console::new(cart);
     

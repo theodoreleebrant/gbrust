@@ -355,20 +355,20 @@ impl Cpu {
                 self.reg.bc = (self.reg.bc & 0xff00) | (content as u16);
             },
             D_ID => {
-                self.reg.b = content;
-                self.reg.bc = (self.reg.de & 0x00ff) | ((content as u16) << 8);
+                self.reg.d = content;
+                self.reg.de = (self.reg.de & 0x00ff) | ((content as u16) << 8);
             },
             E_ID => {
-                self.reg.c = content;
-                self.reg.bc = (self.reg.de & 0xff00) | (content as u16);
+                self.reg.e = content;
+                self.reg.de = (self.reg.de & 0xff00) | (content as u16);
             },
             H_ID => {
-                self.reg.b = content;
-                self.reg.bc = (self.reg.hl & 0x00ff) | ((content as u16) << 8);
+                self.reg.h = content;
+                self.reg.hl = (self.reg.hl & 0x00ff) | ((content as u16) << 8);
             },
             L_ID => {
-                self.reg.c = content;
-                self.reg.bc = (self.reg.hl & 0xff00) | (content as u16);
+                self.reg.h = content;
+                self.reg.hl = (self.reg.hl & 0xff00) | (content as u16);
             },
             _ => panic!("Invalid register!"),
         }
@@ -2126,7 +2126,7 @@ impl Cpu {
     pub fn halt(&mut self) -> ProgramCounter {
         self.halt_mode = true;
 
-        ProgramCounter::Next(0, 0)     // does not incrememt
+        ProgramCounter::Next(1, 0)     // does not incrememt
     }
     
     /// stop: Cpu enters "stop mode" and stops everything including system clock, 
@@ -2135,7 +2135,7 @@ impl Cpu {
     pub fn stop(&mut self) -> ProgramCounter {
         self.stop_mode = true;
 
-        ProgramCounter::Next(0, 0)     // does not increment
+        ProgramCounter::Next(1, 0)     // does not increment
     }
 
     /// di: Disables interrupt handling by setting IME = 0, cancelling any scheduled effects of the
@@ -2242,3 +2242,7 @@ impl Cpu {
         ProgramCounter::Next(1, 1)
     }
 }
+
+#[cfg(test)]
+#[path = "./cpu_test.rs"]
+mod test;
