@@ -943,7 +943,7 @@ impl Cpu {
 	    let h: bool = ((a & 0x0F) + (r & 0x0F)) > 0x0F;
 	    let c: bool = res > 0xFF;
 	    let n: bool = false;
-	    let to_write: u8 = (a & 0xFF) as u8;
+	    let to_write: u8 = (res & 0xFF) as u8;
 	    let z: bool = to_write == 0;
 
 	    self.write_a(to_write);
@@ -966,7 +966,7 @@ impl Cpu {
 	    let h: bool = ((a & 0x0F) + (r & 0x0F)) > 0x0F;
 	    let c: bool = res > 0xFF;
 	    let n: bool = false;
-	    let to_write: u8 = (a & 0xFF) as u8;
+	    let to_write: u8 = (res & 0xFF) as u8;
 	    let z: bool = to_write == 0;
 
 	    self.write_a(to_write);
@@ -987,7 +987,7 @@ impl Cpu {
 	    let h: bool = ((a & 0x0F) + (r & 0x0F)) > 0x0F;
 	    let c: bool = res > 0xFF;
 	    let n: bool = false;
-	    let to_write: u8 = (a & 0xFF) as u8;
+	    let to_write: u8 = (res & 0xFF) as u8;
 	    let z: bool = to_write == 0;
 
 	    self.write_a(to_write);
@@ -1010,7 +1010,7 @@ impl Cpu {
 	    let h: bool = ((a & 0x0F) + (r & 0x0F) + (carry & 0x0F)) > 0x0F;
 	    let c: bool = res > 0xFF;
 	    let n: bool = false;
-	    let to_write: u8 = (a & 0xFF) as u8;
+	    let to_write: u8 = (res & 0xFF) as u8;
 	    let z: bool = to_write == 0;
 
 	    self.write_a(to_write);
@@ -1034,7 +1034,7 @@ impl Cpu {
 	    let h: bool = ((a & 0x0F) + (r & 0x0F) + (carry & 0x0F)) > 0x0F;
 	    let c: bool = res > 0xFF;
 	    let n: bool = false;
-	    let to_write: u8 = (a & 0xFF) as u8;
+	    let to_write: u8 = (res & 0xFF) as u8;
 	    let z: bool = to_write == 0;
 
 	    self.write_a(to_write);
@@ -1056,7 +1056,7 @@ impl Cpu {
 	    let h: bool = ((a & 0x0F) + (r & 0x0F) + (carry & 0x0F)) > 0x0F;
 	    let c: bool = res > 0xFF;
 	    let n: bool = false;
-	    let to_write: u8 = (a & 0xFF) as u8;
+	    let to_write: u8 = (res & 0xFF) as u8;
 	    let z: bool = to_write == 0;
 
 	    self.write_a(to_write);
