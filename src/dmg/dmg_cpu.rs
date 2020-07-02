@@ -2286,8 +2286,8 @@ mod tests {
 
     fn set_3byte_op(cpu: &mut Cpu, opcode: u32) {
         cpu.mem[cpu.reg.pc as usize] = (opcode >> 16) as u8;
-        cpu.mem[(cpu.reg.pc + 1) as usize] = (opcode >> 8) as u8;
-        cpu.mem[(cpu.reg.pc + 2) as usize] = opcode as u8;
+        cpu.mem[(cpu.reg.pc + 1) as usize] = opcode as u8; // nn_low
+        cpu.mem[(cpu.reg.pc + 2) as usize] = (opcode >> 8) as u8;
     }
 
     fn set_4byte_op(cpu: &mut Cpu, opcode: u32) {
@@ -2376,6 +2376,21 @@ mod tests {
         assert_eq!(cpu.get_r8_to(), B_ID);
         assert_eq!(cpu.get_r8_from(), C_ID);
     }
+
+    #[test]
+    fn get_nn() {
+        let mut cpu = set_up_cpu();
+        set_3byte_op(&mut cpu, 0x0000_0000 | NN_DEF as u32);
+
+        assert_eq!(cpu.get_nn(), NN_DEF);
+    }
+
+    #[test]
+    fn get_r16() {
+        let mut cpu = set_up_cpu();
+        set_1byte_op(&mut cpu, 0b_00_000_001 | (SP_ID << 4));
+        assert_eq!(cpu.get_r16(), SP_ID);
+    }
     
     #[test]
     fn rotate_r8() {
@@ -2414,6 +2429,23 @@ mod tests {
         assert_eq!(cpu.stack[cpu.reg.sp as usize], 0x48);
         assert_eq!(cpu.stack[(cpu.reg.sp + 1) as usize], 0x36);
         assert!(last_sp - 2 == cpu.reg.sp);
+    }
+
+    #[test]
+    fn write_a() {
+        let mut cpu = set_up_cpu();
+        cpu.write_a(N_DEF);
+        assert_eq!(cpu.reg.a, N_DEF);
+    }
+
+    #[test]
+    pub fn add_ar() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.a = 0x3A;
+        cpu.reg.b = 0xC6;
+        set_1byte_op(&mut cpu, 0x80 | B_ID);
+        cpu.add_ar();
+        assert_eq!(cpu.reg.a, 0x00);
     }
 
     #[test] 
