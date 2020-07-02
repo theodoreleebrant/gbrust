@@ -1129,7 +1129,7 @@ impl Cpu {
         
     pub fn sbc_ar(&mut self) -> ProgramCounter {
 	    // reading
-	    let carry: u8 = self.read_from_r8(C_ID).unwrap();
+	    let carry: u8 = if (self.reg.f & CF) > 0 { 1 } else { 0 };
         let a: u8 = self.read_from_r8(A_ID).unwrap();
         let idx: u8 = self.get_r8_from();
 	    let r: u8 = self.read_from_r8(idx).unwrap();
@@ -1154,7 +1154,7 @@ impl Cpu {
 	pub fn sbc_an(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
-	    let carry: u8 = self.read_from_r8(C_ID).unwrap();
+	    let carry: u8 = if (self.reg.f & CF) > 0 { 1 } else { 0 };
         let r: u8 = self.get_n();
 
         // processing
@@ -1174,7 +1174,7 @@ impl Cpu {
 
     pub fn sbc_ahl(&mut self) -> ProgramCounter {
         // reading
-        let carry: u8 = self.read_from_r8(C_ID).unwrap();
+	    let carry: u8 = if (self.reg.f & CF) > 0 { 1 } else { 0 };
         let a: u8 = self.read_from_r8(A_ID).unwrap();
         let r: u8 = self.mem[self.reg.hl as usize];
 
@@ -2491,6 +2491,8 @@ mod tests {
         
         cpu.adc_ar();
         assert_eq!(cpu.reg.a, 0xF1);
+        assert_eq!(cpu.reg.f, HF);
+        cpu.reg.f = 0;
     
         // ADC A, m
         cpu.reg.a = 0xE1;
@@ -2501,6 +2503,8 @@ mod tests {
         
         cpu.adc_an();
         assert_eq!(cpu.reg.a, 0x1D);
+        assert_eq!(cpu.reg.f, CF);
+        cpu.reg.f = 0;
 
         // ADC A, (HL)
         cpu.reg.a = 0xE1;
@@ -2510,5 +2514,42 @@ mod tests {
         assert!(cpu.reg.f & CF > 0);
         cpu.adc_ahl();
         assert_eq!(cpu.reg.a, 0x00);
+        assert_eq!(cpu.reg.f, ZF+HF+CF);
     }
+
+    #[test]
+    fn sub_s() {
+        let mut cpu = set_up_cpu();
+        
+        //  SUB A, E
+        cpu.reg.a = 0x3E;
+        cpu.reg.e = 0x3E;
+        set_1byte_op(&mut cpu, 0x90 | E_ID);
+        cpu.sub_r();
+        assert_eq!(cpu.reg.a, 0x00);
+        assert_eq!(cpu.reg.f, ZF + NF);
+        cpu.reg.f = 0;
+
+        // SUB A, n
+        cpu.reg.a = 0x3E;
+        let n = 0x0F;
+        set_2byte_op(&mut cpu, 0xD600 | n);
+        cpu.sub_n();
+        assert_eq!(cpu.reg.a, 0x2F);
+        assert_eq!(cpu.reg.f, HF+NF);
+        cpu.reg.f = 0;
+
+        // SUB A, (HL)
+        cpu.reg.a = 0x3E;
+        cpu.mem[HL_DEF as usize] = 0x40;
+        set_1byte_op(&mut cpu, 0x96);
+        cpu.sub_hl();
+        assert_eq!(cpu.reg.a,0xFE);
+        assert_eq!(cpu.reg.f, NF + CF);
+    }
+
+    #[test]
+
+
+
 }
