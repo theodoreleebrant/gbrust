@@ -999,7 +999,7 @@ impl Cpu {
     pub fn adc_ar(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
-	    let carry: u8 = self.read_from_r8(C_ID).unwrap();
+	    let carry: u8 = if (self.reg.f & CF) > 0 { 1 } else { 0 };
 	    let idx: u8 = self.get_r8_from();
 	    let r: u8 = self.read_from_r8(idx).unwrap();
 
@@ -1024,7 +1024,7 @@ impl Cpu {
 	pub fn adc_an(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
-	    let carry: u8 = self.read_from_r8(C_ID).unwrap();
+	    let carry: u8 = if (self.reg.f & CF) > 0 { 1 } else { 0 };
 	    let r: u8 = self.get_n();
 
 	    // processing
@@ -1046,7 +1046,7 @@ impl Cpu {
     pub fn adc_ahl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
-        let carry: u8 = self.read_from_r8(C_ID).unwrap();
+	    let carry: u8 = if (self.reg.f & CF) > 0 { 1 } else { 0 };
         let r: u8 = self.mem[self.reg.hl as usize];
 
         // processing
@@ -2446,6 +2446,7 @@ mod tests {
         set_1byte_op(&mut cpu, 0x80 | B_ID);
         cpu.add_ar();
         assert_eq!(cpu.reg.a, 0x00);
+        assert_eq!(cpu.reg.f, ZF+HF+CF);
     }
 
     #[test] 
@@ -2453,5 +2454,61 @@ mod tests {
         let mut cpu = set_up_cpu();
         cpu.push_u16(0xFF23);
         assert_eq!(cpu.pop_u16(), 0xFF23);
+    }
+
+    #[test]
+    fn add_an() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.a = 0x3C;
+        set_2byte_op(&mut cpu, 0xC600 | 0xFF);
+        cpu.add_an();
+        assert_eq!(cpu.reg.a, 0x3B);
+        assert_eq!(cpu.reg.f, HF + CF);
+    }
+
+    #[test]
+    fn add_ahl() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.a = 0x3C;
+        cpu.mem[HL_DEF as usize] = 0x12;
+        set_1byte_op(&mut cpu, 0x86);
+        cpu.add_ahl();
+        assert_eq!(cpu.reg.a, 0x4E);
+        assert_eq!(cpu.reg.f, 0x00);
+    }
+
+    #[test]
+    fn adc_as() {
+        let mut cpu = set_up_cpu();
+        
+        // ADC A, E
+        cpu.reg.a = 0xE1;
+        cpu.reg.e = 0x0F;
+        set_1byte_op(&mut cpu, 0x88 | E_ID);
+        // set CY flag
+        cpu.set_flag(CF);
+        assert!(cpu.reg.f & CF > 0);
+        
+        cpu.adc_ar();
+        assert_eq!(cpu.reg.a, 0xF1);
+    
+        // ADC A, m
+        cpu.reg.a = 0xE1;
+        let n = 0x3B;
+        set_2byte_op(&mut cpu, 0xCE00 | n);
+        cpu.set_flag(CF);
+        assert!(cpu.reg.f & CF > 0);
+        
+        cpu.adc_an();
+        assert_eq!(cpu.reg.a, 0x1D);
+
+        // ADC A, (HL)
+        cpu.reg.a = 0xE1;
+        cpu.mem[HL_DEF as usize] = 0x1E;
+        set_1byte_op(&mut cpu, 0x8E); 
+        cpu.set_flag(CF);
+        assert!(cpu.reg.f & CF > 0);
+        cpu.adc_ahl();
+        assert_eq!(cpu.reg.a, 0x00);
     }
 }
