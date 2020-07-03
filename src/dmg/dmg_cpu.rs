@@ -2188,7 +2188,7 @@ impl Cpu {
     pub fn daa(&mut self) -> ProgramCounter {
         let mut a: u8 = self.read_from_r8(A_ID).unwrap();
 
-        let is_addition: bool = (self.reg.f & NF) > 0;
+        let is_addition: bool = (self.reg.f & NF) == 0;
         let c_flag: bool = (self.reg.f & CF) > 0;
         let h_flag: bool = (self.reg.f & HF) > 0;
         let n_flag: bool = (self.reg.f & NF) > 0;
@@ -2994,4 +2994,17 @@ mod tests {
         assert_eq!(cpu.reg.f, 0x00);
     }
 
+    // Tests for 2.9
+    #[test]
+    fn daa() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.a = 0x7D; // skip the add step
+        cpu.reset_flag(NF); // NF = 0 if addition!! Fix now
+        cpu.reset_flag(CF); // C = 0 as no carry
+        set_1byte_op(&mut cpu, 0x27);
+        cpu.daa();
+        assert_eq!(cpu.reg.a, 0x83);
+        assert_eq!(cpu.reg.f & CF, 0);
+    }
+        
 }
