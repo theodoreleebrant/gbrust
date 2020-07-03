@@ -2583,6 +2583,37 @@ mod tests {
     }
 
     #[test]
+    fn and_s() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.a = 0x5A;
+        cpu.reg.b = 0x18;
+        cpu.mem[HL_DEF as usize] = 0x00;
+
+        //and B
+        cpu.set_hcnz(false, false, false, false);
+        set_1byte_op(&mut cpu, 0b10100000 | B_ID);
+        cpu.and_r();
+        assert_eq!(cpu.reg.a, 0x5A & 0x18);
+        assert_eq!(cpu.reg.f, 0b00100000);
+
+        //and n
+        cpu.set_hcnz(false, false, false, false);
+        cpu.reg.a = 0x5A;
+        set_2byte_op(&mut cpu, 0b1110011000000000 | 0x38);
+        cpu.and_n();
+        assert_eq!(cpu.reg.a, 0x5A & 0x38);
+        assert_eq!(cpu.reg.f, 0b00100000);
+
+        //and HL
+        cpu.set_hcnz(false, false, false, false);
+        cpu.reg.a = 0x5A;
+        set_1byte_op(&mut cpu, 0b10100110);
+        cpu.and_hl();
+        assert_eq!(cpu.reg.a, 0x5A & 0x00);
+        assert_eq!(cpu.reg.f, 0b10100000);
+    }
+
+    #[test]
     fn cp_s() {
         let mut cpu = set_up_cpu();
         cpu.reg.a = 0x3C;
