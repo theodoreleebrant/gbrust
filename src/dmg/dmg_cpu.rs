@@ -1915,9 +1915,9 @@ impl Cpu {
     /// set_b_r: Set bit_b of register r to 1.
     /// 2 bytes, 2 cycles
     pub fn set_b_r(&mut self) -> ProgramCounter {
-        let br_info = self.get_n();
+        let br_info = self.get_nn();
         let b = (br_info & 0x38) >> 3;
-        let r = br_info & 0x07;
+        let r = (br_info & 0x07) as u8;
 
         let mut val: u8 = self.read_from_r8(r).unwrap();
         val = val | (0x01 << b);
@@ -1931,7 +1931,7 @@ impl Cpu {
     /// set_b_hl: set bit_b of memory content at HL to 1.
     /// 2 bytes, 4 cycles
     pub fn set_b_hl(&mut self) -> ProgramCounter {
-        let b_info = self.get_n();
+        let b_info = self.get_nn();
         let b = (b_info & 0x38) >> 3;
         
         let mut val: u8 = self.mem[self.reg.hl as usize];
@@ -1946,12 +1946,12 @@ impl Cpu {
     /// res_b_r: set bit_b of register r to 0.
     /// 2 bytes, 2 cycles
     pub fn res_b_r(&mut self) -> ProgramCounter {
-        let br_info = self.get_n();
+        let br_info = self.get_nn();
         let b = (br_info & 0x38) >> 3;
-        let r = br_info & 0x07;
+        let r = (br_info & 0x07) as u8;
 
         let mut val: u8 = self.read_from_r8(r).unwrap();
-        val = val ^ (0x01 << b);
+        val &= !(0x01 << b);
 
         // write back to register
         self.write_to_r8(r, val);
@@ -1962,11 +1962,11 @@ impl Cpu {
     /// res_b_hl: set bit_b of memory content at HL to 0.
     /// 2 bytes, 4 cycles
     pub fn res_b_hl(&mut self) -> ProgramCounter {
-        let b_info = self.get_n();
+        let b_info = self.get_nn();
         let b = (b_info & 0x38) >> 3;
         
         let mut val: u8 = self.mem[self.reg.hl as usize];
-        val = val ^ (0x01 << b);
+        val &= !(0x01 << b);
 
         // write back
         self.mem[self.reg.hl as usize] = val;
@@ -3032,25 +3032,49 @@ mod tests {
         assert_eq!(cpu.reg.f, 0b0010_0000);
     }
 
+    #[test]
     fn set_b_r() {
         let mut cpu = set_up_cpu();
 
         // SET 3, A
         cpu.reg.a = 0b1000_0000;
         set_2byte_op(&mut cpu, 0b11_001_011_11_011_111);
-        cpu.bit_b_r();
-        assert_eq!(cpu.reg.a, 0b1000_0100);
+        cpu.set_b_r();
+        assert_eq!(cpu.reg.a, 0b1000_1000);
 
         // SET 7, L
         cpu.reg.l = 0b0011_1011;
         set_2byte_op(&mut cpu, 0b11_001_011_01_111_101);
-        cpu.bit_b_r();
-        assert_eq!(cpu.reg.l, 0b0111_1011);
+        cpu.set_b_r();
+        assert_eq!(cpu.reg.l, 0b1011_1011);
 
         // SET 7, B
         cpu.reg.b = 0b1111_1011;
         set_2byte_op(&mut cpu, 0b11_001_011_01_111_000);
-        cpu.bit_b_r();
-        assert_eq!(cpu.reg.l, 0b1111_1011);
+        cpu.set_b_r();
+        assert_eq!(cpu.reg.b, 0b1111_1011);
+    }
+
+    #[test]
+    fn res_b_r() {
+        let mut cpu = set_up_cpu();
+
+        // RES 3, A
+        cpu.reg.a = 0b1000_0000;
+        set_2byte_op(&mut cpu, 0b11_001_011_01_011_111);
+        cpu.res_b_r();
+        assert_eq!(cpu.reg.a, 0b1000_0000);
+
+        // RES 7, L
+        cpu.reg.l = 0b0011_1011;
+        set_2byte_op(&mut cpu, 0b11_001_011_01_111_101);
+        cpu.res_b_r();
+        assert_eq!(cpu.reg.l, 0b0011_1011);
+
+        // RES 7, B
+        cpu.reg.b = 0b1111_1011;
+        set_2byte_op(&mut cpu, 0b11_001_011_01_111_000);
+        cpu.res_b_r();
+        assert_eq!(cpu.reg.b, 0b0111_1011);
     }
 }
