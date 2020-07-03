@@ -3072,7 +3072,7 @@ mod tests {
         let mut cpu = set_up_cpu();
         cpu.reg.pc = 0x8000;
         cpu.reg.sp = 0xFFFE;
-        set_3byte_op(&mut cpu, 0x00CD_1234);
+        set_3byte_op(&mut cpu, 0x00CD_3412);
         cpu.execute_opcode();
         assert_eq!(cpu.reg.pc, 0x1234);
         assert_eq!(cpu.reg.sp, 0xFFFC);
@@ -3080,21 +3080,29 @@ mod tests {
         assert_eq!(cpu.stack[0xFFFC], 0x03);
     }
 
+    #[test]
     fn call_cc_nn() {
         let mut cpu = set_up_cpu();
         cpu.set_flag(ZF); // ZF = 1
         cpu.reg.pc = 0x7FFC;
         cpu.reg.sp = 0xFFFE;
-        let cc = // corresponding to Z=0 => increment to next instr
-        set_3byte_op(&mut cpu, 0b11_000_100_);
+        // Let cc be wrong
+        let cc = ;// corresponding to Z=0 => increment to next instr
+        set_3byte_op(&mut cpu, 0b11_000_100_00110100_00010011 | (cc as u32 << 19)); // nn = 0x1234
         cpu.execute_opcode();
         assert_eq!(cpu.reg.pc, 0x8000);
-
+        assert_eq!(cpu.reg.sp, 0xFFFE);
+        
+        // let cc be true
+        cpu.set_flag(ZF); // ZF = 1
+        let cc = ; // Corresponding to Z=1 => jump
+        set_3byte_op(&mut cpu, 0b11_000_100_00110100_00010011 | (cc as u32 << 19)); // nn = 0x1234
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.pc, 0x1234);
         assert_eq!(cpu.reg.sp, 0xFFFC);
         assert_eq!(cpu.stack[0xFFFD], 0x80);
         assert_eq!(cpu.stack[0xFFFC], 0x03);
-    } 
+    }
 
     // Tests for 2.9
     #[test]
