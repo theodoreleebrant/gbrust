@@ -999,7 +999,7 @@ impl Cpu {
     pub fn adc_ar(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
-	    let carry: u8 = if (self.reg.f & CF) > 0 { 1 } else { 0 };
+	    let carry: u8 = ((self.reg.f & CF) > 0) as u8; 
 	    let idx: u8 = self.get_r8_from();
 	    let r: u8 = self.read_from_r8(idx).unwrap();
 
@@ -1024,7 +1024,7 @@ impl Cpu {
 	pub fn adc_an(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
-	    let carry: u8 = if (self.reg.f & CF) > 0 { 1 } else { 0 };
+	    let carry: u8 = ((self.reg.f & CF) > 0) as u8; 
 	    let r: u8 = self.get_n();
 
 	    // processing
@@ -1046,7 +1046,7 @@ impl Cpu {
     pub fn adc_ahl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
-	    let carry: u8 = if (self.reg.f & CF) > 0 { 1 } else { 0 };
+	    let carry: u8 = ((self.reg.f & CF) > 0) as u8; 
         let r: u8 = self.mem[self.reg.hl as usize];
 
         // processing
@@ -1129,7 +1129,7 @@ impl Cpu {
         
     pub fn sbc_ar(&mut self) -> ProgramCounter {
 	    // reading
-	    let carry: u8 = if (self.reg.f & CF) > 0 { 1 } else { 0 };
+	    let carry: u8 = ((self.reg.f & CF) > 0) as u8; 
         let a: u8 = self.read_from_r8(A_ID).unwrap();
         let idx: u8 = self.get_r8_from();
 	    let r: u8 = self.read_from_r8(idx).unwrap();
@@ -1154,7 +1154,7 @@ impl Cpu {
 	pub fn sbc_an(&mut self) -> ProgramCounter {
 	    // reading
 	    let a: u8 = self.read_from_r8(A_ID).unwrap();
-	    let carry: u8 = if (self.reg.f & CF) > 0 { 1 } else { 0 };
+	    let carry: u8 = ((self.reg.f & CF) > 0) as u8; 
         let r: u8 = self.get_n();
 
         // processing
@@ -1174,7 +1174,7 @@ impl Cpu {
 
     pub fn sbc_ahl(&mut self) -> ProgramCounter {
         // reading
-	    let carry: u8 = if (self.reg.f & CF) > 0 { 1 } else { 0 };
+	    let carry: u8 = ((self.reg.f & CF) > 0) as u8; 
         let a: u8 = self.read_from_r8(A_ID).unwrap();
         let r: u8 = self.mem[self.reg.hl as usize];
 
