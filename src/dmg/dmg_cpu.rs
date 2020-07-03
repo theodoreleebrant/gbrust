@@ -2644,6 +2644,36 @@ mod tests {
     }
 
     #[test]
+    fn xor_s() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.a = 0xFF;
+        cpu.mem[HL_DEF as usize] = 0x8A;
+
+        //and A
+        cpu.set_hcnz(false, false, false, false);
+        set_1byte_op(&mut cpu, 0b10_101_000 | A_ID);
+        cpu.xor_r();
+        assert_eq!(cpu.reg.a, 0xFF ^ 0xFF);
+        assert_eq!(cpu.reg.f, 0b10000000);
+
+        //and n
+        cpu.set_hcnz(false, false, false, false);
+        cpu.reg.a = 0xFF;
+        set_2byte_op(&mut cpu, 0b11_101_110_0000_0000 | 0x0F);
+        cpu.xor_n();
+        assert_eq!(cpu.reg.a, 0xFF ^ 0x0F);
+        assert_eq!(cpu.reg.f, 0b00000000);
+
+        //and HL
+        cpu.set_hcnz(false, false, false, false);
+        cpu.reg.a = 0xFF;
+        set_1byte_op(&mut cpu, 0b10_101_110);
+        cpu.xor_hl();
+        assert_eq!(cpu.reg.a, 0xFF ^ 0x8A);
+        assert_eq!(cpu.reg.f, 0b00000000);
+    }
+
+    #[test]
     fn cp_s() {
         let mut cpu = set_up_cpu();
         cpu.reg.a = 0x3C;
