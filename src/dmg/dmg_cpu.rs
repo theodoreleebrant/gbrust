@@ -3080,6 +3080,22 @@ mod tests {
         assert_eq!(cpu.stack[0xFFFC], 0x03);
     }
 
+    fn call_cc_nn() {
+        let mut cpu = set_up_cpu();
+        cpu.set_flag(ZF); // ZF = 1
+        cpu.reg.pc = 0x7FFC;
+        cpu.reg.sp = 0xFFFE;
+        let cc = // corresponding to Z=0 => increment to next instr
+        set_3byte_op(&mut cpu, 0b11_000_100_);
+        cpu.execute_opcode();
+        assert_eq!(cpu.reg.pc, 0x8000);
+
+        assert_eq!(cpu.reg.pc, 0x1234);
+        assert_eq!(cpu.reg.sp, 0xFFFC);
+        assert_eq!(cpu.stack[0xFFFD], 0x80);
+        assert_eq!(cpu.stack[0xFFFC], 0x03);
+    } 
+
     // Tests for 2.9
     #[test]
     fn daa() {
