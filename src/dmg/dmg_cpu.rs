@@ -3056,6 +3056,35 @@ mod tests {
     }
 
     #[test]
+    fn set_res_bhl() {
+        let mut cpu = set_up_cpu();
+
+        // SET 3, HL
+        cpu.mem[HL_DEF as usize] = 0b1001_0010;
+        set_2byte_op(&mut cpu, 0b11_001_011_11_011_110);
+        cpu.set_b_hl();
+        assert_eq!(cpu.mem[HL_DEF as usize], 0b1001_1010);
+
+        // SET 1, HL
+        cpu.mem[HL_DEF as usize] = 0b1001_0010;
+        set_2byte_op(&mut cpu, 0b11_001_011_11_001_110);
+        cpu.set_b_hl();
+        assert_eq!(cpu.mem[HL_DEF as usize], 0b1001_0010);
+
+        // RES 3, HL
+        cpu.mem[HL_DEF as usize] = 0b1001_0010;
+        set_2byte_op(&mut cpu, 0b11_001_011_11_011_110);
+        cpu.res_b_hl();
+        assert_eq!(cpu.mem[HL_DEF as usize], 0b1001_0010);
+
+        // RES 1, HL
+        cpu.mem[HL_DEF as usize] = 0b1001_0010;
+        set_2byte_op(&mut cpu, 0b11_001_011_11_001_110);
+        cpu.res_b_hl();
+        assert_eq!(cpu.mem[HL_DEF as usize], 0b1001_0000);
+    }
+
+    #[test]
     fn res_b_r() {
         let mut cpu = set_up_cpu();
 
