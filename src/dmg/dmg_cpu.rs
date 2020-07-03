@@ -1822,7 +1822,7 @@ impl Cpu {
                 bit_0 = data & 0x01;
                 
                 // processing
-                data = data << 1;
+                data = data >> 1;
 
                 // write back
                 self.write_to_r8(r, data);
@@ -2842,5 +2842,24 @@ mod tests {
         cpu.sra();
         assert_eq!(cpu.mem[HL_DEF as usize], 0x00);
         assert_eq!(cpu.reg.f, CF + ZF);
+    }
+
+    #[test]
+    fn srl() {
+        let mut cpu = set_up_cpu();
+        // SRL A
+        cpu.reg.a = 0x01;
+        cpu.reset_flag(CF);
+        set_2byte_op(&mut cpu, 0xCB38 | (A_ID as u16));
+        cpu.srl();
+        assert_eq!(cpu.reg.a, 0x00);
+        assert_eq!(cpu.reg.f, CF + ZF);
+        // SRL(HL)
+        cpu.mem[HL_DEF as usize] = 0xFF;
+        cpu.reset_flag(CF);
+        set_2byte_op(&mut cpu, 0xCB38 | (0x06 as u16));
+        cpu.srl();
+        assert_eq!(cpu.mem[HL_DEF as usize], 0x7F);
+        assert_eq!(cpu.reg.f, CF);
     }
 }
