@@ -1915,9 +1915,9 @@ impl Cpu {
     /// set_b_r: Set bit_b of register r to 1.
     /// 2 bytes, 2 cycles
     pub fn set_b_r(&mut self) -> ProgramCounter {
-        let br_info = self.get_n();
+        let br_info = self.get_nn();
         let b = (br_info & 0x38) >> 3;
-        let r = br_info & 0x07;
+        let r = (br_info & 0x07) as u8;
 
         let mut val: u8 = self.read_from_r8(r).unwrap();
         val = val | (0x01 << b);
@@ -1931,7 +1931,7 @@ impl Cpu {
     /// set_b_hl: set bit_b of memory content at HL to 1.
     /// 2 bytes, 4 cycles
     pub fn set_b_hl(&mut self) -> ProgramCounter {
-        let b_info = self.get_n();
+        let b_info = self.get_nn();
         let b = (b_info & 0x38) >> 3;
         
         let mut val: u8 = self.mem[self.reg.hl as usize];
@@ -1946,12 +1946,12 @@ impl Cpu {
     /// res_b_r: set bit_b of register r to 0.
     /// 2 bytes, 2 cycles
     pub fn res_b_r(&mut self) -> ProgramCounter {
-        let br_info = self.get_n();
+        let br_info = self.get_nn();
         let b = (br_info & 0x38) >> 3;
-        let r = br_info & 0x07;
+        let r = (br_info & 0x07) as u8;
 
         let mut val: u8 = self.read_from_r8(r).unwrap();
-        val = val ^ (0x01 << b);
+        val &= !(0x01 << b);
 
         // write back to register
         self.write_to_r8(r, val);
@@ -1962,11 +1962,11 @@ impl Cpu {
     /// res_b_hl: set bit_b of memory content at HL to 0.
     /// 2 bytes, 4 cycles
     pub fn res_b_hl(&mut self) -> ProgramCounter {
-        let b_info = self.get_n();
+        let b_info = self.get_nn();
         let b = (b_info & 0x38) >> 3;
         
         let mut val: u8 = self.mem[self.reg.hl as usize];
-        val = val ^ (0x01 << b);
+        val &= !(0x01 << b);
 
         // write back
         self.mem[self.reg.hl as usize] = val;
@@ -1979,6 +1979,8 @@ impl Cpu {
     /// jp_nn: unconditional jump to absolute address specified by 16-bit immediate. Set PC = nn
     /// 3-byte instruction, 4 cycles.
     pub fn jp_nn(&mut self) -> ProgramCounter {
+        print!("self.get_nn:");
+        println!("{:?}", self.get_nn());
         ProgramCounter::Jump(self.get_nn(), 4)
     }
 
@@ -2286,8 +2288,8 @@ mod tests {
 
     fn set_3byte_op(cpu: &mut Cpu, opcode: u32) {
         cpu.mem[cpu.reg.pc as usize] = (opcode >> 16) as u8;
-        cpu.mem[(cpu.reg.pc + 1) as usize] = opcode as u8; // nn_low
-        cpu.mem[(cpu.reg.pc + 2) as usize] = (opcode >> 8) as u8;
+        cpu.mem[(cpu.reg.pc + 1) as usize] = (opcode >> 8)  as u8;
+        cpu.mem[(cpu.reg.pc + 2) as usize] = opcode as u8;
     }
 
     fn set_4byte_op(cpu: &mut Cpu, opcode: u32) {
@@ -2382,7 +2384,7 @@ mod tests {
         let mut cpu = set_up_cpu();
         set_3byte_op(&mut cpu, 0x0000_0000 | NN_DEF as u32);
 
-        assert_eq!(cpu.get_nn(), NN_DEF);
+        assert_eq!(cpu.get_nn(), 0xCDAB);
     }
 
     #[test]
@@ -3032,26 +3034,79 @@ mod tests {
         assert_eq!(cpu.reg.f, 0b0010_0000);
     }
 
+    #[test]
     fn set_b_r() {
         let mut cpu = set_up_cpu();
 
         // SET 3, A
         cpu.reg.a = 0b1000_0000;
         set_2byte_op(&mut cpu, 0b11_001_011_11_011_111);
-        cpu.bit_b_r();
-        assert_eq!(cpu.reg.a, 0b1000_0100);
+        cpu.set_b_r();
+        assert_eq!(cpu.reg.a, 0b1000_1000);
 
         // SET 7, L
         cpu.reg.l = 0b0011_1011;
         set_2byte_op(&mut cpu, 0b11_001_011_01_111_101);
-        cpu.bit_b_r();
-        assert_eq!(cpu.reg.l, 0b0111_1011);
+        cpu.set_b_r();
+        assert_eq!(cpu.reg.l, 0b1011_1011);
 
         // SET 7, B
         cpu.reg.b = 0b1111_1011;
         set_2byte_op(&mut cpu, 0b11_001_011_01_111_000);
-        cpu.bit_b_r();
-        assert_eq!(cpu.reg.l, 0b1111_1011);
+        cpu.set_b_r();
+        assert_eq!(cpu.reg.b, 0b1111_1011);
+    }
+
+    #[test]
+    fn set_res_bhl() {
+        let mut cpu = set_up_cpu();
+
+        // SET 3, HL
+        cpu.mem[HL_DEF as usize] = 0b1001_0010;
+        set_2byte_op(&mut cpu, 0b11_001_011_11_011_110);
+        cpu.set_b_hl();
+        assert_eq!(cpu.mem[HL_DEF as usize], 0b1001_1010);
+
+        // SET 1, HL
+        cpu.mem[HL_DEF as usize] = 0b1001_0010;
+        set_2byte_op(&mut cpu, 0b11_001_011_11_001_110);
+        cpu.set_b_hl();
+        assert_eq!(cpu.mem[HL_DEF as usize], 0b1001_0010);
+
+        // RES 3, HL
+        cpu.mem[HL_DEF as usize] = 0b1001_0010;
+        set_2byte_op(&mut cpu, 0b11_001_011_11_011_110);
+        cpu.res_b_hl();
+        assert_eq!(cpu.mem[HL_DEF as usize], 0b1001_0010);
+
+        // RES 1, HL
+        cpu.mem[HL_DEF as usize] = 0b1001_0010;
+        set_2byte_op(&mut cpu, 0b11_001_011_11_001_110);
+        cpu.res_b_hl();
+        assert_eq!(cpu.mem[HL_DEF as usize], 0b1001_0000);
+    }
+
+    #[test]
+    fn res_b_r() {
+        let mut cpu = set_up_cpu();
+
+        // RES 3, A
+        cpu.reg.a = 0b1000_0000;
+        set_2byte_op(&mut cpu, 0b11_001_011_01_011_111);
+        cpu.res_b_r();
+        assert_eq!(cpu.reg.a, 0b1000_0000);
+
+        // RES 7, L
+        cpu.reg.l = 0b0011_1011;
+        set_2byte_op(&mut cpu, 0b11_001_011_01_111_101);
+        cpu.res_b_r();
+        assert_eq!(cpu.reg.l, 0b0011_1011);
+
+        // RES 7, B
+        cpu.reg.b = 0b1111_1011;
+        set_2byte_op(&mut cpu, 0b11_001_011_01_111_000);
+        cpu.res_b_r();
+        assert_eq!(cpu.reg.b, 0b0111_1011);
     }
 
     
@@ -3175,4 +3230,29 @@ mod tests {
         cpu.stop();
         assert!(cpu.stop_mode);
     }
+
+    #[test]
+    fn jp_nn() {
+        let mut cpu = set_up_cpu();
+        set_3byte_op(&mut cpu, 
+            0b11000011_11011111_11010101);
+        cpu.execute_opcode();
+        assert_eq!(cpu.reg.pc, 0b11010101_11011111);
+    }
+
+    // #[test]
+    // fn jp_cc_nn() {
+    //     // 8 testcases:
+    //     // Opcode 11_0cc_010
+    //     // CC conditions:
+    //         // 00: jump if Z = 0 (2 testcases each for z)
+    //         // 01: jump if Z = 1 (2 testcases each for z)
+    //         // 10: jump if C = 0 (2 testcases each for c)
+    //         // 11: jump is C = 1 (2 testcases each for c)
+    //     let mut cpu = set_up_cpu();
+    //     set_3byte_op(&mut cpu, 
+    //         0b11000011_11011111_11010101);
+    //     cpu.execute_opcode();
+    //     assert_eq!(cpu.reg.pc, 0b11010101_11011111);
+    // }
 }
