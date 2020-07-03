@@ -3006,5 +3006,63 @@ mod tests {
         assert_eq!(cpu.reg.a, 0x83);
         assert_eq!(cpu.reg.f & CF, 0);
     }
-        
+       
+    #[test]
+    fn cpl() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.a = 0x35;
+        set_1byte_op(&mut cpu, 0x2F);
+        cpu.cpl();
+        assert_eq!(cpu.reg.a, 0xCA);
+    }
+
+    #[test]
+    fn ccf() {
+        let mut cpu = set_up_cpu();
+        cpu.set_flag(CF); // C = 1;
+        set_1byte_op(&mut cpu, 0x3F);
+        cpu.ccf();
+        assert_eq!(cpu.reg.f & CF, 0);
+    }
+
+    #[test]
+    fn scf() {
+        let mut cpu = set_up_cpu();
+        cpu.reset_flag(CF); // CF = 0;
+        set_1byte_op(&mut cpu, 0x37);
+        cpu.scf();
+        assert!(cpu.reg.f & CF > 0);
+    }
+
+    #[test]
+    fn di() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.ime = true; // set ime first
+        cpu.di(); // reset
+        assert!(!cpu.reg.ime);
+    }
+
+    #[test]
+    fn ei() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.ime = false; // set ime first
+        cpu.ei(); // reset
+        assert!(cpu.reg.ime);
+    }
+
+    #[test]
+    fn halt() {
+        let mut cpu = set_up_cpu();
+        cpu.halt_mode = false;
+        cpu.halt();
+        assert!(cpu.halt_mode);
+    }
+
+    #[test]
+    fn stop() {
+        let mut cpu = set_up_cpu();
+        cpu.stop_mode = false;
+        cpu.stop();
+        assert!(cpu.stop_mode);
+    }
 }
