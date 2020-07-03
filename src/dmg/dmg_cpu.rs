@@ -3031,4 +3031,26 @@ mod tests {
         cpu.bit_b_hl();
         assert_eq!(cpu.reg.f, 0b0010_0000);
     }
+
+    fn set_b_r() {
+        let mut cpu = set_up_cpu();
+
+        // SET 3, A
+        cpu.reg.a = 0b1000_0000;
+        set_2byte_op(&mut cpu, 0b11_001_011_11_011_111);
+        cpu.bit_b_r();
+        assert_eq!(cpu.reg.a, 0b1000_0100);
+
+        // SET 7, L
+        cpu.reg.l = 0b0011_1011;
+        set_2byte_op(&mut cpu, 0b11_001_011_01_111_101);
+        cpu.bit_b_r();
+        assert_eq!(cpu.reg.l, 0b0111_1011);
+
+        // SET 7, B
+        cpu.reg.b = 0b1111_1011;
+        set_2byte_op(&mut cpu, 0b11_001_011_01_111_000);
+        cpu.bit_b_r();
+        assert_eq!(cpu.reg.l, 0b1111_1011);
+    }
 }
