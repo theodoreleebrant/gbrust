@@ -2720,6 +2720,28 @@ mod tests {
     }
 
     #[test]
+    pub fn inc_hl() {
+        let mut cpu = set_up_cpu();
+        cpu.set_hcnz(false, false, false, false);
+        cpu.mem[HL_DEF as usize] = 0x50;
+        set_1byte_op(&mut cpu, 0b00_110_100);
+        cpu.inc_hl();
+        assert_eq!(cpu.mem[HL_DEF as usize], 0x51);
+        assert_eq!(cpu.reg.f, 0);
+    }
+    
+    #[test]
+    pub fn inc_r() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.l = 0xFF;
+        cpu.set_hcnz(false, false, false, false);
+        set_1byte_op(&mut cpu, 0b00_000_101 | (L_ID << 3));
+        cpu.inc_r();
+        assert_eq!(cpu.reg.l, 0x00);
+        assert_eq!(cpu.reg.f, ZF+HF);
+    }
+
+    #[test]
     pub fn add_hlss() {
         let mut cpu = set_up_cpu();
         
