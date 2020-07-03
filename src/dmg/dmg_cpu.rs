@@ -2862,4 +2862,23 @@ mod tests {
         assert_eq!(cpu.mem[HL_DEF as usize], 0x7F);
         assert_eq!(cpu.reg.f, CF);
     }
+
+    #[test]
+    fn swap() {
+        let mut cpu = set_up_cpu();
+        // SWAP A
+        cpu.reg.a = 0x0F;
+        set_2byte_op(&mut cpu, 0xCB30 | (A_ID as u16));
+        cpu.swap();
+        assert_eq!(cpu.reg.a, 0xF0);
+        assert_eq!(cpu.reg.f, 0x00);
+
+        // SWAP (HL)
+        cpu.mem[HL_DEF as usize] = 0xF0;
+        set_2byte_op(&mut cpu, 0xCB30 | (0x06 as u16));
+        cpu.swap();
+        assert_eq!(cpu.mem[HL_DEF as usize], 0x0F);
+        assert_eq!(cpu.reg.f, 0x00);
+    }
+
 }
