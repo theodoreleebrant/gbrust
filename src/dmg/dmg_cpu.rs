@@ -1561,7 +1561,7 @@ impl Cpu {
 	pub fn inc_ss(&mut self) -> ProgramCounter {
 		// reading
 	    let idx: u8 = (self.get_r8_to() & 0b110) >> 1;
-	    let r: u16 = self.get_n() as u16;
+	    let r: u16 = self.read_from_r16(idx).unwrap();
 
 	    // processing
 	    let res: u16 = if r == std::u16::MAX {0} else {r + 1};
@@ -1574,7 +1574,7 @@ impl Cpu {
 	pub fn dec_ss(&mut self) -> ProgramCounter {
 		// reading
 	    let idx: u8 = (self.get_r8_to() & 0b110) >> 1;
-	    let r: u16 = self.get_n() as u16;
+	    let r: u16 = self.read_from_r16(idx).unwrap();
 
 	    // processing
 	    let res: u16 = if r == 0 {std::u16::MAX} else {r - 1};
@@ -2660,5 +2660,23 @@ mod tests {
         cpu.add_spe();
         assert_eq!(cpu.reg.sp, 0xFFFA);
         assert_eq!(cpu.reg.f, 0);
+    }
+
+    #[test]
+    fn inc_ss() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.de = 0x235F;
+        set_2byte_op(&mut cpu, 0x0300 | ((DE_ID as u16) << 12) | N_DEF as u16);
+        cpu.inc_ss();
+        assert_eq!(cpu.reg.de, 0x2360);
+    }
+    
+    #[test]
+    fn dec_ss() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.de = 0x235F;
+        set_2byte_op(&mut cpu, 0x0B00 | ((DE_ID as u16) << 12) | N_DEF as u16);
+        cpu.dec_ss();
+        assert_eq!(cpu.reg.de, 0x235E);
     }
 }
