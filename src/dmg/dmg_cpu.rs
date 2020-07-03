@@ -2994,6 +2994,66 @@ mod tests {
         assert_eq!(cpu.reg.f, 0x00);
     }
 
+    #[test]
+    fn bit_b_r() {
+        let mut cpu = set_up_cpu();
+
+        // BIT 7, A
+        cpu.reg.a = 0x80;
+        cpu.set_hcnz(false, false, false, false);
+        set_2byte_op(&mut cpu, 0b11_001_011_01_111_111);
+        cpu.bit_b_r();
+        assert_eq!(cpu.reg.f, 0b0010_0000);
+
+        // BIT 4, L
+        cpu.reg.l = 0xEF;
+        cpu.set_hcnz(false, false, false, false);
+        set_2byte_op(&mut cpu, 0b11_001_011_01_100_101);
+        cpu.bit_b_r();
+        assert_eq!(cpu.reg.f, 0b1010_0000);
+    }
+
+    #[test]
+    fn bit_b_hl() {
+        let mut cpu = set_up_cpu();
+
+        // BIT 0, HL
+        cpu.mem[HL_DEF as usize] = 0xFE;
+        cpu.set_hcnz(false, false, false, false);
+        set_2byte_op(&mut cpu, 0b11_001_011_01_000_110);
+        cpu.bit_b_hl();
+        assert_eq!(cpu.reg.f, 0b1010_0000);
+
+        // BIT 1, HL
+        cpu.mem[HL_DEF as usize] = 0xFE;
+        cpu.set_hcnz(false, false, false, false);
+        set_2byte_op(&mut cpu, 0b11_001_011_01_001_110);
+        cpu.bit_b_hl();
+        assert_eq!(cpu.reg.f, 0b0010_0000);
+    }
+
+    fn set_b_r() {
+        let mut cpu = set_up_cpu();
+
+        // SET 3, A
+        cpu.reg.a = 0b1000_0000;
+        set_2byte_op(&mut cpu, 0b11_001_011_11_011_111);
+        cpu.bit_b_r();
+        assert_eq!(cpu.reg.a, 0b1000_0100);
+
+        // SET 7, L
+        cpu.reg.l = 0b0011_1011;
+        set_2byte_op(&mut cpu, 0b11_001_011_01_111_101);
+        cpu.bit_b_r();
+        assert_eq!(cpu.reg.l, 0b0111_1011);
+
+        // SET 7, B
+        cpu.reg.b = 0b1111_1011;
+        set_2byte_op(&mut cpu, 0b11_001_011_01_111_000);
+        cpu.bit_b_r();
+        assert_eq!(cpu.reg.l, 0b1111_1011);
+    }
+
     // Tests for 2.9
     #[test]
     fn daa() {
