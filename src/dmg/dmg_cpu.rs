@@ -1779,7 +1779,7 @@ impl Cpu {
                 bit_0 = data & 0x01;
                 
                 // processing
-                data = data << 1;
+                data = data >> 1;
                 data |= bit_7 << 7;
 
                 // write back
@@ -2678,5 +2678,169 @@ mod tests {
         set_2byte_op(&mut cpu, 0x0B00 | ((DE_ID as u16) << 12) | N_DEF as u16);
         cpu.dec_ss();
         assert_eq!(cpu.reg.de, 0x235E);
+    }
+
+    #[test]
+    fn rlca() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.a = 0x85;
+        cpu.reset_flag(CF); // C = 0
+        set_1byte_op(&mut cpu, 0x07);
+        cpu.rlca();
+        assert_eq!(cpu.reg.f, CF);
+        assert_eq!(cpu.reg.a, 0x0B); //Example in manual is wrong
+    }
+
+    #[test]
+    fn rla() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.a = 0x95;
+        cpu.set_flag(CF); // C = 1
+        set_1byte_op(&mut cpu, 0x017);
+        cpu.rla();
+        assert_eq!(cpu.reg.f, CF);
+        assert_eq!(cpu.reg.a, 0x2B);
+    }
+
+    #[test]
+    fn rrca() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.a = 0x3B;
+        cpu.reset_flag(CF);
+        set_1byte_op(&mut cpu, 0x0F);
+        cpu.rrca();
+        assert_eq!(cpu.reg.a, 0x9D);
+        assert_eq!(cpu.reg.f, CF);
+    }
+
+    #[test]
+    fn rra() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.a = 0x81;
+        cpu.reset_flag(CF);
+        set_1byte_op(&mut cpu, 0x1F);
+        cpu.rra();
+        assert_eq!(cpu.reg.a, 0x40);
+        assert_eq!(cpu.reg.f, CF);
+    }
+
+    #[test]
+    fn rlc() {
+        let mut cpu = set_up_cpu();
+        // RLC B
+        cpu.reg.b = 0x85;
+        cpu.reset_flag(CF);
+        set_2byte_op(&mut cpu, 0xCB00 | (B_ID as u16));
+        cpu.rlc();
+        assert_eq!(cpu.reg.b, 0x0B);
+        assert_eq!(cpu.reg.f, CF);
+
+        // RLC (HL)
+        cpu.mem[HL_DEF as usize] = 0x00;
+        cpu.reset_flag(CF);
+        set_2byte_op(&mut cpu, 0xCB00 | (0x06 as u16));
+        cpu.rlc();
+        assert_eq!(cpu.mem[HL_DEF as usize], 0x00);
+        assert_eq!(cpu.reg.f, ZF);
+    }
+
+    #[test]
+    fn rl() {
+        let mut cpu = set_up_cpu();
+        // RLC B
+        cpu.reg.b = 0x80;
+        cpu.reset_flag(CF);
+        set_2byte_op(&mut cpu, 0xCB10 | (B_ID as u16));
+        cpu.rl();
+        assert_eq!(cpu.reg.b, 0x00);
+        assert_eq!(cpu.reg.f, CF + ZF);
+
+        // RLC (HL)
+        cpu.mem[HL_DEF as usize] = 0x11;
+        cpu.reset_flag(CF);
+        set_2byte_op(&mut cpu, 0xCB10 | (0x06 as u16));
+        cpu.rl();
+        assert_eq!(cpu.mem[HL_DEF as usize], 0x22);
+        assert_eq!(cpu.reg.f, 0);
+    }
+
+    #[test]
+    fn rrc() {
+        let mut cpu = set_up_cpu();
+        // RLC B
+        cpu.reg.b = 0x01;
+        cpu.reset_flag(CF);
+        set_2byte_op(&mut cpu, 0xCB08 | (B_ID as u16));
+        cpu.rrc();
+        assert_eq!(cpu.reg.b, 0x80);
+        assert_eq!(cpu.reg.f, CF);
+
+        // RLC (HL)
+        cpu.mem[HL_DEF as usize] = 0x00;
+        cpu.reset_flag(CF);
+        set_2byte_op(&mut cpu, 0xCB08 | (0x06 as u16));
+        cpu.rrc();
+        assert_eq!(cpu.mem[HL_DEF as usize], 0x00);
+        assert_eq!(cpu.reg.f, ZF);
+    }
+
+    #[test]
+    fn rr() {
+        let mut cpu = set_up_cpu();
+        // RLC B
+        cpu.reg.b = 0x01;
+        cpu.reset_flag(CF);
+        set_2byte_op(&mut cpu, 0xCB18 | (B_ID as u16));
+        cpu.rr();
+        assert_eq!(cpu.reg.b, 0x00);
+        assert_eq!(cpu.reg.f, CF + ZF);
+
+        // RLC (HL)
+        cpu.mem[HL_DEF as usize] = 0x8A;
+        cpu.reset_flag(CF);
+        set_2byte_op(&mut cpu, 0xCB18 | (0x06 as u16));
+        cpu.rr();
+        assert_eq!(cpu.mem[HL_DEF as usize], 0x45);
+        assert_eq!(cpu.reg.f, 0);
+    }
+
+    #[test]
+    fn sla() {
+        let mut cpu = set_up_cpu();
+        // SLA D
+        cpu.reg.d = 0x80;
+        cpu.reset_flag(CF);
+        set_2byte_op(&mut cpu, 0xCB20 | (D_ID as u16));
+        cpu.sla();
+        assert_eq!(cpu.reg.d, 0x00);
+        assert_eq!(cpu.reg.f, CF + ZF);
+
+        // SLA (HL)
+        cpu.mem[HL_DEF as usize] = 0xFF;
+        cpu.reset_flag(CF);
+        set_2byte_op(&mut cpu, 0xCB20 | (0x06 as u16));
+        cpu.sla();
+        assert_eq!(cpu.mem[HL_DEF as usize], 0xFE);
+        assert_eq!(cpu.reg.f, CF);
+    }
+
+    #[test]
+    fn sra() {
+        let mut cpu = set_up_cpu();
+        // SRA A
+        cpu.reg.a = 0x8A;
+        cpu.reset_flag(CF); // C = 0
+        set_2byte_op(&mut cpu, 0xCB28 | (A_ID as u16));
+        cpu.sra();
+        assert_eq!(cpu.reg.a, 0xC5);
+        assert_eq!(cpu.reg.f, 0);
+
+        // SRA (HL)
+        cpu.mem[HL_DEF as usize] = 0x01;
+        cpu.reset_flag(CF);
+        set_2byte_op(&mut cpu, 0xCB28 | (0x06 as u16));
+        cpu.sra();
+        assert_eq!(cpu.mem[HL_DEF as usize], 0x00);
+        assert_eq!(cpu.reg.f, CF + ZF);
     }
 }
