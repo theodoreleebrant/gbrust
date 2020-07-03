@@ -3189,4 +3189,20 @@ mod tests {
         cpu.execute_opcode();
         assert_eq!(cpu.reg.pc, 0b11010101_11011111);
     }
+
+    // #[test]
+    // fn jp_cc_nn() {
+    //     // 8 testcases:
+    //     // Opcode 11_0cc_010
+    //     // CC conditions:
+    //         // 00: jump if Z = 0 (2 testcases each for z)
+    //         // 01: jump if Z = 1 (2 testcases each for z)
+    //         // 10: jump if C = 0 (2 testcases each for c)
+    //         // 11: jump is C = 1 (2 testcases each for c)
+    //     let mut cpu = set_up_cpu();
+    //     set_3byte_op(&mut cpu, 
+    //         0b11000011_11011111_11010101);
+    //     cpu.execute_opcode();
+    //     assert_eq!(cpu.reg.pc, 0b11010101_11011111);
+    // }
 }
