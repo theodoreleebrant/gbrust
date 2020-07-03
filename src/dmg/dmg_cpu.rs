@@ -1486,7 +1486,7 @@ impl Cpu {
 	    let res: u8 = if r == 0 {std::u8::MAX} else {r - 1};
 
 	    // flags and writing
-	    let h: bool = (r & 0xF) == 0xF;
+	    let h: bool = r & 0xF == 0x0;
 	    let n: bool = true;
 	    let z: bool = res == 0;
 
@@ -1504,7 +1504,7 @@ impl Cpu {
 	    let res: u8 = if r == 0 {std::u8::MAX} else {r - 1};
 
 	    // flags and writing
-	    let h: bool = (r & 0xF) == 0xF;
+	    let h: bool = (r & 0xF) == 0x0;
 	    let n: bool = true;
 	    let z: bool = res == 0;
 
@@ -2549,7 +2549,116 @@ mod tests {
     }
 
     #[test]
+    fn sbc_s() {
+        let mut cpu = set_up_cpu();
+        
+        //  SBC A, E
+        cpu.reg.a = 0x3B;
+        cpu.reg.e = 0x2A;
+        set_1byte_op(&mut cpu, 0x98 | E_ID);
+        cpu.set_flag(CF);
+        cpu.sbc_ar();
+        assert_eq!(cpu.reg.a, 0x10);
+        assert_eq!(cpu.reg.f, NF);
+        cpu.reg.f = 0;
 
+        // SUB A, n
+        cpu.reg.a = 0x3B;
+        let n = 0x3A;
+        set_2byte_op(&mut cpu, 0xDE00 | n);
+        cpu.set_flag(CF);
+        cpu.sbc_an();
+        assert_eq!(cpu.reg.a, 0x00);
+        assert_eq!(cpu.reg.f, ZF+NF);
+        cpu.reg.f = 0;
 
+        // SUB A, (HL)
+        cpu.reg.a = 0x3B;
+        cpu.mem[HL_DEF as usize] = 0x4F;
+        set_1byte_op(&mut cpu, 0x9E);
+        cpu.set_flag(CF);
+        cpu.sbc_ahl();
+        assert_eq!(cpu.reg.a,0xEB);
+        assert_eq!(cpu.reg.f, HF + NF + CF);
+    }
 
+    #[test]
+    fn cp_s() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.a = 0x3C;
+        cpu.reg.b = 0x2F;
+        cpu.mem[HL_DEF as usize] = 0x40;
+
+        // cp B
+        set_1byte_op(&mut cpu, 0xB8 | B_ID);
+        cpu.cp_r();
+        assert_eq!(cpu.reg.f, HF + NF);
+        
+        // cp 3C
+        set_2byte_op(&mut cpu, 0xFE00 | 0x3C);
+        cpu.cp_n();
+        assert_eq!(cpu.reg.f, ZF+NF);
+
+        // cp (HL)
+        set_1byte_op(&mut cpu, 0xBE);
+        cpu.cp_hl();
+        assert_eq!(cpu.reg.f, NF + CF);
+        cpu.reg.f = 0;
+    }
+    
+    #[test]
+    pub fn dec_hl() {
+        let mut cpu = set_up_cpu();
+        cpu.mem[HL_DEF as usize] = 0x00;
+        set_1byte_op(&mut cpu, 0x36);
+        cpu.dec_hl();
+        assert_eq!(cpu.mem[HL_DEF as usize], 0xFF);
+        cpu.reset_flag(CF);
+        assert_eq!(cpu.reg.f, HF+NF);
+    }
+    
+    #[test]
+    pub fn dec_r() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.l = 0x01;
+        cpu.reg.f = 0;
+        set_1byte_op(&mut cpu, 0b00_000_101 | (L_ID << 3));
+        cpu.dec_r();
+        assert_eq!(cpu.reg.l, 0x00);
+        assert_eq!(cpu.reg.f, ZF+NF);
+    }
+
+    #[test]
+    pub fn add_hlss() {
+        let mut cpu = set_up_cpu();
+        
+        // ADD HL, BC
+        cpu.reg.hl = 0x8A23;
+        cpu.reg.bc = 0x0605;
+        set_1byte_op(&mut cpu, 0b00_001_001 | (BC_ID << 4));
+        cpu.reg.f = 0;
+        cpu.add_hlss();
+        assert_eq!(cpu.reg.hl, 0x9028);
+        assert_eq!(cpu.reg.f, HF);
+        
+        // ADD HL, HL
+        cpu.reg.hl = 0x8A23;
+        set_1byte_op(&mut cpu, 0b00_001_001 | (HL_ID << 4));
+        cpu.reg.f = 0;
+        cpu.add_hlss();
+        assert_eq!(cpu.reg.hl, 0x1446);
+        assert_eq!(cpu.reg.f, HF + CF);
+    }
+
+    #[test]
+    pub fn add_spe() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.sp = 0xFFF8;
+        let e = 0x02;
+        cpu.reg.f = 0;
+        set_2byte_op(&mut cpu, 0xE800 | e);
+        cpu.add_spe();
+        assert_eq!(cpu.reg.sp, 0xFFFA);
+        assert_eq!(cpu.reg.f, 0);
+    }
 }
