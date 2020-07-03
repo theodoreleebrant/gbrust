@@ -2050,7 +2050,7 @@ impl Cpu {
         let pc_final: ProgramCounter;
 
         if cc { // execute function call
-            self.push_u16(self.reg.pc);
+            self.push_u16(self.reg.pc + 3);
             pc_final = ProgramCounter::Jump(nn, 6);
         } else {
             pc_final = ProgramCounter::Next(3, 3);
@@ -3109,18 +3109,6 @@ mod tests {
         assert_eq!(cpu.reg.b, 0b0111_1011);
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-
     // Tests for 2.8
     #[test]
     fn call_nn() {
@@ -3139,19 +3127,19 @@ mod tests {
     fn call_cc_nn() {
         let mut cpu = set_up_cpu();
         cpu.set_flag(ZF); // ZF = 1
-        cpu.reg.pc = 0x7FFC;
+        cpu.reg.pc = 0x7FFD;
         cpu.reg.sp = 0xFFFE;
         // Let cc be wrong
-        let cc = ;// corresponding to Z=0 => increment to next instr
-        set_3byte_op(&mut cpu, 0b11_000_100_00110100_00010011 | (cc as u32 << 19)); // nn = 0x1234
+        let cc: u8 = 00;// corresponding to Z=0 => increment to next instr
+        set_3byte_op(&mut cpu, 0b11_000_100_00110100_00010010 | ((cc as u32) << 19)); // nn = 0x1234
         cpu.execute_opcode();
         assert_eq!(cpu.reg.pc, 0x8000);
         assert_eq!(cpu.reg.sp, 0xFFFE);
         
         // let cc be true
         cpu.set_flag(ZF); // ZF = 1
-        let cc = ; // Corresponding to Z=1 => jump
-        set_3byte_op(&mut cpu, 0b11_000_100_00110100_00010011 | (cc as u32 << 19)); // nn = 0x1234
+        let cc: u8 = 01; // Corresponding to Z=1 => jump
+        set_3byte_op(&mut cpu, 0b11_000_100_00110100_00010010 | ((cc as u32) << 19)); // nn = 0x1234
         cpu.execute_opcode();
         assert_eq!(cpu.reg.pc, 0x1234);
         assert_eq!(cpu.reg.sp, 0xFFFC);
