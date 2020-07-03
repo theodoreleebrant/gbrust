@@ -2033,7 +2033,7 @@ impl Cpu {
     /// 3 bytes. 6 cycles
     pub fn call_nn(&mut self) -> ProgramCounter {
         let nn = self.get_nn();
-        self.push_u16(self.reg.pc); // Push PC onto the stacc
+        self.push_u16(self.reg.pc + 3); // Push NEXT PC (the one after calling call_nn) onto the stack
         
         ProgramCounter::Jump(nn, 6)
     }
@@ -3052,6 +3052,32 @@ mod tests {
         set_2byte_op(&mut cpu, 0b11_001_011_01_111_000);
         cpu.bit_b_r();
         assert_eq!(cpu.reg.l, 0b1111_1011);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    // Tests for 2.8
+    #[test]
+    fn call_nn() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.pc = 0x8000;
+        cpu.reg.sp = 0xFFFE;
+        set_3byte_op(&mut cpu, 0x00CD_1234);
+        cpu.execute_opcode();
+        assert_eq!(cpu.reg.pc, 0x1234);
+        assert_eq!(cpu.reg.sp, 0xFFFC);
+        assert_eq!(cpu.stack[0xFFFD], 0x80);
+        assert_eq!(cpu.stack[0xFFFC], 0x03);
     }
 
     // Tests for 2.9
