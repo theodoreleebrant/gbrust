@@ -2188,7 +2188,7 @@ impl Cpu {
     pub fn daa(&mut self) -> ProgramCounter {
         let mut a: u8 = self.read_from_r8(A_ID).unwrap();
 
-        let is_addition: bool = (self.reg.f & NF) > 0;
+        let is_addition: bool = (self.reg.f & NF) == 0;
         let c_flag: bool = (self.reg.f & CF) > 0;
         let h_flag: bool = (self.reg.f & HF) > 0;
         let n_flag: bool = (self.reg.f & NF) > 0;
@@ -3076,5 +3076,77 @@ mod tests {
         set_2byte_op(&mut cpu, 0b11_001_011_01_111_000);
         cpu.res_b_r();
         assert_eq!(cpu.reg.b, 0b0111_1011);
+    }
+
+    // Tests for 2.9
+    #[test]
+    fn daa() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.a = 0x7D; // skip the add step
+        cpu.reset_flag(NF); // NF = 0 if addition!! Fix now
+        cpu.reset_flag(CF); // C = 0 as no carry
+        set_1byte_op(&mut cpu, 0x27);
+        cpu.daa();
+        assert_eq!(cpu.reg.a, 0x83);
+        assert_eq!(cpu.reg.f & CF, 0);
+    }
+       
+    #[test]
+    fn cpl() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.a = 0x35;
+        set_1byte_op(&mut cpu, 0x2F);
+        cpu.cpl();
+        assert_eq!(cpu.reg.a, 0xCA);
+    }
+
+    #[test]
+    fn ccf() {
+        let mut cpu = set_up_cpu();
+        cpu.set_flag(CF); // C = 1;
+        set_1byte_op(&mut cpu, 0x3F);
+        cpu.ccf();
+        assert_eq!(cpu.reg.f & CF, 0);
+    }
+
+    #[test]
+    fn scf() {
+        let mut cpu = set_up_cpu();
+        cpu.reset_flag(CF); // CF = 0;
+        set_1byte_op(&mut cpu, 0x37);
+        cpu.scf();
+        assert!(cpu.reg.f & CF > 0);
+    }
+
+    #[test]
+    fn di() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.ime = true; // set ime first
+        cpu.di(); // reset
+        assert!(!cpu.reg.ime);
+    }
+
+    #[test]
+    fn ei() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.ime = false; // set ime first
+        cpu.ei(); // reset
+        assert!(cpu.reg.ime);
+    }
+
+    #[test]
+    fn halt() {
+        let mut cpu = set_up_cpu();
+        cpu.halt_mode = false;
+        cpu.halt();
+        assert!(cpu.halt_mode);
+    }
+
+    #[test]
+    fn stop() {
+        let mut cpu = set_up_cpu();
+        cpu.stop_mode = false;
+        cpu.stop();
+        assert!(cpu.stop_mode);
     }
 }
