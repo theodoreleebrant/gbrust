@@ -1979,6 +1979,8 @@ impl Cpu {
     /// jp_nn: unconditional jump to absolute address specified by 16-bit immediate. Set PC = nn
     /// 3-byte instruction, 4 cycles.
     pub fn jp_nn(&mut self) -> ProgramCounter {
+        print!("self.get_nn:");
+        println!("{:?}", self.get_nn());
         ProgramCounter::Jump(self.get_nn(), 4)
     }
 
@@ -2286,8 +2288,8 @@ mod tests {
 
     fn set_3byte_op(cpu: &mut Cpu, opcode: u32) {
         cpu.mem[cpu.reg.pc as usize] = (opcode >> 16) as u8;
-        cpu.mem[(cpu.reg.pc + 1) as usize] = opcode as u8; // nn_low
-        cpu.mem[(cpu.reg.pc + 2) as usize] = (opcode >> 8) as u8;
+        cpu.mem[(cpu.reg.pc + 1) as usize] = (opcode >> 8)  as u8;
+        cpu.mem[(cpu.reg.pc + 2) as usize] = opcode as u8;
     }
 
     fn set_4byte_op(cpu: &mut Cpu, opcode: u32) {
@@ -2382,7 +2384,7 @@ mod tests {
         let mut cpu = set_up_cpu();
         set_3byte_op(&mut cpu, 0x0000_0000 | NN_DEF as u32);
 
-        assert_eq!(cpu.get_nn(), NN_DEF);
+        assert_eq!(cpu.get_nn(), 0xCDAB);
     }
 
     #[test]
@@ -3177,5 +3179,14 @@ mod tests {
         cpu.stop_mode = false;
         cpu.stop();
         assert!(cpu.stop_mode);
+    }
+
+    #[test]
+    fn jp_nn() {
+        let mut cpu = set_up_cpu();
+        set_3byte_op(&mut cpu, 
+            0b11000011_11011111_11010101);
+        cpu.execute_opcode();
+        assert_eq!(cpu.reg.pc, 0b11010101_11011111);
     }
 }
