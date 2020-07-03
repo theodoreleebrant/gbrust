@@ -644,11 +644,11 @@ impl Cpu {
         
         // match cc with respective outcomes
         match cc {
-            00 => result = self.reg.f & ZF == 0,
-            01 => result = self.reg.f & ZF != 0,
-            10 => result = self.reg.f & CF == 0,
-            11 => result = self.reg.f & CF != 0,
-            _ => panic!("Invalid cc"),
+            0b00 => result = self.reg.f & ZF == 0,
+            0b01 => result = self.reg.f & ZF != 0,
+            0b10 => result = self.reg.f & CF == 0,
+            0b11 => result = self.reg.f & CF != 0,
+            _ => panic!("Invalid cc: 0b{:b}", cc),
         }
 
         result
@@ -3228,19 +3228,44 @@ mod tests {
         assert_eq!(cpu.reg.pc, 0b11010101_11011111);
     }
 
-    // #[test]
-    // fn jp_cc_nn() {
-    //     // 8 testcases:
-    //     // Opcode 11_0cc_010
-    //     // CC conditions:
-    //         // 00: jump if Z = 0 (2 testcases each for z)
-    //         // 01: jump if Z = 1 (2 testcases each for z)
-    //         // 10: jump if C = 0 (2 testcases each for c)
-    //         // 11: jump is C = 1 (2 testcases each for c)
-    //     let mut cpu = set_up_cpu();
-    //     set_3byte_op(&mut cpu, 
-    //         0b11000011_11011111_11010101);
-    //     cpu.execute_opcode();
-    //     assert_eq!(cpu.reg.pc, 0b11010101_11011111);
-    // }
+    #[test]
+    fn jp_cc_nn() {
+    // 8 testcases:
+    // Opcode 11_0cc_010
+    // CC conditions:
+        // 00: jump if Z = 0 (2 testcases each for z)
+        // 01: jump if Z = 1 (2 testcases each for z)
+        // 10: jump if C = 0 (2 testcases each for c)
+        // 11: jump is C = 1 (2 testcases each for c)
+    let mut cpu = set_up_cpu();
+    // Z = 0
+    cpu.reset_flag(ZF); // Z = 0, jumps
+    set_3byte_op(&mut cpu, 
+            0b11000010_11011111_11010101);
+            cpu.execute_opcode();
+            assert_eq!(cpu.reg.pc, 0b11010101_11011111);
+    
+    // Z = 1
+    cpu.set_flag(ZF); // Z = 1, jumps
+    set_3byte_op(&mut cpu, 
+            0b11001010_11011111_11010101);
+            cpu.execute_opcode();
+            assert_eq!(cpu.reg.pc, 0b11010101_11011111);
+    
+    // C = 0
+    cpu.reset_flag(CF); // C = 0, jumps
+    set_3byte_op(&mut cpu, 
+            0b11010010_11011111_11010101);
+            assert_eq!((cpu.mem[cpu.reg.pc as usize] & 0b00011000) >> 3, 0b10);
+            cpu.execute_opcode();
+            assert_eq!(cpu.reg.pc, 0b11010101_11011111);
+    
+    // C = 1
+    cpu.set_flag(CF); // C = 1, jumps
+    set_3byte_op(&mut cpu, 
+            0b11011010_11011111_11010101);
+            cpu.execute_opcode();
+            assert_eq!(cpu.reg.pc, 0b11010101_11011111);
+    
+    }
 }
