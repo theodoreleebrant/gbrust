@@ -3012,4 +3012,23 @@ mod tests {
         cpu.bit_b_r();
         assert_eq!(cpu.reg.f, 0b1010_0000);
     }
+
+    #[test]
+    fn bit_b_hl() {
+        let mut cpu = set_up_cpu();
+
+        // BIT 0, HL
+        cpu.mem[HL_DEF as usize] = 0xFE;
+        cpu.set_hcnz(false, false, false, false);
+        set_2byte_op(&mut cpu, 0b11_001_011_01_000_110);
+        cpu.bit_b_hl();
+        assert_eq!(cpu.reg.f, 0b1010_0000);
+
+        // BIT 1, HL
+        cpu.mem[HL_DEF as usize] = 0xFE;
+        cpu.set_hcnz(false, false, false, false);
+        set_2byte_op(&mut cpu, 0b11_001_011_01_001_110);
+        cpu.bit_b_hl();
+        assert_eq!(cpu.reg.f, 0b0010_0000);
+    }
 }
