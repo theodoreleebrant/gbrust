@@ -2994,4 +2994,22 @@ mod tests {
         assert_eq!(cpu.reg.f, 0x00);
     }
 
+    #[test]
+    fn bit_b_r() {
+        let mut cpu = set_up_cpu();
+
+        // BIT 7, A
+        cpu.reg.a = 0x80;
+        cpu.set_hcnz(false, false, false, false);
+        set_2byte_op(&mut cpu, 0b11_001_011_01_111_111);
+        cpu.bit_b_r();
+        assert_eq!(cpu.reg.f, 0b0010_0000);
+
+        // BIT 4, L
+        cpu.reg.l = 0xEF;
+        cpu.set_hcnz(false, false, false, false);
+        set_2byte_op(&mut cpu, 0b11_001_011_01_100_101);
+        cpu.bit_b_r();
+        assert_eq!(cpu.reg.f, 0b1010_0000);
+    }
 }
