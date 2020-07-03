@@ -3238,32 +3238,59 @@ mod tests {
         // 10: jump if C = 0 (2 testcases each for c)
         // 11: jump is C = 1 (2 testcases each for c)
     let mut cpu = set_up_cpu();
-    // Z = 0
-    cpu.reset_flag(ZF); // Z = 0, jumps
+    // Z = 0, no jump
+    cpu.reset_flag(ZF); // Z = 0
+    let no_jump_pc = cpu.reg.pc + 3;
     set_3byte_op(&mut cpu, 
-            0b11000010_11011111_11010101);
+            0b11001010_11011111_11010101); // cc = 01
+            cpu.execute_opcode();
+            assert_eq!(cpu.reg.pc, no_jump_pc);
+    // Z = 0, jump
+    cpu.reset_flag(ZF); // Z = 0
+    set_3byte_op(&mut cpu, 
+            0b11000010_11011111_11010101); // cc = 00
             cpu.execute_opcode();
             assert_eq!(cpu.reg.pc, 0b11010101_11011111);
     
-    // Z = 1
-    cpu.set_flag(ZF); // Z = 1, jumps
+    // Z = 1, no jump
+    cpu.set_flag(ZF); // Z = 1
+    let no_jump_pc = cpu.reg.pc + 3;
     set_3byte_op(&mut cpu, 
-            0b11001010_11011111_11010101);
+            0b11000010_11011111_11010101); // cc = 00
+            cpu.execute_opcode();
+            assert_eq!(cpu.reg.pc, no_jump_pc);
+    // Z = 1, jump
+    cpu.set_flag(ZF); // Z = 1
+    set_3byte_op(&mut cpu, 
+            0b11001010_11011111_11010101); // cc = 01
             cpu.execute_opcode();
             assert_eq!(cpu.reg.pc, 0b11010101_11011111);
     
-    // C = 0
-    cpu.reset_flag(CF); // C = 0, jumps
+    // C = 0, no jumps
+    cpu.reset_flag(CF); // C = 0
+    let no_jump_pc = cpu.reg.pc + 3;
     set_3byte_op(&mut cpu, 
-            0b11010010_11011111_11010101);
-            assert_eq!((cpu.mem[cpu.reg.pc as usize] & 0b00011000) >> 3, 0b10);
+            0b11011010_11011111_11010101); // cc = 11
+            cpu.execute_opcode();
+            assert_eq!(cpu.reg.pc, no_jump_pc);
+    // C = 0, jumps
+    cpu.reset_flag(CF); // C = 0
+    set_3byte_op(&mut cpu, 
+            0b11010010_11011111_11010101); // cc = 10
             cpu.execute_opcode();
             assert_eq!(cpu.reg.pc, 0b11010101_11011111);
     
-    // C = 1
-    cpu.set_flag(CF); // C = 1, jumps
+    // C = 1, no jumps
+    cpu.set_flag(CF); // C = 1
+    let no_jump_pc = cpu.reg.pc + 3;
     set_3byte_op(&mut cpu, 
-            0b11011010_11011111_11010101);
+            0b11010010_11011111_11010101); // cc = 10
+            cpu.execute_opcode();
+            assert_eq!(cpu.reg.pc, no_jump_pc);
+    // C = 1, jumps
+    cpu.set_flag(CF); // C = 1
+    set_3byte_op(&mut cpu, 
+            0b11011010_11011111_11010101); // cc = 11
             cpu.execute_opcode();
             assert_eq!(cpu.reg.pc, 0b11010101_11011111);
     
