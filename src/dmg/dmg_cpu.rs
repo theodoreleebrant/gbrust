@@ -2011,7 +2011,7 @@ impl Cpu {
     /// jr_e: Unconditional jump to relative address specified by signed 8-bit operand e.
     /// 2 bytes, 3 cycles.
     pub fn jr_e(&mut self) -> ProgramCounter {
-        let e = self.get_n() as i16;
+        let e = (self.get_n() as i16) + 2;
         ProgramCounter::Next(e, 3)
     }
 
@@ -2100,7 +2100,7 @@ impl Cpu {
     /// 1 byte, 4 cycles.
     pub fn rst_n(&mut self) -> ProgramCounter {
         // push pc onto stack
-        self.push_u16(self.reg.pc);
+        self.push_u16(self.reg.pc + 1);
 
         let xxx = self.get_r8_to(); // same bits
         let pc_msb: u16 = 0x00;
@@ -3147,6 +3147,83 @@ mod tests {
         assert_eq!(cpu.stack[0xFFFC], 0x03);
     }
 
+    #[test]
+    fn ret() {
+        let mut cpu = set_up_cpu();
+        cpu.reg.pc = 0x8000;
+        cpu.reg.sp = 0xFFFE;
+        set_3byte_op(&mut cpu, 0x00CD_0090);
+        cpu.execute_opcode(); // call 0x9000
+        set_1byte_op(&mut cpu, 0b1100_1001);
+        cpu.execute_opcode();
+        assert_eq!(cpu.reg.pc, 0x8003);
+        assert_eq!(cpu.reg.sp, 0xFFFE);
+    }
+
+    #[test]
+    fn reti() {
+        let mut cpu = set_up_cpu();
+        let mut cpu = set_up_cpu();
+        cpu.reg.pc = 0x8000;
+        cpu.reg.sp = 0xFFFE;
+        set_3byte_op(&mut cpu, 0x00CD_0090);
+        cpu.execute_opcode(); // call 0x9000. Now stack has 0x8003
+        set_1byte_op(&mut cpu, 0b1101_1001);
+        cpu.execute_opcode();
+        assert_eq!(cpu.reg.pc, 0x8003);
+        assert_eq!(cpu.reg.sp, 0xFFFE);
+    }
+
+    #[test]
+    fn ret_cc() {
+        // cc wrong
+        let mut cpu = set_up_cpu();
+        cpu.reg.pc = 0x8000;
+        cpu.reg.sp = 0xFFFE;
+        cpu.set_flag(ZF); // z = 1
+        let cc: u8 = 00; // jump if z = 0
+        set_3byte_op(&mut cpu, 0x00CD_0090);
+        cpu.execute_opcode(); // call 0x9000
+        set_1byte_op(&mut cpu, 0b1100_0000 | cc << 3);
+        cpu.execute_opcode();
+        assert_eq!(cpu.reg.pc, 0x9001);
+        assert_eq!(cpu.reg.sp, 0xFFFC);
+        
+        // cc true
+        cpu.reset_flag(ZF); // z = 0
+        set_1byte_op(&mut cpu, 0b1100_0000 | cc << 3); // set up for ret_cc()
+        cpu.execute_opcode();
+        assert_eq!(cpu.reg.pc, 0x8003);
+        assert_eq!(cpu.reg.sp, 0xFFFE);
+    }
+
+    #[test]
+    fn rst_n() {
+        let mut cpu = set_up_cpu();
+        for t in 0b000..= 0b111 { // test all possible ts
+            cpu.reg.pc = 0x8000;
+            cpu.reg.sp = 0xFFFE;
+            set_1byte_op(&mut cpu, 0b1100_0111 | (t << 3));        
+            cpu.execute_opcode();
+            assert_eq!(cpu.reg.sp, 0xFFFC);
+            assert_eq!(cpu.stack[cpu.reg.sp as usize], 0x01);
+            assert_eq!(cpu.stack[(cpu.reg.sp+1) as usize], 0x80);
+            match t {
+                0b000 => assert_eq!(cpu.reg.pc, 0x0000),
+                0b001 => assert_eq!(cpu.reg.pc, 0x0008),
+                0b010 => assert_eq!(cpu.reg.pc, 0x0010),
+                0b011 => assert_eq!(cpu.reg.pc, 0x0018),
+                0b100 => assert_eq!(cpu.reg.pc, 0x0020),
+                0b101 => assert_eq!(cpu.reg.pc, 0x0028),
+                0b110 => assert_eq!(cpu.reg.pc, 0x0030),
+                0b111 => assert_eq!(cpu.reg.pc, 0x0038),
+                _ => assert!(false), // panic
+            }
+        }
+    }
+            
+
+
     // Tests for 2.9
     #[test]
     fn daa() {
@@ -3228,6 +3305,7 @@ mod tests {
         assert_eq!(cpu.reg.pc, 0b11010101_11011111);
     }
 
+    // Tests for 2.7
     #[test]
     fn jp_cc_nn() {
     // 8 testcases:
@@ -3295,4 +3373,25 @@ mod tests {
             assert_eq!(cpu.reg.pc, 0b11010101_11011111);
     
     }
+
+    
+    #[test]
+    fn jr_e() {
+        let mut cpu = set_up_cpu();
+        for e in 0b0000_0000..=0b1111_1110 {
+            cpu.reg.pc = 0x8000;
+            
+            let offset = e as i8;
+            if offset > 0 {
+                assert_eq!(offset, e);
+            } else {
+                assert_eq!(offset, e * (-1));
+            }
+        }
+    }
+    
+
+
+
+
 }
