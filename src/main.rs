@@ -143,7 +143,7 @@ fn main() {
         }
     }
 
-    println!("Program exitted!");
+    println!("Program exited!");
 
     // if let Some(ram) = console.copy_cart_ram() {
     //     save_bin(&save_ram_path, ram)

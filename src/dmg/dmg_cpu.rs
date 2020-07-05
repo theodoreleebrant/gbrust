@@ -2011,19 +2011,20 @@ impl Cpu {
     /// jr_e: Unconditional jump to relative address specified by signed 8-bit operand e.
     /// 2 bytes, 3 cycles.
     pub fn jr_e(&mut self) -> ProgramCounter {
-        let e = (self.get_n() as i16) + 2;
-        ProgramCounter::Next(e, 3)
+        let e = (self.get_n() as i8) as i16;
+        println!("{:?}", e);
+        ProgramCounter::Next(e + 2, 3)
     }
 
     /// jr_cc_e: Conditional jump to relative address specified by signed 8-bit operand e, depending on condition cc.
     /// 2 bytes, 2 cycles if cc == false, 3 cycles if cc == true.
     pub fn jr_cc_e(&mut self) -> ProgramCounter {
-        let e = self.get_n() as i16;
+        let e = (self.get_n() as i8) as i16;
         let cc = self.check_cc();
         let pc_final: ProgramCounter;
         
         if cc {
-            pc_final = ProgramCounter::Next(e, 3);
+            pc_final = ProgramCounter::Next(e + 2, 3);
         } else {
             pc_final = ProgramCounter::Next(2, 2);
         }
@@ -3378,20 +3379,26 @@ mod tests {
     #[test]
     fn jr_e() {
         let mut cpu = set_up_cpu();
-        for e in 0b0000_0000..=0b1111_1110 {
-            cpu.reg.pc = 0x8000;
-            
-            let offset = e as i8;
-            if offset > 0 {
-                assert_eq!(offset, e);
-            } else {
-                assert_eq!(offset, e * (-1));
-            }
-        }
+        cpu.reg.pc = 0x8000;
+
+        // offset: -128 (+2)
+        cpu.reg.pc = 0x8000;
+        set_2byte_op(&mut cpu, 0b00011000_10000000);
+        cpu.execute_opcode();
+        assert_eq!(cpu.reg.pc, 0x8000 - 126);
+
+        // offset: 0 (+2)
+        cpu.reg.pc = 0x8000;
+        set_2byte_op(&mut cpu, 0b00011000_00000000);
+        cpu.execute_opcode();
+        assert_eq!(cpu.reg.pc, 0x8000 + 2);
+
+        // offset: +127 (+2)
+        cpu.reg.pc = 0x8000;
+        set_2byte_op(&mut cpu, 0b00011000_01111111);
+        cpu.execute_opcode();
+        assert_eq!(cpu.reg.pc, 0x8000 + 129);
     }
-    
-
-
 
 
 }
