@@ -205,13 +205,13 @@ impl Ppu {
             lcdstat: LCDStat::new(),
             scx: 0,
             scy: 0,
-            ly: 0,
-            lyc: 0,
+            ly: 144,
+            lyc: 0xFF,
             wy: 0,
-            wx: 7,
-            bgp: 0,
-            obp0: 0,
-            obp1: 0,
+            wx: 0,
+            bgp: 0xFC,
+            obp0: 0xFF,
+            obp1: 0xFF,
             vram: [0; VRAM_SIZE],
             oam: [0; OAM_SIZE],
             lcd_tiles: [0; DISPLAY_WIDTH * DISPLAY_HEIGHT], // array of bytes representing lcd_screen
@@ -231,7 +231,7 @@ impl Ppu {
             0xFF41 => self.lcdstat.set_flags(val),
             0xFF42 => self.scy = val,
             0xFF43 => self.scx = val,
-            0xFF44 => self.ly = val,
+            0xFF44 => {} // self.ly = val, read-only
             0xFF45 => self.lyc = val,
             0xFF4A => self.wy = val,
             0xFF4B => self.wx = val,
@@ -611,7 +611,7 @@ impl Ppu {
             1 => LIGHT_GRAY,
             2 => DARK_GRAY,
             3 => BLACK,
-            _ => panic!("Invalid color!!: 0x{:x}", color),
+            _ => panic!("Invalid color"),
         }
     }
 
@@ -640,7 +640,7 @@ impl Ppu {
         
         let c = ((color.a as u32) << 24) | ((color.r as u32) << 16) | ((color.g as u32) << 8) | (color.b as u32);
 
-        self.lcd_tiles[tile_index] = c;
+        self.framebuffer[tile_index] = c;
     }
 
 }
