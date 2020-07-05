@@ -111,7 +111,7 @@ fn main() {
 
     let mut console = Console::new(cart);
     
-    let mut window = Window::new("rustgb",
+    let mut window = Window::new("gbrust",
                                  160,
                                  144,
                                  WindowOptions { scale: minifb::Scale::X2, ..Default::default() })
