@@ -99,7 +99,7 @@ impl Lcdc {
         (self.lcd_display_enable as u8) << 7 
             + (self.window_tile_map_display_select as u8) << 6
             + (self.window_display_enable as u8) << 5
-            + (self.bg_window_display_priority as u8) << 4
+            + (self.bg_window_tile_data_select as u8) << 4
             + (self.bg_tile_map_display_select as u8) << 3
             + (self.sprite_size as u8) << 2
             + (self.sprite_display_enable as u8) << 1
