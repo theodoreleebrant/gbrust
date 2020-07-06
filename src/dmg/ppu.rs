@@ -85,14 +85,14 @@ impl Lcdc {
     }
 
     pub fn set_flags(&mut self, flags: u8) {
-        self.lcd_display_enable = (flags & 0x80) == 1;
-        self.window_tile_map_display_select = (flags & 0x40) == 1;
-        self.window_display_enable = (flags & 0x20) == 1;
-        self.bg_window_tile_data_select = (flags & 0x10) == 1;
-        self.bg_tile_map_display_select = (flags & 0x08) == 1;
-        self.sprite_size = (flags & 0x04) == 1;
-        self.sprite_display_enable = (flags & 0x02) == 1;
-        self.bg_window_display_priority = (flags & 0x01) == 1;
+        self.lcd_display_enable = (flags & 0x80) != 0;
+        self.window_tile_map_display_select = (flags & 0x40) != 0;
+        self.window_display_enable = (flags & 0x20) != 0;
+        self.bg_window_tile_data_select = (flags & 0x10) != 0;
+        self.bg_tile_map_display_select = (flags & 0x08) != 0;
+        self.sprite_size = (flags & 0x04) != 0;
+        self.sprite_display_enable = (flags & 0x02) != 0;
+        self.bg_window_display_priority = (flags & 0x01) != 0;
     }
 
     pub fn get_flags(&mut self) -> u8 {
@@ -129,10 +129,10 @@ impl LCDStat {
     }
 
     pub fn set_flags(&mut self, flags: u8) {
-        self.lcd_ly_coincidence_interrupt = (flags & 0x40) == 1;
-        self.mode_2_oam_interrupt = (flags & 0x20) == 1;
-        self.mode_1_vblank_interupt = (flags & 0x10) == 1;
-        self.mode_0_hblank_interrupt = (flags & 0x8) == 1;
+        self.lcd_ly_coincidence_interrupt = (flags & 0x40) != 0;
+        self.mode_2_oam_interrupt = (flags & 0x20) != 0;
+        self.mode_1_vblank_interupt = (flags & 0x10) != 0;
+        self.mode_0_hblank_interrupt = (flags & 0x8) != 0;
         //coincidence_flag read only
         //mode_flag read only
     }
@@ -176,6 +176,8 @@ impl Mode {
     }
 */
 }
+
+// No definition of trait VideoSink because already defined it in console and imported.
 
 pub struct Ppu {
     lcdc: Lcdc,
@@ -643,4 +645,31 @@ impl Ppu {
         self.framebuffer[tile_index] = c;
     }
 
+}
+
+#[cfg(test)] // write simple tests to test ppu functions
+mod test {
+    use super::*;
+    
+    #[test]
+    fn init_test() {
+        // Test lcdc initiation
+        let lcdc = LCDCtrl::new();
+        assert!(lcdc.lcd_display_enable); // true
+        assert!(!lcdc.window_tile_map_display_select); // false
+        assert!(!lcdc.window_display_enable); // false
+        assert!(lcdc.bg_window_tile_data_select); // true
+        assert!(!lcdc.bg_tile_map_display_select); // false
+        assert!(!lcdc.sprite_size); // false
+        assert!(!lcdc.sprite_display_enable); // false
+        assert!(lcdc.bg_window_display_priority); // true
+
+        let lcdstat = LCDStat::new();
+        assert!(!lcdstat.lcd_ly_coincidence_interrupt); // false
+        assert!(!lcdcstat.mode_2_oam_interrupt); // false
+        assert!(!lcdcstat.mode_1_vblank_interupt); // false
+        assert!(!lcdcstat.mode_0_hblank_interrupt); // false
+        assert!(!lcdcstat.coincidence_flag); // false
+        assert_eq!(mode_flag, Mode::VBlank);
+    }
 }
