@@ -229,17 +229,18 @@ impl Ppu {
                 let addr = addr - TILE_BASE_ADDR; // TILE_BASE_ADDR = 0x8000
                 self.vram[addr as usize] = val;
             },
+            0xFE00..=0xFEFF => self.oam[(addr - 0xFE00) as usize] = val,
             0xFF40 => self.lcdc.set_flags(val),
             0xFF41 => self.lcdstat.set_flags(val),
             0xFF42 => self.scy = val,
             0xFF43 => self.scx = val,
             0xFF44 => {} // self.ly = val, read-only
             0xFF45 => self.lyc = val,
-            0xFF4A => self.wy = val,
-            0xFF4B => self.wx = val,
             0xFF47 => self.bgp = val,
             0xFF48 => self.obp0 = val,
             0xFF49 => self.obp1 = val,
+            0xFF4A => self.wy = val,
+            0xFF4B => self.wx = val,
             _ => panic!("Unsupported address to write to: 0x{:x}", addr),
         }
     }
@@ -249,18 +250,19 @@ impl Ppu {
             0x8000..=0x9fff => { // tile data
                 let addr = addr - TILE_BASE_ADDR;
                 self.vram[addr as usize]
-            },  
+            }, 
+            0xFE00..=0xFEFF => self.oam[(addr - 0xFE00) as usize],
             0xFF40 => self.lcdc.get_flags(),
             0xFF41 => self.lcdstat.get_flags(),
             0xFF42 => self.scy,
             0xFF43 => self.scx,
             0xFF44 => self.ly,
             0xFF45 => self.lyc,
-            0xFF4A => self.wy,
-            0xFF4B => self.wx,
             0xFF47 => self.bgp,
             0xFF48 => self.obp0,
             0xFF49 => self.obp1,
+            0xFF4A => self.wy,
+            0xFF4B => self.wx,
             _ => panic!("Unsupported address to read: 0x{:x}", addr),
         }
     }
