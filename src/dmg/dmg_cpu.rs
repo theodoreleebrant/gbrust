@@ -114,7 +114,7 @@ impl Cpu {
         // elapsed_cycles calculates how many cycles are spent carrying out the instruction and
         // corresponding interrupt (if produced) = time to execute + time to handle interrupt
         println!("{:?}", self.reg.pc);
-        thread::sleep(time::Duration::from_millis(100));
+        thread::sleep(time::Duration::from_millis(1));
         let elapsed_cycles = {
             self.execute_opcode() + self.handle_interrupt() 
         };
@@ -423,7 +423,7 @@ impl Cpu {
     /// get_r8_to: gets 3-bit register ID from opcode. Register ID takes bit 3, 4, 5 for register
     /// written to.
     pub fn get_r8_to(&mut self) -> u8 {
-        (self.interconnect.read(self.reg.pc & 0b00111000) >> 3) as u8
+        ((self.interconnect.read(self.reg.pc) & 0b00111000) >> 3) as u8
     }
     
     /// get_r8_from: gets 3-bit register ID from opcode. Register ID takes bit 0,1,2 for register
@@ -501,7 +501,9 @@ impl Cpu {
     }
 
     pub fn get_r16(&mut self) -> u8 {
-        (self.interconnect.read(self.reg.pc  & 0b00110000) >> 4) as u8
+        let res = ((self.interconnect.read(self.reg.pc) & 0b00110000) >> 4) as u8;
+        println!("get_r16: {:?}", res);
+        res
     }
 
     // Reusable code for 8-bit Rotate, Shift instructions
@@ -702,6 +704,8 @@ impl Cpu {
     pub fn ld_r_n(&mut self) -> ProgramCounter {
         let r = self.get_r8_to();
         let n = self.get_n();
+
+        println!("(ld_r_n) r:{:?}, n:{:?}", r, n);
 
         self.write_to_r8(r, n);
 
