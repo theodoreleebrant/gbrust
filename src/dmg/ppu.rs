@@ -566,15 +566,16 @@ impl Ppu {
                     // Put together the color bits
                     let color_num = (((msb_line >> color_bit) & 0b01) << 1) | ((lsb_line >> color_bit) & 0b01);
                     
-                    if color_num == 0 { // transparent, do not draw
-                        continue;
-                    }
                     // get sprite color
                     let palette_num = if palette_bit == 0 {
                         self.obp0
                     } else {
                         self.obp1
                     };
+
+                    if color_num == 0 { // transparent, do not draw
+                        continue;
+                    }
 
                     let color = self.get_color(color_num, palette_num);
                     
@@ -625,10 +626,10 @@ impl Ppu {
         let tile_index = ((y_line * DISPLAY_WIDTH as u32) + pixel_x) as usize;
 
         let prev_pixel = Color {
-            a: (self.lcd_tiles[tile_index] >> 24) as u8,
-            r: (self.lcd_tiles[tile_index] >> 16) as u8,
-            g: (self.lcd_tiles[tile_index] >> 8) as u8,
-            b: self.lcd_tiles[tile_index] as u8,
+            a: (self.framebuffer[tile_index] >> 24) as u8,
+            r: (self.framebuffer[tile_index] >> 16) as u8,
+            g: (self.framebuffer[tile_index] >> 8) as u8,
+            b: self.framebuffer[tile_index] as u8,
         };
 
         // if color of previous tile is not white and it has higher priority, don't draw next tile
@@ -656,7 +657,7 @@ mod test {
     #[test]
     fn init_test() {
         // Test lcdc initiation
-        let lcdc = Lcdc::new();
+        let mut lcdc = Lcdc::new();
         assert!(lcdc.lcd_display_enable); // true
         assert!(!lcdc.window_tile_map_display_select); // false
         assert!(!lcdc.window_display_enable); // false
@@ -665,8 +666,9 @@ mod test {
         assert!(!lcdc.sprite_size); // false
         assert!(!lcdc.sprite_display_enable); // false
         assert!(lcdc.bg_window_display_priority); // true
+        assert_eq!(lcdc.get_flags(), 0x91);
 
-        let lcdstat = LCDStat::new();
+        let mut lcdstat = LCDStat::new();
         assert!(!lcdstat.lcd_ly_coincidence_interrupt); // false
         assert!(!lcdstat.mode_2_oam_interrupt); // false
         assert!(!lcdstat.mode_1_vblank_interupt); // false
@@ -676,6 +678,7 @@ mod test {
             Mode::VBlank => assert!(true),
             _ => assert!(false),
         }
+        assert_eq!(lcdstat.get_flags(), 0b0000_0001);
 
         let ppu = Ppu::new();
         assert_eq!(ppu.scx, 0);
@@ -688,7 +691,5 @@ mod test {
         assert_eq!(ppu.mode_cycles, 0);
         assert_eq!(ppu.cycles, 0);
     }
-
-    #[test]
 
 }
