@@ -2466,10 +2466,12 @@ mod tests {
         let mut cpu = set_up_cpu();
         cpu.reg.a = 0x3A;
         cpu.reg.b = 0xC6;
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0x80 | B_ID);
-        cpu.add_ar();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0x00);
         assert_eq!(cpu.reg.f, ZF+HF+CF);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
 
@@ -2477,10 +2479,12 @@ mod tests {
     fn add_an() {
         let mut cpu = set_up_cpu();
         cpu.reg.a = 0x3C;
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xC600 | 0xFF);
-        cpu.add_an();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0x3B);
         assert_eq!(cpu.reg.f, HF + CF);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2488,10 +2492,12 @@ mod tests {
         let mut cpu = set_up_cpu();
         cpu.reg.a = 0x3C;
         cpu.mem[HL_DEF as usize] = 0x12;
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0x86);
-        cpu.add_ahl();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0x4E);
         assert_eq!(cpu.reg.f, 0x00);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2502,36 +2508,37 @@ mod tests {
         cpu.reg.a = 0xE1;
         cpu.reg.e = 0x0F;
         set_1byte_op(&mut cpu, 0x88 | E_ID);
+        let pc_after = cpu.reg.pc + 1;
         // set CY flag
         cpu.set_flag(CF);
-        assert!(cpu.reg.f & CF > 0);
-        
-        cpu.adc_ar();
+        cpu.execute_opcode(); // adc_ar
         assert_eq!(cpu.reg.a, 0xF1);
         assert_eq!(cpu.reg.f, HF);
+        assert_eq!(cpu.reg.pc, pc_after);
         cpu.reg.f = 0;
     
         // ADC A, m
         cpu.reg.a = 0xE1;
         let n = 0x3B;
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xCE00 | n);
         cpu.set_flag(CF);
-        assert!(cpu.reg.f & CF > 0);
-        
-        cpu.adc_an();
+        cpu.execute_opcode(); // adc_an
         assert_eq!(cpu.reg.a, 0x1D);
         assert_eq!(cpu.reg.f, CF);
+        assert_eq!(cpu.reg.pc, pc_after);
         cpu.reg.f = 0;
 
         // ADC A, (HL)
         cpu.reg.a = 0xE1;
         cpu.mem[HL_DEF as usize] = 0x1E;
         set_1byte_op(&mut cpu, 0x8E); 
+        let pc_after = cpu.reg.pc + 1;
         cpu.set_flag(CF);
-        assert!(cpu.reg.f & CF > 0);
-        cpu.adc_ahl();
+        cpu.execute_opcode(); // adc_hl
         assert_eq!(cpu.reg.a, 0x00);
         assert_eq!(cpu.reg.f, ZF+HF+CF);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2541,28 +2548,34 @@ mod tests {
         //  SUB A, E
         cpu.reg.a = 0x3E;
         cpu.reg.e = 0x3E;
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0x90 | E_ID);
-        cpu.sub_r();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0x00);
         assert_eq!(cpu.reg.f, ZF + NF);
+        assert_eq!(cpu.reg.pc, pc_after);
         cpu.reg.f = 0;
 
         // SUB A, n
         cpu.reg.a = 0x3E;
         let n = 0x0F;
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xD600 | n);
-        cpu.sub_n();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0x2F);
         assert_eq!(cpu.reg.f, HF+NF);
+        assert_eq!(cpu.reg.pc, pc_after);
         cpu.reg.f = 0;
 
         // SUB A, (HL)
         cpu.reg.a = 0x3E;
         cpu.mem[HL_DEF as usize] = 0x40;
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0x96);
-        cpu.sub_hl();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a,0xFE);
         assert_eq!(cpu.reg.f, NF + CF);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2572,32 +2585,39 @@ mod tests {
         //  SBC A, E
         cpu.reg.a = 0x3B;
         cpu.reg.e = 0x2A;
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0x98 | E_ID);
         cpu.set_flag(CF);
-        cpu.sbc_ar();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0x10);
         assert_eq!(cpu.reg.f, NF);
+        assert_eq!(cpu.reg.pc, pc_after);
         cpu.reg.f = 0;
 
         // SUB A, n
         cpu.reg.a = 0x3B;
         let n = 0x3A;
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xDE00 | n);
         cpu.set_flag(CF);
-        cpu.sbc_an();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0x00);
         assert_eq!(cpu.reg.f, ZF+NF);
+        assert_eq!(cpu.reg.pc, pc_after);
         cpu.reg.f = 0;
 
         // SUB A, (HL)
         cpu.reg.a = 0x3B;
         cpu.mem[HL_DEF as usize] = 0x4F;
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0x9E);
         cpu.set_flag(CF);
-        cpu.sbc_ahl();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a,0xEB);
         assert_eq!(cpu.reg.f, HF + NF + CF);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
+
 
     #[test]
     fn and_s() {
@@ -2608,26 +2628,32 @@ mod tests {
 
         //and B
         cpu.set_hcnz(false, false, false, false);
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0b10100000 | B_ID);
-        cpu.and_r();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0x5A & 0x18);
         assert_eq!(cpu.reg.f, 0b00100000);
+        assert_eq!(cpu.reg.pc, pc_after);
 
         //and n
         cpu.set_hcnz(false, false, false, false);
         cpu.reg.a = 0x5A;
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0b1110011000000000 | 0x38);
-        cpu.and_n();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0x5A & 0x38);
         assert_eq!(cpu.reg.f, 0b00100000);
+        assert_eq!(cpu.reg.pc, pc_after);
 
         //and HL
         cpu.set_hcnz(false, false, false, false);
         cpu.reg.a = 0x5A;
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0b10100110);
-        cpu.and_hl();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0x5A & 0x00);
         assert_eq!(cpu.reg.f, 0b10100000);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2638,27 +2664,34 @@ mod tests {
 
         //and A
         cpu.set_hcnz(false, false, false, false);
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0b10110000 | A_ID);
-        cpu.or_r();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0x5A | 0x5A);
         assert_eq!(cpu.reg.f, 0b00000000);
+        assert_eq!(cpu.reg.pc, pc_after);
 
         //and n
         cpu.set_hcnz(false, false, false, false);
         cpu.reg.a = 0x5A;
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0b11_110_110_0000_0000 | 0x3);
-        cpu.or_n();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0x5A | 0x3);
         assert_eq!(cpu.reg.f, 0b00000000);
+        assert_eq!(cpu.reg.pc, pc_after);
 
         //and HL
         cpu.set_hcnz(false, false, false, false);
         cpu.reg.a = 0x5A;
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0b10_110_110);
-        cpu.or_hl();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0x5A | 0x0F);
         assert_eq!(cpu.reg.f, 0b00000000);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
+
 
     #[test]
     fn xor_s() {
@@ -2668,26 +2701,32 @@ mod tests {
 
         //and A
         cpu.set_hcnz(false, false, false, false);
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0b10_101_000 | A_ID);
-        cpu.xor_r();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0xFF ^ 0xFF);
         assert_eq!(cpu.reg.f, 0b10000000);
+        assert_eq!(cpu.reg.pc, pc_after);
 
         //and n
         cpu.set_hcnz(false, false, false, false);
         cpu.reg.a = 0xFF;
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0b11_101_110_0000_0000 | 0x0F);
-        cpu.xor_n();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0xFF ^ 0x0F);
         assert_eq!(cpu.reg.f, 0b00000000);
+        assert_eq!(cpu.reg.pc, pc_after);
 
         //and HL
         cpu.set_hcnz(false, false, false, false);
         cpu.reg.a = 0xFF;
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0b10_101_110);
-        cpu.xor_hl();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0xFF ^ 0x8A);
         assert_eq!(cpu.reg.f, 0b00000000);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2698,19 +2737,25 @@ mod tests {
         cpu.mem[HL_DEF as usize] = 0x40;
 
         // cp B
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0xB8 | B_ID);
-        cpu.cp_r();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.f, HF + NF);
+        assert_eq!(cpu.reg.pc, pc_after);
         
         // cp 3C
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xFE00 | 0x3C);
-        cpu.cp_n();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.f, ZF+NF);
+        assert_eq!(cpu.reg.pc, pc_after);
 
         // cp (HL)
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0xBE);
-        cpu.cp_hl();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.f, NF + CF);
+        assert_eq!(cpu.reg.pc, pc_after);
         cpu.reg.f = 0;
     }
     
@@ -2718,10 +2763,12 @@ mod tests {
     pub fn dec_hl() {
         let mut cpu = set_up_cpu();
         cpu.mem[HL_DEF as usize] = 0x00;
-        set_1byte_op(&mut cpu, 0x36);
-        cpu.dec_hl();
+        let pc_after = cpu.reg.pc + 1;
+        set_1byte_op(&mut cpu, 0x35);
+        cpu.execute_opcode();
         assert_eq!(cpu.mem[HL_DEF as usize], 0xFF);
-        cpu.reset_flag(CF);
+        assert_eq!(cpu.reg.pc, pc_after);
+        cpu.reset_flag(CF); // CF stays the same as before
         assert_eq!(cpu.reg.f, HF+NF);
     }
     
@@ -2730,10 +2777,12 @@ mod tests {
         let mut cpu = set_up_cpu();
         cpu.reg.l = 0x01;
         cpu.reg.f = 0;
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0b00_000_101 | (L_ID << 3));
-        cpu.dec_r();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.l, 0x00);
         assert_eq!(cpu.reg.f, ZF+NF);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2741,10 +2790,12 @@ mod tests {
         let mut cpu = set_up_cpu();
         cpu.set_hcnz(false, false, false, false);
         cpu.mem[HL_DEF as usize] = 0x50;
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0b00_110_100);
-        cpu.inc_hl();
+        cpu.execute_opcode();
         assert_eq!(cpu.mem[HL_DEF as usize], 0x51);
         assert_eq!(cpu.reg.f, 0);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
     
     #[test]
@@ -2752,10 +2803,12 @@ mod tests {
         let mut cpu = set_up_cpu();
         cpu.reg.l = 0xFF;
         cpu.set_hcnz(false, false, false, false);
-        set_1byte_op(&mut cpu, 0b00_000_101 | (L_ID << 3));
-        cpu.inc_r();
+        let pc_after = cpu.reg.pc + 1;
+        set_1byte_op(&mut cpu, 0b00_000_100 | (L_ID << 3));
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.l, 0x00);
         assert_eq!(cpu.reg.f, ZF+HF);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2765,19 +2818,23 @@ mod tests {
         // ADD HL, BC
         cpu.reg.hl = 0x8A23;
         cpu.reg.bc = 0x0605;
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0b00_001_001 | (BC_ID << 4));
         cpu.reg.f = 0;
-        cpu.add_hlss();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.hl, 0x9028);
         assert_eq!(cpu.reg.f, HF);
+        assert_eq!(cpu.reg.pc, pc_after);
         
         // ADD HL, HL
         cpu.reg.hl = 0x8A23;
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0b00_001_001 | (HL_ID << 4));
         cpu.reg.f = 0;
-        cpu.add_hlss();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.hl, 0x1446);
         assert_eq!(cpu.reg.f, HF + CF);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2786,28 +2843,34 @@ mod tests {
         cpu.reg.sp = 0xFFF8;
         let e = 0x02;
         cpu.reg.f = 0;
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xE800 | e);
-        cpu.add_spe();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.sp, 0xFFFA);
         assert_eq!(cpu.reg.f, 0);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
     fn inc_ss() {
         let mut cpu = set_up_cpu();
         cpu.reg.de = 0x235F;
-        set_2byte_op(&mut cpu, 0x0300 | ((DE_ID as u16) << 12) | N_DEF as u16);
-        cpu.inc_ss();
+        let pc_after = cpu.reg.pc + 1;
+        set_1byte_op(&mut cpu, 0x03 | (DE_ID << 4));
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.de, 0x2360);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
     
     #[test]
-    fn dec_ss() {
+    fn dec_ss() { // 1-byte instruction, why set 2byte?
         let mut cpu = set_up_cpu();
         cpu.reg.de = 0x235F;
-        set_2byte_op(&mut cpu, 0x0B00 | ((DE_ID as u16) << 12) | N_DEF as u16);
-        cpu.dec_ss();
+        let pc_after = cpu.reg.pc + 1;
+        set_1byte_op(&mut cpu, 0x0B | (DE_ID << 4));
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.de, 0x235E);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2815,10 +2878,12 @@ mod tests {
         let mut cpu = set_up_cpu();
         cpu.reg.a = 0x85;
         cpu.reset_flag(CF); // C = 0
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0x07);
-        cpu.rlca();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.f, CF);
         assert_eq!(cpu.reg.a, 0x0B); //Example in manual is wrong
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2826,10 +2891,12 @@ mod tests {
         let mut cpu = set_up_cpu();
         cpu.reg.a = 0x95;
         cpu.set_flag(CF); // C = 1
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0x017);
-        cpu.rla();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.f, CF);
         assert_eq!(cpu.reg.a, 0x2B);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2837,10 +2904,12 @@ mod tests {
         let mut cpu = set_up_cpu();
         cpu.reg.a = 0x3B;
         cpu.reset_flag(CF);
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0x0F);
-        cpu.rrca();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0x9D);
         assert_eq!(cpu.reg.f, CF);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2848,10 +2917,12 @@ mod tests {
         let mut cpu = set_up_cpu();
         cpu.reg.a = 0x81;
         cpu.reset_flag(CF);
+        let pc_after = cpu.reg.pc + 1;
         set_1byte_op(&mut cpu, 0x1F);
-        cpu.rra();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0x40);
         assert_eq!(cpu.reg.f, CF);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2860,18 +2931,22 @@ mod tests {
         // RLC B
         cpu.reg.b = 0x85;
         cpu.reset_flag(CF);
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xCB00 | (B_ID as u16));
-        cpu.rlc();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.b, 0x0B);
         assert_eq!(cpu.reg.f, CF);
+        assert_eq!(cpu.reg.pc, pc_after);
 
         // RLC (HL)
         cpu.mem[HL_DEF as usize] = 0x00;
         cpu.reset_flag(CF);
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xCB00 | (0x06 as u16));
-        cpu.rlc();
+        cpu.execute_opcode();
         assert_eq!(cpu.mem[HL_DEF as usize], 0x00);
         assert_eq!(cpu.reg.f, ZF);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2880,18 +2955,22 @@ mod tests {
         // RLC B
         cpu.reg.b = 0x80;
         cpu.reset_flag(CF);
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xCB10 | (B_ID as u16));
-        cpu.rl();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.b, 0x00);
         assert_eq!(cpu.reg.f, CF + ZF);
+        assert_eq!(cpu.reg.pc, pc_after);
 
         // RLC (HL)
         cpu.mem[HL_DEF as usize] = 0x11;
         cpu.reset_flag(CF);
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xCB10 | (0x06 as u16));
-        cpu.rl();
+        cpu.execute_opcode();
         assert_eq!(cpu.mem[HL_DEF as usize], 0x22);
         assert_eq!(cpu.reg.f, 0);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2900,18 +2979,22 @@ mod tests {
         // RLC B
         cpu.reg.b = 0x01;
         cpu.reset_flag(CF);
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xCB08 | (B_ID as u16));
-        cpu.rrc();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.b, 0x80);
         assert_eq!(cpu.reg.f, CF);
+        assert_eq!(cpu.reg.pc, pc_after);
 
         // RLC (HL)
         cpu.mem[HL_DEF as usize] = 0x00;
         cpu.reset_flag(CF);
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xCB08 | (0x06 as u16));
-        cpu.rrc();
+        cpu.execute_opcode();
         assert_eq!(cpu.mem[HL_DEF as usize], 0x00);
         assert_eq!(cpu.reg.f, ZF);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2920,18 +3003,22 @@ mod tests {
         // RLC B
         cpu.reg.b = 0x01;
         cpu.reset_flag(CF);
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xCB18 | (B_ID as u16));
-        cpu.rr();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.b, 0x00);
         assert_eq!(cpu.reg.f, CF + ZF);
+        assert_eq!(cpu.reg.pc, pc_after);
 
         // RLC (HL)
         cpu.mem[HL_DEF as usize] = 0x8A;
         cpu.reset_flag(CF);
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xCB18 | (0x06 as u16));
-        cpu.rr();
+        cpu.execute_opcode();
         assert_eq!(cpu.mem[HL_DEF as usize], 0x45);
         assert_eq!(cpu.reg.f, 0);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2940,18 +3027,22 @@ mod tests {
         // SLA D
         cpu.reg.d = 0x80;
         cpu.reset_flag(CF);
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xCB20 | (D_ID as u16));
-        cpu.sla();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.d, 0x00);
         assert_eq!(cpu.reg.f, CF + ZF);
+        assert_eq!(cpu.reg.pc, pc_after);
 
         // SLA (HL)
         cpu.mem[HL_DEF as usize] = 0xFF;
         cpu.reset_flag(CF);
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xCB20 | (0x06 as u16));
-        cpu.sla();
+        cpu.execute_opcode();
         assert_eq!(cpu.mem[HL_DEF as usize], 0xFE);
         assert_eq!(cpu.reg.f, CF);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2960,18 +3051,22 @@ mod tests {
         // SRA A
         cpu.reg.a = 0x8A;
         cpu.reset_flag(CF); // C = 0
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xCB28 | (A_ID as u16));
-        cpu.sra();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0xC5);
         assert_eq!(cpu.reg.f, 0);
-
+        assert_eq!(cpu.reg.pc, pc_after);
+        
         // SRA (HL)
         cpu.mem[HL_DEF as usize] = 0x01;
         cpu.reset_flag(CF);
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xCB28 | (0x06 as u16));
-        cpu.sra();
+        cpu.execute_opcode();
         assert_eq!(cpu.mem[HL_DEF as usize], 0x00);
         assert_eq!(cpu.reg.f, CF + ZF);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2980,17 +3075,22 @@ mod tests {
         // SRL A
         cpu.reg.a = 0x01;
         cpu.reset_flag(CF);
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xCB38 | (A_ID as u16));
-        cpu.srl();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0x00);
         assert_eq!(cpu.reg.f, CF + ZF);
+        assert_eq!(cpu.reg.pc, pc_after);
+
         // SRL(HL)
         cpu.mem[HL_DEF as usize] = 0xFF;
         cpu.reset_flag(CF);
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xCB38 | (0x06 as u16));
-        cpu.srl();
+        cpu.execute_opcode();
         assert_eq!(cpu.mem[HL_DEF as usize], 0x7F);
         assert_eq!(cpu.reg.f, CF);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -2998,17 +3098,21 @@ mod tests {
         let mut cpu = set_up_cpu();
         // SWAP A
         cpu.reg.a = 0x0F;
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xCB30 | (A_ID as u16));
-        cpu.swap();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.a, 0xF0);
         assert_eq!(cpu.reg.f, 0x00);
+        assert_eq!(cpu.reg.pc, pc_after);
 
         // SWAP (HL)
         cpu.mem[HL_DEF as usize] = 0xF0;
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0xCB30 | (0x06 as u16));
-        cpu.swap();
+        cpu.execute_opcode();
         assert_eq!(cpu.mem[HL_DEF as usize], 0x0F);
         assert_eq!(cpu.reg.f, 0x00);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -3018,16 +3122,20 @@ mod tests {
         // BIT 7, A
         cpu.reg.a = 0x80;
         cpu.set_hcnz(false, false, false, false);
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0b11_001_011_01_111_111);
-        cpu.bit_b_r();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.f, 0b0010_0000);
+        assert_eq!(cpu.reg.pc, pc_after);
 
         // BIT 4, L
         cpu.reg.l = 0xEF;
         cpu.set_hcnz(false, false, false, false);
+        let pc_after = cpu.reg.pc + 2;
         set_2byte_op(&mut cpu, 0b11_001_011_01_100_101);
-        cpu.bit_b_r();
+        cpu.execute_opcode();
         assert_eq!(cpu.reg.f, 0b1010_0000);
+        assert_eq!(cpu.reg.pc, pc_after);
     }
 
     #[test]
@@ -3412,6 +3520,4 @@ mod tests {
         cpu.execute_opcode();
         assert_eq!(cpu.reg.pc, 0x8000 + 129);
     }
-
-
 }
