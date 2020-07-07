@@ -6,7 +6,7 @@ use std::fmt::Debug;
 use std::string::String;
 
 // use super::dmg_cpu::*;
-#[derive(Debug)]
+// #[derive(Debug)]
 pub struct Cart {
     program: Box<[u8]>,
 }
@@ -114,4 +114,19 @@ impl Cart {
     }
 }
 
+impl Debug for Cart {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f,
+               "Cart {{
+    title: {},
+    size: {:?},
+    destination_code: {:?},
+}}",
+               self.get_title(),
+               // self.mbc_info(),
+               self.get_rom_size(),
+               // self.rom_bank_count(),
+               self.get_dest())
+    }
+}
 
