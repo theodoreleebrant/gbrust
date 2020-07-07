@@ -298,7 +298,7 @@ impl Cpu {
     }
 
     pub fn execute_bc(&mut self, pc_current: u16) -> ProgramCounter {
-        let suffix = self.interconnect.read((pc_current + 1));
+        let suffix = self.interconnect.read(pc_current + 1);
         let parts = (
             suffix >> 6, //  bit 76
             (suffix & 0b0011_1000) >> 3, // bit 543

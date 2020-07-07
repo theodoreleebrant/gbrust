@@ -53,7 +53,7 @@ impl Interconnect {
                 | 0xff40..= 0xff45 // LCDC, LCDStat, SCY, SCX, LY, LYC
                 | 0xff47..= 0xff4b // BGP, Object Palette Data 0-1, WY, WX, 
                 | 0xff68..= 0xff69 // LCD Color Palette for CGB
-                | 0xff4f => { // Destination Memory Bank
+                 => { // Destination Memory Bank
                 self.ppu.read(addr)
             }
 
@@ -134,7 +134,7 @@ impl Interconnect {
             }
 
             // VRAM Sprite Attribute Table
-            0xFE00..= 0xFE9F | 0xFF40..= 0xFF45 | 0xFF47..= 0xFF4B | 0xFF4F => {
+            0xFE00..= 0xFE9F | 0xFF40..= 0xFF45 | 0xFF47..= 0xFF4B => {
                         self.ppu.write(addr, val);
             }
 
