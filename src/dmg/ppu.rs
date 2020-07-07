@@ -684,7 +684,7 @@ mod test {
         }
         assert_eq!(lcdstat.get_flags(), 0b0000_0001);
 
-        let ppu = Ppu::new();
+        let mut ppu = Ppu::new();
         assert_eq!(ppu.scx, 0);
         assert_eq!(ppu.scy, 0);
         assert_eq!(ppu.ly, 144);
@@ -694,6 +694,8 @@ mod test {
         assert_eq!(ppu.obp1, 0xff);
         assert_eq!(ppu.mode_cycles, 0);
         assert_eq!(ppu.cycles, 0);
+        assert_eq!(ppu.lcdc.get_flags(), 0x91);
+        assert_eq!(ppu.lcdstat.get_flags(), 0b0000_0001);
     }
 
 }
