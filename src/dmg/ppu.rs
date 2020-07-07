@@ -413,8 +413,8 @@ impl Ppu {
         let scanline = self.ly;
         let scroll_x = self.scx;
         let scroll_y = self.scy;
-        let window_x = self.wx;
-        let window_y = self.wy.wrapping_sub(7);
+        let window_x = self.wx.wrapping_sub(7); // fixed difference
+        let window_y = self.wy;
 
         // Window used if the flag in LCDC is true and the window is below scanline
         let use_window = self.lcdc.window_display_enable && window_y <= scanline;
@@ -438,7 +438,7 @@ impl Ppu {
             }
         } else {
             // Window not used. Background tiles used.
-            if self.lcdc.bg_window_tile_data_select {
+            if self.lcdc.bg_tile_map_display_select {
                 0x9c00
             } else {
                 0x9800
@@ -464,7 +464,7 @@ impl Ppu {
             let x_pos = if use_window && pixel >= window_x {
                 pixel.wrapping_sub(window_x)
             } else {
-                scroll_x.wrapping_add(scroll_x)
+                pixel.wrapping_add(scroll_x)
             };
 
             let tile_col: u16 = (x_pos / 8) as u16;
@@ -688,4 +688,7 @@ mod test {
         assert_eq!(ppu.mode_cycles, 0);
         assert_eq!(ppu.cycles, 0);
     }
+
+    #[test]
+
 }
