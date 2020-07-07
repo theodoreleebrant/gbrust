@@ -113,7 +113,7 @@ impl Cpu {
     pub fn step(&mut self, video_sink: &mut dyn VideoSink) -> u32 {
         // elapsed_cycles calculates how many cycles are spent carrying out the instruction and
         // corresponding interrupt (if produced) = time to execute + time to handle interrupt
-        println!("{:?}", self.reg.pc);
+        println!("current pc: {:?}", self.reg.pc);
         //thread::sleep(time::Duration::from_millis(1));
         let elapsed_cycles = {
             self.execute_opcode() + self.handle_interrupt() 
@@ -178,7 +178,7 @@ impl Cpu {
             is_0bb,
         );
 
-        println!("{:?}", parts);
+        println!("opcode: 0x{:x}", opcode);
 
         let pc_change = match parts {
             // opcodes starting with 00
