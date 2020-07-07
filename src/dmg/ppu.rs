@@ -96,14 +96,18 @@ impl Lcdc {
     }
 
     pub fn get_flags(&mut self) -> u8 {
-        (self.lcd_display_enable as u8) << 7 
-            + (self.window_tile_map_display_select as u8) << 6
-            + (self.window_display_enable as u8) << 5
-            + (self.bg_window_tile_data_select as u8) << 4
-            + (self.bg_tile_map_display_select as u8) << 3
-            + (self.sprite_size as u8) << 2
-            + (self.sprite_display_enable as u8) << 1
-            + (self.bg_window_display_priority as u8)
+        // println!("{:?}", self.lcd_display_enable);
+        // let intermediate = + (self.bg_window_tile_data_select as u8) << 4;
+        // println!("{:?}", intermediate);
+        let res = ((self.lcd_display_enable as u8) << 7) 
+            + ((self.window_tile_map_display_select as u8) << 6)
+            + ((self.window_display_enable as u8) << 5)
+            + ((self.bg_window_tile_data_select as u8) << 4)
+            + ((self.bg_tile_map_display_select as u8) << 3)
+            + ((self.sprite_size as u8) << 2)
+            + ((self.sprite_display_enable as u8) << 1)
+            + (self.bg_window_display_priority as u8);
+        res
     }
 }
 
@@ -138,11 +142,11 @@ impl LCDStat {
     }
 
     pub fn get_flags(&mut self) -> u8 {
-        (self.lcd_ly_coincidence_interrupt as u8) << 6
-            + (self.mode_2_oam_interrupt as u8) << 5
-            + (self.mode_1_vblank_interupt as u8) << 4
-            + (self.mode_0_hblank_interrupt as u8) << 3
-            + (self.coincidence_flag as u8) << 2
+        ((self.lcd_ly_coincidence_interrupt as u8) << 6)
+            + ((self.mode_2_oam_interrupt as u8) << 5)
+            + ((self.mode_1_vblank_interupt as u8) << 4)
+            + ((self.mode_0_hblank_interrupt as u8) << 3)
+            + ((self.coincidence_flag as u8) << 2)
             + self.mode_flag.get_flags() 
     }
 }
