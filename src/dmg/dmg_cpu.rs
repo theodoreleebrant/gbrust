@@ -3164,7 +3164,6 @@ mod tests {
     #[test]
     fn reti() {
         let mut cpu = set_up_cpu();
-        let mut cpu = set_up_cpu();
         cpu.reg.pc = 0x8000;
         cpu.reg.sp = 0xFFFE;
         set_3byte_op(&mut cpu, 0x00CD_0090);

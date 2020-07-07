@@ -672,6 +672,20 @@ mod test {
         assert!(!lcdstat.mode_1_vblank_interupt); // false
         assert!(!lcdstat.mode_0_hblank_interrupt); // false
         assert!(!lcdstat.coincidence_flag); // false
-        //assert!(lcdstat.mode_flag == VBlank);
+        match lcdstat.mode_flag {
+            Mode::VBlank => assert!(true),
+            _ => assert!(false),
+        }
+
+        let ppu = Ppu::new();
+        assert_eq!(ppu.scx, 0);
+        assert_eq!(ppu.scy, 0);
+        assert_eq!(ppu.ly, 144);
+        assert_eq!(ppu.lyc, 0xff);
+        assert_eq!(ppu.bgp, 0xfc);
+        assert_eq!(ppu.obp0, 0xff);
+        assert_eq!(ppu.obp1, 0xff);
+        assert_eq!(ppu.mode_cycles, 0);
+        assert_eq!(ppu.cycles, 0);
     }
 }
