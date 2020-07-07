@@ -37,7 +37,7 @@ pub struct Console {
 
 impl Console {
     pub fn new(cart: Cart) -> Console {
-        let mut interconnect = Interconnect::new(cart);
+        let interconnect = Interconnect::new(cart);
         Console {
             cpu: Cpu::new(interconnect),
         }

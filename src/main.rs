@@ -9,7 +9,8 @@ use std::env;
 use std::path::PathBuf;
 use std::boxed::Box;
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::Read;  // {Read, Write}
+use std::{thread, time};
 
 mod dmg;
 pub use dmg::*;
@@ -23,15 +24,15 @@ fn load_bin(path: &PathBuf) -> Box<[u8]> {
     bytes.into_boxed_slice()
 }
 
-fn save_bin(path: &PathBuf, bytes: Box<[u8]>) {
-    let mut file = File::create(path).unwrap();
-    file.write_all(&bytes).unwrap();
-}
+// fn save_bin(path: &PathBuf, bytes: Box<[u8]>) {
+//     let mut file = File::create(path).unwrap();
+//     file.write_all(&bytes).unwrap();
+// }
 
 fn keycode_to_button(keycode: Key) -> Option<Button> {
     match keycode {
-        Key::Space => Some(Button::A),
-        Key::LeftCtrl => Some(Button::B),
+        Key::Z => Some(Button::A),
+        Key::X => Some(Button::B),
         Key::Enter => Some(Button::Start),
         Key::RightShift => Some(Button::Select),
         Key::Up => Some(Button::Up),
@@ -79,10 +80,7 @@ impl<'a> VideoSink<'a> {
 
 impl<'a> dmg::console::VideoSink for VideoSink<'a> {
     fn frame_available(&mut self, frame: &Box<[u32]>) {
-        match self.window.update_with_buffer(frame, 160, 144) {
-            Ok(_val) => {},
-            Err(err_msg) => panic!(err_msg),
-        }
+        self.window.update_with_buffer(frame, 160, 144).unwrap()
     }
 }
 
@@ -92,11 +90,11 @@ fn main() {
     let rom_path = PathBuf::from(env::args().nth(1).unwrap());
     let rom_binary = load_bin(&rom_path);
 
-    let save_ram_path = {
-        let mut path = rom_path.clone();
-        path.set_extension("sav");
-        path
-    };
+    // let save_ram_path = {
+    //     let mut path = rom_path.clone();
+    //     path.set_extension("sav");
+    //     path
+    // };
 
     // Unused for DMG
     // let ram = if save_ram_path.exists() {
@@ -126,8 +124,10 @@ fn main() {
         let now = std::time::Instant::now();
 
         console.run_for_one_frame(&mut VideoSink::new(&mut window));
-
         
+        // for debugging purposes
+        //thread::sleep(time::Duration::from_millis(1000));
+
         if let Some(keys) = window.get_keys() {
             make_events(keys.clone(), prev_keys)
                 .into_iter()

@@ -1,9 +1,6 @@
 use super::interconnect::Interconnect;
 use super::console::VideoSink;
-use super::cart::Cart;
-
-use std::u8;
-use std::u16;
+use std::{thread, time};
 
 // Flags
 const ZF: u8 = 0x80; // 0b10000000
@@ -116,6 +113,8 @@ impl Cpu {
     pub fn step(&mut self, video_sink: &mut dyn VideoSink) -> u32 {
         // elapsed_cycles calculates how many cycles are spent carrying out the instruction and
         // corresponding interrupt (if produced) = time to execute + time to handle interrupt
+        println!("{:?}", self.reg.pc);
+        thread::sleep(time::Duration::from_millis(100));
         let elapsed_cycles = {
             self.execute_opcode() + self.handle_interrupt() 
         };
@@ -166,7 +165,7 @@ impl Cpu {
     }
 
     pub fn execute_opcode(&mut self) -> u32 {
-        let opcode: u8 = self.mem[self.reg.pc as usize];
+        let opcode: u8 = self.interconnect.read(self.reg.pc);
         
         let is_aa0: bool = (opcode & 0b0000_1000) == 0; 
         let is_0bb: bool = (opcode & 0b0010_0000) == 0;  
@@ -178,6 +177,8 @@ impl Cpu {
             is_aa0,
             is_0bb,
         );
+
+        println!("{:?}", parts);
 
         let pc_change = match parts {
             // opcodes starting with 00
@@ -297,7 +298,7 @@ impl Cpu {
     }
 
     pub fn execute_bc(&mut self, pc_current: u16) -> ProgramCounter {
-        let suffix = self.mem[(pc_current + 1) as usize];
+        let suffix = self.interconnect.read((pc_current + 1));
         let parts = (
             suffix >> 6, //  bit 76
             (suffix & 0b0011_1000) >> 3, // bit 543
@@ -400,7 +401,8 @@ impl Cpu {
     /// @param addr: 16-bit address for memory
     /// @return boolean whether ID is valid
     pub fn load_mem_to_r8(&mut self, r8_id: u8, addr: u16) {
-        self.write_to_r8(r8_id, self.mem[addr as usize]);
+        let res = self.interconnect.read(addr);
+        self.write_to_r8(r8_id, res);
     }
 
     /// save_r8_to_mem: Saves content from register r8_id into memory specified by addr.
@@ -408,26 +410,26 @@ impl Cpu {
     /// @param addr: 16-bit address for memory to be saved to
     pub fn save_r8_to_mem(&mut self, r8_id: u8, addr: u16) {
         match self.read_from_r8(r8_id) {
-            Some(content) => self.mem[addr as usize] = content,
+            Some(content) => self.interconnect.write(addr, content),
             None => (),
         }
     }
 
     /// get_n: gets 8-bit immediate n right after opcode
     pub fn get_n(&mut self) -> u8 {
-        self.mem[(self.reg.pc + 1) as usize]
+        self.interconnect.read(self.reg.pc + 1) 
     }
 
     /// get_r8_to: gets 3-bit register ID from opcode. Register ID takes bit 3, 4, 5 for register
     /// written to.
     pub fn get_r8_to(&mut self) -> u8 {
-        ((self.mem[self.reg.pc as usize] & 0b00111000) >> 3) as u8
+        (self.interconnect.read(self.reg.pc & 0b00111000) >> 3) as u8
     }
     
     /// get_r8_from: gets 3-bit register ID from opcode. Register ID takes bit 0,1,2 for register
     /// written to.
     pub fn get_r8_from(&mut self) -> u8 {
-        (self.mem[self.reg.pc as usize] & 0b00000111) as u8
+        self.interconnect.read(self.reg.pc & 0b00000111) as u8
     }
 
     /// write_to_r16: Write content onto a 16-byte register.
@@ -482,8 +484,8 @@ impl Cpu {
     pub fn save_r16_to_mem(&mut self, r16_id: u8, addr: u16) {
         match self.read_from_r16(r16_id) {
             Some(value) => {
-                self.mem[addr as usize] = (value & 0x00FF) as u8;
-                self.mem[(addr + 1)  as usize] = (value >> 8) as u8;
+                self.interconnect.write(addr, (value & 0x00FF) as u8);
+                self.interconnect.write((addr + 1), (value >> 8) as u8);
             },
             None => (),
         }
@@ -491,15 +493,15 @@ impl Cpu {
 
     /// get_nn: gets 16-bit immediate nn right after opcode
     pub fn get_nn(&mut self) -> u16 {
-        let nn_low = self.mem[(self.reg.pc + 1) as usize];
-        let nn_high = self.mem[(self.reg.pc + 2) as usize];
+        let nn_low = self.interconnect.read(self.reg.pc + 1);
+        let nn_high = self.interconnect.read(self.reg.pc + 2);
         let nn = ((nn_high as u16) << 8) | (nn_low as u16); 
 
         nn
     }
 
     pub fn get_r16(&mut self) -> u8 {
-        ((self.mem[self.reg.pc as usize] & 0b00110000) >> 4) as u8
+        (self.interconnect.read(self.reg.pc  & 0b00110000) >> 4) as u8
     }
 
     // Reusable code for 8-bit Rotate, Shift instructions
@@ -574,7 +576,7 @@ impl Cpu {
     /// register rotation.
     
     pub fn rotate_mem(&mut self, addr: u16, is_left_rotate: bool, has_carry: bool) {
-        let mut data = self.mem[addr as usize];
+        let mut data = self.interconnect.read(addr);
         let c: bool;
         let bit_cf = (self.reg.f & CF) >> 4;
     
@@ -604,7 +606,7 @@ impl Cpu {
             c = bit_a0 > 0;
         }
 
-        self.mem[addr as usize] = data; // write back to memory
+        self.interconnect.write(addr, data); // write back to memory
 
         // setting cf to bit_a7
         self.set_hcnz(false, c, false, data == 0);
@@ -638,7 +640,7 @@ impl Cpu {
     /// 00 -> Z == 0; 01 -> Z == 1; 10 -> C == 0; 11 -> C == 1
     pub fn check_cc(&mut self) -> bool {
         // extract cc from opcode
-        let opcode = self.mem[self.reg.pc as usize];
+        let opcode = self.interconnect.read(self.reg.pc);
         let cc: u8 = (opcode & 0b00011000) >> 3;
         let result: bool;
         
@@ -736,7 +738,7 @@ impl Cpu {
     pub fn ld_addr_hl_n(&mut self) -> ProgramCounter {
         let n = self.get_n();
 
-        self.mem[self.reg.hl as usize] = n;
+        self.interconnect.write(self.reg.hl, n);
 
         ProgramCounter::Next(2, 3)
     }
@@ -978,7 +980,7 @@ impl Cpu {
     pub fn add_ahl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
-        let r: u8 = self.mem[self.reg.hl as usize];
+        let r: u8 = self.interconnect.read(self.reg.hl);
 
         // processing
         let res: u16 = (a as u16) + (r as u16);
@@ -1047,7 +1049,7 @@ impl Cpu {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
 	    let carry: u8 = ((self.reg.f & CF) > 0) as u8; 
-        let r: u8 = self.mem[self.reg.hl as usize];
+        let r: u8 = self.interconnect.read(self.reg.hl);
 
         // processing
         let res: u16 = (a as u16) + (r as u16) + (carry as u16);
@@ -1110,7 +1112,7 @@ impl Cpu {
     pub fn sub_hl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
-        let r: u8 = self.mem[self.reg.hl as usize];
+        let r: u8 = self.interconnect.read(self.reg.hl);
 
         // processing
 	    let res: u8 = a.wrapping_sub(r);
@@ -1176,7 +1178,7 @@ impl Cpu {
         // reading
 	    let carry: u8 = ((self.reg.f & CF) > 0) as u8; 
         let a: u8 = self.read_from_r8(A_ID).unwrap();
-        let r: u8 = self.mem[self.reg.hl as usize];
+        let r: u8 = self.interconnect.read(self.reg.hl);
 
         // processing
 	    let res: u8 = a.wrapping_sub(r).wrapping_sub(carry);
@@ -1239,7 +1241,7 @@ impl Cpu {
     pub fn and_hl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
-        let r: u8 = self.mem[self.reg.hl as usize];
+        let r: u8 = self.interconnect.read(self.reg.hl);
 
         // processing
 	    let res: u8 = a & r;
@@ -1301,7 +1303,7 @@ impl Cpu {
     pub fn or_hl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
-        let r: u8 = self.mem[self.reg.hl as usize];
+        let r: u8 = self.interconnect.read(self.reg.hl);
 
         // processing
 	    let res: u8 = a | r;
@@ -1364,7 +1366,7 @@ impl Cpu {
     pub fn xor_hl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
-        let r: u8 = self.mem[self.reg.hl as usize];
+        let r: u8 = self.interconnect.read(self.reg.hl);
 
         // processing
 	    let res: u8 = a ^ r;
@@ -1424,7 +1426,7 @@ impl Cpu {
     pub fn cp_hl(&mut self) -> ProgramCounter {
         // reading
         let a: u8 = self.read_from_r8(A_ID).unwrap();
-        let r: u8 = self.mem[self.reg.hl as usize];
+        let r: u8 = self.interconnect.read(self.reg.hl);
 
         // processing
 	    let res: u8 = a.wrapping_sub(r);
@@ -1461,7 +1463,7 @@ impl Cpu {
 
 	pub fn inc_hl(&mut self) -> ProgramCounter {
 	    // reading
-	    let r: u8 = self.mem[self.reg.hl as usize];
+	    let r: u8 = self.interconnect.read(self.reg.hl);
 
 	    // processing
 	    let res: u8 = if r == std::u8::MAX {0} else {r + 1};
@@ -1471,7 +1473,7 @@ impl Cpu {
 	    let n: bool = false;
 	    let z: bool = res == 0;
 
-	    self.mem[self.reg.hl as usize] = res;
+	    self.interconnect.write(self.reg.hl, res);
 	    self.set_hnz(h, n, z);
 
 	    ProgramCounter::Next(1, 3)
@@ -1498,7 +1500,7 @@ impl Cpu {
 
 	pub fn dec_hl(&mut self) -> ProgramCounter {
 	    // reading
-	    let r: u8 = self.mem[self.reg.hl as usize];
+	    let r: u8 = self.interconnect.read(self.reg.hl);
 
 	    // processing
 	    let res: u8 = if r == 0 {std::u8::MAX} else {r - 1};
@@ -1508,7 +1510,7 @@ impl Cpu {
 	    let n: bool = true;
 	    let z: bool = res == 0;
 
-	    self.mem[self.reg.hl as usize] = res;
+	    self.interconnect.write(self.reg.hl, res);
 	    self.set_hnz(h, n, z);
 
 	    ProgramCounter::Next(1, 3)
@@ -1718,14 +1720,14 @@ impl Cpu {
 
         let cycles = match r {
             0x06 => {
-                data = self.mem[self.reg.hl as usize];
+                data = self.interconnect.read(self.reg.hl);
                 bit_7 = (data & 0x80) >> 7;
                 
                 // processing
                 data = data << 1;
                 
                 // write back
-                self.mem[self.reg.hl as usize] = data;
+                self.interconnect.write(self.reg.hl, data);
                 4
             },
             _ => {
@@ -1760,7 +1762,7 @@ impl Cpu {
 
         let cycles = match r {
             0x06 => {
-                data = self.mem[self.reg.hl as usize];
+                data = self.interconnect.read(self.reg.hl);
                 bit_7 = (data & 0x80) >> 7;
                 bit_0 = data & 0x01;
                 
@@ -1769,7 +1771,7 @@ impl Cpu {
                 data |= bit_7 << 7;
                 
                 // write back
-                self.mem[self.reg.hl as usize] = data;
+                self.interconnect.write(self.reg.hl, data);
                 
                 4
             },
@@ -1807,14 +1809,14 @@ impl Cpu {
 
         let cycles = match r {
             0x06 => {
-                data = self.mem[self.reg.hl as usize];
+                data = self.interconnect.read(self.reg.hl);
                 bit_0 = data & 0x01;
                 
                 // processing
                 data = data >> 1;
                 
                 // write back
-                self.mem[self.reg.hl as usize] = data;
+                self.interconnect.write(self.reg.hl, data);
                 4
             },
             _ => {
@@ -1849,7 +1851,7 @@ impl Cpu {
         let cycles = match r {
             0x06 => {
                 // read
-                data = self.mem[self.reg.hl as usize];
+                data = self.interconnect.read(self.reg.hl);
                 
                 // process
                 let lower = data & 0x0F;
@@ -1857,7 +1859,7 @@ impl Cpu {
                 data = (lower << 4) | higher;
 
                 // write back
-                self.mem[self.reg.hl as usize] = data;
+                self.interconnect.write(self.reg.hl, data);
                 4
             },
             _ => {
@@ -1903,7 +1905,7 @@ impl Cpu {
         let b_info = self.get_n();
         let b = (b_info & 0x38) >> 3;
         
-        let mut val: u8 = self.mem[self.reg.hl as usize];
+        let mut val: u8 = self.interconnect.read(self.reg.hl);
         val = (val >> b) & 0x01;
 
         // set the flag
@@ -1934,11 +1936,11 @@ impl Cpu {
         let b_info = self.get_nn();
         let b = (b_info & 0x38) >> 3;
         
-        let mut val: u8 = self.mem[self.reg.hl as usize];
+        let mut val: u8 = self.interconnect.read(self.reg.hl);
         val = val | (0x01 << b);
 
         // write back
-        self.mem[self.reg.hl as usize] = val;
+        self.interconnect.write(self.reg.hl, val);
 
         ProgramCounter::Next(2, 4)
     }
@@ -1965,11 +1967,11 @@ impl Cpu {
         let b_info = self.get_nn();
         let b = (b_info & 0x38) >> 3;
         
-        let mut val: u8 = self.mem[self.reg.hl as usize];
+        let mut val: u8 = self.interconnect.read(self.reg.hl);
         val &= !(0x01 << b);
 
         // write back
-        self.mem[self.reg.hl as usize] = val;
+        self.interconnect.write(self.reg.hl, val);
 
         ProgramCounter::Next(2, 4)
     }
@@ -3425,6 +3427,10 @@ mod tests {
             0b11000011_11011111_11010101);
         cpu.execute_opcode();
         assert_eq!(cpu.reg.pc, 0b11010101_11011111);
+
+        set_3byte_op(&mut cpu, 0xC30C02);
+        cpu.execute_opcode();
+        assert_eq!(cpu.reg.pc, 0x020C);
     }
 
     // Tests for 2.7

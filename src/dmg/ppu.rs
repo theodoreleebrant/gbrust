@@ -198,7 +198,7 @@ pub struct Ppu {
     obp1: u8,   // Object palette 1 data, addr at FF49
     vram: [u8; VRAM_SIZE],
     oam: [u8; OAM_SIZE],
-    lcd_tiles: [u32; DISPLAY_WIDTH * DISPLAY_HEIGHT], // array of bytes representing all lcd tiles
+    //lcd_tiles: [u32; DISPLAY_WIDTH * DISPLAY_HEIGHT], // array of bytes representing all lcd tiles
     cycles: u32, // cycles of an interrupt
     mode_cycles: u32,    // keep track of cycles available for each mode
     framebuffer: Box<[u32]>,    // To render images before showing to the screen
@@ -220,7 +220,7 @@ impl Ppu {
             obp1: 0xFF,
             vram: [0; VRAM_SIZE],
             oam: [0; OAM_SIZE],
-            lcd_tiles: [0; DISPLAY_WIDTH * DISPLAY_HEIGHT], // array of bytes representing lcd_screen
+            //lcd_tiles: [0; DISPLAY_WIDTH * DISPLAY_HEIGHT], // array of bytes representing lcd_screen
             cycles: 0,
             mode_cycles: 0,
             framebuffer: vec![0; FRAMEBUFFER_SIZE].into_boxed_slice(),
