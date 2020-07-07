@@ -114,7 +114,7 @@ impl Cpu {
         // elapsed_cycles calculates how many cycles are spent carrying out the instruction and
         // corresponding interrupt (if produced) = time to execute + time to handle interrupt
         println!("{:?}", self.reg.pc);
-        thread::sleep(time::Duration::from_millis(1));
+        //thread::sleep(time::Duration::from_millis(1));
         let elapsed_cycles = {
             self.execute_opcode() + self.handle_interrupt() 
         };
@@ -429,7 +429,7 @@ impl Cpu {
     /// get_r8_from: gets 3-bit register ID from opcode. Register ID takes bit 0,1,2 for register
     /// written to.
     pub fn get_r8_from(&mut self) -> u8 {
-        self.interconnect.read(self.reg.pc & 0b00000111) as u8
+        (self.interconnect.read(self.reg.pc) & 0b00000111) as u8
     }
 
     /// write_to_r16: Write content onto a 16-byte register.
@@ -1496,6 +1496,10 @@ impl Cpu {
 	    let n: bool = true;
 	    let z: bool = res == 0;
 
+        if res == 0 {
+            println!(" ******** Register ID {:x} REACHED 0********", idx);
+        }
+         
 	    self.write_to_r8(idx, res);
 	    self.set_hnz(h, n, z);
 
