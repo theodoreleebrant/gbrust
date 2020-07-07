@@ -63,7 +63,7 @@ impl Interconnect {
             // 0xFF00 - 0xFF7F: Hardware I/O Registers
             // Details http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf pg35
             // 0xFF00: Gamepad (TODO)
-            // 0xff00 => self.gamepad.read(),
+            0xff00 => self.gamepad.read(),
 
             // 0xFF01 - 0xFF02: serial I/O, used for linking up to other gameboy
             0xff01..= 0xff02 => 0,
@@ -113,8 +113,7 @@ impl Interconnect {
             // Reserved part of RAM
             0xE000..= 0xFDFF => self.write(addr - 0xe000 + 0xc000, val),
 
-            //0xFF00 => self.gamepad.write(val),
-            0xFF00 => {},
+            0xFF00 => self.gamepad.write(val),
 
             // Reserved memory for serial I/O Port
             0xFF01..= 0xFF02 => {},
