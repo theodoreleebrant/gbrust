@@ -2441,6 +2441,26 @@ mod tests {
         assert_eq!(cpu.reg.a, N_DEF);
     }
 
+    // 16-bit transfer
+
+    #[test] 
+    fn pop_u16() {
+        let mut cpu = set_up_cpu();
+        cpu.push_u16(0xFF23);
+        assert_eq!(cpu.pop_u16(), 0xFF23);
+    }
+
+
+
+
+
+
+
+
+
+
+    // Test for 8-bit arithmetic instructions
+
     #[test]
     pub fn add_ar() {
         let mut cpu = set_up_cpu();
@@ -2452,12 +2472,6 @@ mod tests {
         assert_eq!(cpu.reg.f, ZF+HF+CF);
     }
 
-    #[test] 
-    fn pop_u16() {
-        let mut cpu = set_up_cpu();
-        cpu.push_u16(0xFF23);
-        assert_eq!(cpu.pop_u16(), 0xFF23);
-    }
 
     #[test]
     fn add_an() {
