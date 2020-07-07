@@ -52,7 +52,6 @@ impl Interconnect {
             0xfe00..= 0xfe9f // Object Attribute Memory, in PPU / Sprite RAM
                 | 0xff40..= 0xff45 // LCDC, LCDStat, SCY, SCX, LY, LYC
                 | 0xff47..= 0xff4b // BGP, Object Palette Data 0-1, WY, WX, 
-                | 0xff68..= 0xff69 // LCD Color Palette for CGB
                  => { // Destination Memory Bank
                 self.ppu.read(addr)
             }
