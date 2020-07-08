@@ -83,7 +83,7 @@ impl Registers {
 pub struct Cpu {
 	reg: Registers,     // Set of registers
 
-	mem: [u8; 65536],   // 64KB memory
+	//mem: [u8; 65536],   // 64KB memory
 	stack: [u8; 65536], // Stack for PC
 
 	halt_mode: bool,    // true -> enter halt mode
@@ -101,7 +101,7 @@ impl Cpu {
     pub fn new(interconnect: Interconnect) -> Self {
         Cpu {
             reg: Registers::new(),
-            mem: [0; 65536],
+            //mem: [0; 65536],
             stack: [0; 065536],
             interconnect: interconnect,
 
@@ -485,7 +485,7 @@ impl Cpu {
         match self.read_from_r16(r16_id) {
             Some(value) => {
                 self.interconnect.write(addr, (value & 0x00FF) as u8);
-                self.interconnect.write((addr + 1), (value >> 8) as u8);
+                self.interconnect.write(addr + 1, (value >> 8) as u8);
             },
             None => (),
         }
@@ -863,7 +863,7 @@ impl Cpu {
     /// 1-byte instruction.
     pub fn ld_addr_hl_a_inc(&mut self) -> ProgramCounter {
         self.save_r8_to_mem(A_ID, self.reg.hl);
-        self.reg.hl.wrapping_add(1);
+        self.reg.hl = self.reg.hl.wrapping_add(1);
 
         ProgramCounter::Next(1, 2)
     }
@@ -873,7 +873,7 @@ impl Cpu {
     /// 1-byte instruction.
     pub fn ld_addr_hl_a_dec(&mut self) -> ProgramCounter {
         self.save_r8_to_mem(A_ID, self.reg.hl);
-        self.reg.hl.wrapping_sub(1);
+        self.reg.hl = self.reg.hl.wrapping_sub(1);
 
         ProgramCounter::Next(1, 2)
     }
