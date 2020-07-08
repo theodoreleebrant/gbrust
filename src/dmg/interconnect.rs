@@ -17,7 +17,7 @@ pub struct Interconnect {
     pub int_flags: u8,
     pub gamepad: Gamepad,
     timer: Timer,
-    // TODO: Sound Processing unit, gamepad, timer
+    // TODO: Sound Processing unit
 }
 
 impl Interconnect {
@@ -26,7 +26,7 @@ impl Interconnect {
         Interconnect {
             cart: cart,
             ppu: Ppu::new(),
-            // spu: spu,
+            // spu: spu
             timer: Timer::new(),
             ram: vec![0; RAM_SIZE].into_boxed_slice(),
             zero_page: vec![0; ZERO_PAGE].into_boxed_slice(),
@@ -54,6 +54,11 @@ impl Interconnect {
                 | 0xff47..= 0xff4b // BGP, Object Palette Data 0-1, WY, WX, 
                  => { // Destination Memory Bank
                 self.ppu.read(addr)
+            }
+
+            // CGB PPU features, but address need to be able to be accessed.
+            0xFEA0..= 0xFEFF | 0xFF68 | 0xFF69 => {
+                        self.ppu.read(addr)
             }
 
             // Unused memory
@@ -110,7 +115,7 @@ impl Interconnect {
             // Internal RAM (Now fixed, will become switchable
             0xD000..= 0xDFFF => self.ram[(addr - 0xc000) as usize] = val,
             // Reserved part of RAM
-            0xE000..= 0xFDFF => self.write(addr - 0xe000 + 0xc000, val),
+            0xE000..= 0xFDFF => self.write(addr - 0x2000, val), //-f+c
 
             0xFF00 => self.gamepad.write(val),
 
@@ -137,14 +142,19 @@ impl Interconnect {
                         self.ppu.write(addr, val);
             }
 
+            // CGB features, but address need to be able to be accessed.
+            0xFEA0..= 0xFEFF | 0xFF68 | 0xFF69 => {
+                        self.ppu.write(addr, val);
+            }
+
             // Speedswitch TODO, not implemented yet. Uses unused mem.
             // 0xFF4D => {},
-            // for update_ram_offset(GBC?)
+            // for update_ram_offset(GBC)
             0xFF70 => {},
             // Tetris uses this address for some reason
             0xFF7F => {},
             // Set hwram
-            0xFF80..= 0xFFFE => self.zero_page[(addr-0xFF80) as usize] = val,
+            0xFF80..= 0xFFFE => self.zero_page[(addr - 0xFF80) as usize] = val,
             // Set interrupt enable flag 
             0xFFFF => self.int_enable = val,
             _ => {} // panic!("Write: addr not in range!! 0x{:x} - val: 0x{:x}", addr, val),
