@@ -863,7 +863,7 @@ impl Cpu {
     /// 1-byte instruction.
     pub fn ld_addr_hl_a_inc(&mut self) -> ProgramCounter {
         self.save_r8_to_mem(A_ID, self.reg.hl);
-        self.reg.hl = self.reg.hl.wrapping_add(1);
+        self.write_to_r16(HL_ID, self.reg.hl.wrapping_add(1));
 
         ProgramCounter::Next(1, 2)
     }
@@ -873,7 +873,7 @@ impl Cpu {
     /// 1-byte instruction.
     pub fn ld_addr_hl_a_dec(&mut self) -> ProgramCounter {
         self.save_r8_to_mem(A_ID, self.reg.hl);
-        self.reg.hl = self.reg.hl.wrapping_sub(1);
+        self.write_to_r16(HL_ID, self.reg.hl.wrapping_sub(1));
 
         ProgramCounter::Next(1, 2)
     }
