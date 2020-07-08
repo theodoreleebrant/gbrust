@@ -59,6 +59,7 @@ const BLACK: Color = Color {
     a: 255,
 };
 
+#[derive(Debug)]
 struct Lcdc {
     lcd_display_enable: bool,
     window_tile_map_display_select: bool,
@@ -202,6 +203,11 @@ pub struct Ppu {
     cycles: u32, // cycles of an interrupt
     mode_cycles: u32,    // keep track of cycles available for each mode
     framebuffer: Box<[u32]>,    // To render images before showing to the screen
+
+    // Unimplemented address for DMG, but need to be read and writable
+    bgpi: u8,
+    bgpd: u8,
+    vbk: u8,
 }
 
 impl Ppu {
@@ -224,6 +230,9 @@ impl Ppu {
             cycles: 0,
             mode_cycles: 0,
             framebuffer: vec![0; FRAMEBUFFER_SIZE].into_boxed_slice(),
+            bgpi: 0,
+            bgpd: 0,
+            vbk: 0,
         }
     }
 
@@ -245,6 +254,11 @@ impl Ppu {
             0xFF49 => self.obp1 = val,
             0xFF4A => self.wy = val,
             0xFF4B => self.wx = val,
+
+            // CGB Features
+            0xFF68 => self.bgpi = val,
+            0xFF69 => self.bgpd = val,
+            0xFF4F => self.vbk = val,
             _ => panic!("Unsupported address to write to: 0x{:x}", addr),
         }
     }
@@ -267,6 +281,10 @@ impl Ppu {
             0xFF49 => self.obp1,
             0xFF4A => self.wy,
             0xFF4B => self.wx,
+            // CGB Features
+            0xFF68 => self.bgpi,
+            0xFF69 => self.bgpd,
+            0xFF4F => self.vbk,
             _ => panic!("Unsupported address to read: 0x{:x}", addr),
         }
     }
