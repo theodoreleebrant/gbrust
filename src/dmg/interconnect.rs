@@ -168,7 +168,7 @@ impl Interconnect {
         let timer_ints = self.timer.cycle_flush(cycle_count);
         let gamepad_ints = self.gamepad.cycle_flush(cycle_count);
 
-        println!("Carrying out ints");
+        //println!("Carrying out ints");
 
         // summarize all requested interrupts
         let all_interrupts = ppu_ints | timer_ints | gamepad_ints;

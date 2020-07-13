@@ -113,7 +113,7 @@ impl Cpu {
     pub fn step(&mut self, video_sink: &mut dyn VideoSink) -> u32 {
         // elapsed_cycles calculates how many cycles are spent carrying out the instruction and
         // corresponding interrupt (if produced) = time to execute + time to handle interrupt
-        println!("current pc: {:?}", self.reg.pc);
+        //println!("current pc: {:?}", self.reg.pc);
         //thread::sleep(time::Duration::from_millis(1));
         let elapsed_cycles = {
             self.execute_opcode() + self.handle_interrupt() 
@@ -178,7 +178,7 @@ impl Cpu {
             is_0bb,
         );
 
-        println!("opcode: 0x{:x}", opcode);
+        //println!("opcode: 0x{:x}", opcode);
 
         let pc_change = match parts {
             // opcodes starting with 00
@@ -502,7 +502,7 @@ impl Cpu {
 
     pub fn get_r16(&mut self) -> u8 {
         let res = ((self.interconnect.read(self.reg.pc) & 0b00110000) >> 4) as u8;
-        println!("get_r16: {:?}", res);
+        //println!("get_r16: {:?}", res);
         res
     }
 
@@ -705,7 +705,7 @@ impl Cpu {
         let r = self.get_r8_to();
         let n = self.get_n();
 
-        println!("(ld_r_n) r:{:?}, n:{:?}", r, n);
+        //println!("(ld_r_n) r:{:?}, n:{:?}", r, n);
 
         self.write_to_r8(r, n);
 
@@ -1499,7 +1499,7 @@ impl Cpu {
 	    let z: bool = res == 0;
 
         if res == 0 {
-            println!(" ******** Register ID {:x} REACHED 0********", idx);
+            //println!(" ******** Register ID {:x} REACHED 0********", idx);
         }
          
 	    self.write_to_r8(idx, res);
@@ -1991,8 +1991,7 @@ impl Cpu {
     /// jp_nn: unconditional jump to absolute address specified by 16-bit immediate. Set PC = nn
     /// 3-byte instruction, 4 cycles.
     pub fn jp_nn(&mut self) -> ProgramCounter {
-        print!("self.get_nn:");
-        println!("{:?}", self.get_nn());
+        //println!("{:?}", self.get_nn());
         ProgramCounter::Jump(self.get_nn(), 4)
     }
 
@@ -2024,7 +2023,7 @@ impl Cpu {
     /// 2 bytes, 3 cycles.
     pub fn jr_e(&mut self) -> ProgramCounter {
         let e = (self.get_n() as i8) as i16;
-        println!("{:?}", e);
+        //println!("{:?}", e);
         ProgramCounter::Next(e + 2, 3)
     }
 
