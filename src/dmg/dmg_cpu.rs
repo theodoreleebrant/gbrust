@@ -827,7 +827,8 @@ impl Cpu {
     /// 1-byte instruction.
     pub fn ld_a_addr_hl_inc(&mut self) -> ProgramCounter {
         self.load_mem_to_r8(A_ID, self.reg.hl);
-        self.reg.hl += 1;
+        let new_hl = self.reg.hl + 1;
+        self.write_to_r16(HL_ID, new_hl);
 
         ProgramCounter::Next(1, 2)
     }
@@ -837,7 +838,8 @@ impl Cpu {
     /// 1-byte instruction.
     pub fn ld_a_addr_hl_dec(&mut self) -> ProgramCounter {
         self.load_mem_to_r8(A_ID, self.reg.hl);
-        self.reg.hl -= 1;
+        let new_hl = self.reg.hl - 1;
+        self.write_to_r16(HL_ID, new_hl);
 
         ProgramCounter::Next(1, 2)
     }
