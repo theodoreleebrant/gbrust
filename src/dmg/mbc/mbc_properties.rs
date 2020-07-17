@@ -2,9 +2,9 @@
 // For ROMs larger than 32kb, Memory Bank Controller expands available address space. These MBC
 // Chips are located in the Catridge, not the Gameboy itself.
 
-//use super::rom_only::RomOnly;
-//use super::mbc1::Mbc1;
-//use super::mbc2::Mbc2;
+use super::rom_only::RomOnly;
+use super::mbc1::Mbc1;
+use super::mbc2::Mbc2;
 //use super::mbc3::Mbc3;
 //use super::mbc5::Mbc5;
 
@@ -44,7 +44,8 @@ pub fn new_mbc(mbc_info: MbcInfo, ram: Option<Box<[u8]>>) -> Box<Mbc> {
     }
 }
 */
-// Each MBC should carry following information, can be obtained from address 0147
+
+// Each MBC should carry following information, can be obtained from :
 // Type: Informs the configuration of how MBC switches banks
 // ram_info: Information about RAM (Size and bank_ID 00 - 03)
 // has_battery: RAM Bank accessed by MBC is battery_buffered. While still have battery, RAM Bank
