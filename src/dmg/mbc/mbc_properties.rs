@@ -44,7 +44,7 @@ pub fn new_mbc(mbc_info: MbcInfo, ram: Option<Box<[u8]>>) -> Box<Mbc> {
     }
 }
 */
-// Each MBC should carry following information:
+// Each MBC should carry following information, can be obtained from :
 // Type: Informs the configuration of how MBC switches banks
 // ram_info: Information about RAM (Size and bank_ID 00 - 03)
 // has_battery: RAM Bank accessed by MBC is battery_buffered. While still have battery, RAM Bank
