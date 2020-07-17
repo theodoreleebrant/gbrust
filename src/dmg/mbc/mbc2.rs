@@ -24,7 +24,7 @@ impl Mbc for Mbc2 {
         }
     }
 
-    pub fn read(&self, rom: Box<[u8]>, addr: u16) -> u8 {
+    pub fn read_rom(&self, rom: Box<[u8]>, addr: u16) -> u8 {
         match addr {
             0x0000..=0x3FFF => rom[addr as usize]
             0x4000..=0x7FFF => rom[addr as usize + rom_offset]
@@ -32,7 +32,7 @@ impl Mbc for Mbc2 {
     }
     
     #[allow(dead_code)]
-    pub fn write(&mut self, addr: u16, content: u8) {
+    pub fn write_rom(&mut self, addr: u16, content: u8) {
         match addr {
             0x0000..=0x1FFF => if (addr | 0x0100) == 0 {
                 ram_flag = !ram_flag;
