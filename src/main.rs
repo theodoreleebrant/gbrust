@@ -14,6 +14,7 @@ use std::{thread, time};
 
 mod dmg;
 pub use dmg::*;
+pub use dmg::mbc::*;
 
 use dmg::console::{Console, Button,ButtonState,InputEvent, Cart}; 
 

@@ -1,6 +1,12 @@
 // Memory Bank Controller (MBC):
 // For ROMs larger than 32kb, Memory Bank Controller expands available address space. These MBC
-// Chips are located in the Catridge, not the Gameboy itself. 
+// Chips are located in the Catridge, not the Gameboy itself.
+
+//use super::rom_only::RomOnly;
+//use super::mbc1::Mbc1;
+//use super::mbc2::Mbc2;
+//use super::mbc3::Mbc3;
+//use super::mbc5::Mbc5;
 
 #[derive(Debug)]
 pub enum MbcType { // Should be specified at byte (0x0147) in ROM.
@@ -74,7 +80,7 @@ impl RamInfo {
             bank_count: bank_count,
         }
     }
-}
+
 
     // Enable external RAM if any exists. If none exists, create a blank external RAM
     pub fn make_external_ram(self, saved_ram: Option<Box<[u8]>>) -> Box<[u8]> {

@@ -6,6 +6,7 @@ pub mod gamepad;
 pub mod console;
 pub mod timer;
 pub mod cpu_test;
+pub mod mbc;
 
 pub use self::cart::*;
 pub use self::dmg_cpu::*;
