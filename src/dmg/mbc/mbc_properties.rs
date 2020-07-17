@@ -22,8 +22,8 @@ pub enum MbcType { // Should be specified at byte (0x0147) in ROM.
 // Display Control Registers etc...
 pub trait Mbc {
     // read / write operations for Mbc
-    fn read(&self, rom: &Box<[u8]>, addr: u16) -> u8;
-    fn write(&mut self, addr: u16, content: u8);
+    fn read_rom(&self, rom: &Box<[u8]>, addr: u16) -> u8;
+    fn write_rom(&mut self, addr: u16, content: u8); // rom is read_only. Write only serves to toggle
     // read / write operations interacting with RAM
     fn read_ram(&self, addr: u16) -> u8;
     fn write_ram(&mut self, addr: u16, val: u8);
@@ -44,7 +44,7 @@ pub fn new_mbc(mbc_info: MbcInfo, ram: Option<Box<[u8]>>) -> Box<Mbc> {
     }
 }
 */
-// Each MBC should carry following information, can be obtained from :
+// Each MBC should carry following information, can be obtained from address 0147
 // Type: Informs the configuration of how MBC switches banks
 // ram_info: Information about RAM (Size and bank_ID 00 - 03)
 // has_battery: RAM Bank accessed by MBC is battery_buffered. While still have battery, RAM Bank
@@ -83,7 +83,7 @@ impl RamInfo {
 
 
     // Enable external RAM if any exists. If none exists, create a blank external RAM
-    pub fn make_external_ram(self, saved_ram: Option<Box<[u8]>>) -> Box<[u8]> {
+    pub fn make_external_ram(&self, saved_ram: Option<Box<[u8]>>) -> Box<[u8]> {
         match saved_ram {
             Some(extern_ram) => {
                 if extern_ram.len() == self.size as usize { // if exisiting RAM matches the specified RAM size for MBC
