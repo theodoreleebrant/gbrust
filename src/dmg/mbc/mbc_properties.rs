@@ -28,7 +28,7 @@ pub trait Mbc {
     fn read_ram(&self, addr: u16) -> u8;
     fn write_ram(&mut self, addr: u16, val: u8);
     // Return RAM. Read up first
-    // fn copy_ram(&self) -> Option<Box<[u8]>>; // ????
+    fn copy_ram(&self) -> Option<Box<[u8]>>; // ????
 }
 
 /* MOVE THIS FUNCTION TO MOD.RS SO THAT IT HAS ALL THE MBC IMPLEMENTED
