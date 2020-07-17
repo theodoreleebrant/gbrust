@@ -63,4 +63,8 @@ impl Mbc for Mbc2 {
             ram[addr as usize] = content;
         }
     }
+
+    pub fn copy_ram(&self) -> Option<Box<[u8]>> {
+        return None;
+    }
 }
