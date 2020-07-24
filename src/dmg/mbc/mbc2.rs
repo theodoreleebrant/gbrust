@@ -39,7 +39,7 @@ impl Mbc for Mbc2 {
     fn write_rom(&mut self, addr: u16, content: u8) {
         match addr {
             0x0000..=0x1FFF => if (addr | 0x0100) == 0 {
-                self.ram_flag = !self.ram_flag;
+                self.ram_flag = !self.ram_flag; // Depends on content, not address
             },
             0xA000..=0xA1FF => self.ram[(addr - 0xA000) as usize] = content,
             0x2000..=0x3FFF => if (addr | 0x0100) == 0 {
@@ -49,7 +49,7 @@ impl Mbc for Mbc2 {
                 } else {
                     new_rom = content | 0xF;
                 }
-                self.rom_offset = ((new_rom - 1) * 0x4000) as usize; // update rom offset
+                self.rom_offset = ((new_rom - 1) * 0x4000) as usize; // update rom offset. why new_rom - 1? Overflow error
             },
             _ => panic!("unsupported address 0x{:x}", addr),
         }
