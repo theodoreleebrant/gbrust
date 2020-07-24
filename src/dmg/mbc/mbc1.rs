@@ -72,6 +72,7 @@ impl Mbc for Mbc1 {
             0x2000..=0x3FFF => self.rom_bank_num = content & 0x1F,
             0x4000..=0x5FFF => self.ram_bank_num = content & 0x03,
             0x6000..=0x7FFF => self.ram_mode = content == 0x01,
+            _ => panic!("Unsupported address 0x{:x}", addr),
         }
         self.update_rom_offset();
         self.update_ram_offset();

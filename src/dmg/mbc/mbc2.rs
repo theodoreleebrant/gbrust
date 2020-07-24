@@ -13,9 +13,9 @@ pub struct Mbc2 {
     ram: [u8; 512],
 }
 
-impl Mbc for Mbc2 {
-    pub fn new(mbc_info: MbcInfo, ram: Option<Box<[u8]>>) -> Mbc {
-        Mbc1 {
+impl Mbc2 {
+    pub fn new(mbc_info: MbcInfo, ram: Option<Box<[u8]>>) -> Mbc2 {
+        Mbc2 {
             ram_flag: true,
             rom_bank_0: 0,
             rom_bank_1: 1,
@@ -23,48 +23,58 @@ impl Mbc for Mbc2 {
             ram: [0; 512],
         }
     }
+}
 
-    pub fn read_rom(&self, rom: Box<[u8]>, addr: u16) -> u8 {
+impl Mbc for Mbc2 {
+    fn read_rom(&self, rom: &Box<[u8]>, addr: u16) -> u8 {
         match addr {
-            0x0000..=0x3FFF => rom[addr as usize]
-            0x4000..=0x7FFF => rom[addr as usize + rom_offset]
+            0x0000..=0x3FFF => rom[addr as usize],
+            0x4000..=0x7FFF => rom[addr as usize + self.rom_offset],
+            _ => panic!("Unsupported address 0x{:x}", addr),
         }   
     }
     
     #[allow(dead_code)]
-    pub fn write_rom(&mut self, addr: u16, content: u8) {
+    // TODO: check logic
+    fn write_rom(&mut self, addr: u16, content: u8) {
         match addr {
             0x0000..=0x1FFF => if (addr | 0x0100) == 0 {
-                ram_flag = !ram_flag;
+                self.ram_flag = !self.ram_flag;
             },
-            0xA000..=0xA1FF => ram[(addr - 0xA000) as usize] = content,
+            0xA000..=0xA1FF => self.ram[(addr - 0xA000) as usize] = content,
             0x2000..=0x3FFF => if (addr | 0x0100) == 0 {
-                let new_rom: u8 = 1;
+                let mut new_rom: u8 = 1;
                 if content | 0xF == 0 {
                     new_rom = 1;
                 } else {
                     new_rom = content | 0xF;
                 }
-                rom_offset = (new_rom - 1) * 0x4000;
-            }
+                self.rom_offset = ((new_rom - 1) * 0x4000) as usize; // update rom offset
+            },
+            _ => panic!("unsupported address 0x{:x}", addr),
         }
     }
 
-    pub fn read_ram(&self, addr: u16) -> u8 {
-        if ram_flag {
-            ram[addr as usize]
+    fn read_ram(&self, addr: u16) -> u8 {
+        if self.ram_flag {
+            self.ram[addr as usize]
         } else {
             0
         }
     }
 
-    pub fn write_ram(&mut self, addr: u16, content: u8) {
-        if ram_flag {
-            ram[addr as usize] = content;
+    fn write_ram(&mut self, addr: u16, content: u8) {
+        if self.ram_flag {
+            self.ram[addr as usize] = content;
         }
     }
 
-    pub fn copy_ram(&self) -> Option<Box<[u8]>> {
-        return None;
+    fn copy_ram(&self) -> Option<Box<[u8]>> {
+        if self.ram.len() > 0 {
+            let ram_box = Box::new(self.ram.clone());
+            Some(ram_box)
+        } else {
+            None
+        }
     }
 }
