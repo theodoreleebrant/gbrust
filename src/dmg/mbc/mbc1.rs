@@ -48,7 +48,7 @@ impl Mbc1 {
 
     pub fn update_ram_offset(&mut self) {
         self.ram_offset = if self.ram_mode { // ram banking mode
-            self.ram_bank_num as usize * 8 * 1024 // 8kb each ram bank
+            self.ram_bank_num as usize * 8 * 1024 // 8kb each ram bank, treating RAM as a giant array
         } else { // simple ROM banking mode
             0
         };
@@ -85,7 +85,7 @@ impl Mbc for Mbc1 {
         }
     }
 
-    pub fn copy_ram(&self) -> Option<Box<[u8]>> {
+    pub fn copy_ram(&self) -> Option<Box<[u8]>> { // Pass RAM over to another hardware to use
         if self.ram.len() > 0 {
             Some(self.ram.clone())
         } else {
