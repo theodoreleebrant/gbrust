@@ -55,7 +55,7 @@ impl Mbc for Mbc2 {
                 } else {
                     new_rom = content | 0xF;
                 }
-                self.rom_offset = ((new_rom - 1) * 0x4000) as usize; // update rom offset. why new_rom - 1? Overflow error
+                self.rom_offset = ((new_rom - 1) as usize * 0x4000 as usize) as usize; // update rom offset. why new_rom - 1? Overflow error
             },
             _ => panic!("unsupported address 0x{:x}", addr),
         }
