@@ -42,7 +42,7 @@ impl Interconnect {
             // For more information: http://gameboy.mongenel.com/dmg/asmmemmap.html
             0x0000..= 0x7fff => self.cart.read(addr), // Cartridge ROM
             0x8000..= 0x9fff => self.ppu.read(addr), // Picture Processing Unit
-            0xa000..= 0xbfff => 0, // Cartridge swappable RAM
+            0xa000..= 0xbfff => self.cart.read_ram(addr), // Cartridge swappable RAM, CHECK AGAIN
             0xc000..= 0xdfff => self.ram[(addr - 0xc000) as usize], // Internal RAM
             // Might cause problems in GBC implementation but for DMG should be ok
             0xe000..= 0xfdff => self.read(addr - 0xe000 + 0xc000), 
@@ -109,7 +109,7 @@ impl Interconnect {
             // character ram (basically tile data)
             0x8000..= 0x9FFF => self.ppu.write(addr, val),
             // Cartridge RAM to switch, now not available
-            0xA000..= 0xBFFF => {},
+            0xA000..= 0xBFFF => self.cart.write_ram(addr),
             // Internal RAM (bank 0)
             0xC000..= 0xCFFF => self.ram[(addr - 0xc000) as usize] = val,
             // Internal RAM (Now fixed, will become switchable
