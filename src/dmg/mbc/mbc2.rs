@@ -38,7 +38,7 @@ impl Mbc for Mbc2 {
     // TODO: check logic
     fn write_rom(&mut self, addr: u16, content: u8) {
         match addr {
-            0x0000..=0x1FFF => if (addr | 0x0100) == 0 {
+            0x0000..=0x1FFF => if (addr & 0x0100) == 0 {
                 self.ram_flag = !self.ram_flag; // Depends on content, not address
             },
             0xA000..=0xA1FF => self.ram[(addr - 0xA000) as usize] = content,
