@@ -52,7 +52,7 @@ pub fn new_mbc(mbc_info: MbcInfo, ram: Option<Box<[u8]>>) -> Box<Mbc> {
 // can store info even after cartridge is removed or GB is turned off
 pub struct MbcInfo {
     mbc_type: MbcType,
-    ram_info: Option<RamInfo>,
+    pub ram_info: Option<RamInfo>,
     has_battery: bool,
 }
 

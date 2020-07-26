@@ -35,12 +35,13 @@ pub struct Mbc3 {
 }
 
 impl Mbc3 {
-    pub fn new(ram: Option<Box<[u8]>>) -> Self {
-        let ram = match ram {
-            Some(boxed_ram) => boxed_ram,
-            None => vec![0; 0].into_boxed_slice(),
+    pub fn new(mbc_info: MbcInfo, ram: Option<Box<[u8]>>) -> Self {
+        let ram = if let Some(extern_ram) = mbc_info.ram_info {
+            extern_ram.make_external_ram(ram)
+        } else {
+            vec![0; 0].into_boxed_slice()
         };
-
+        
         let timer_std = Timer {
             sec: 0,
             min: 0,

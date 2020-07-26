@@ -6,7 +6,9 @@
 // Banking Mode Select (0x6000 - 0x7FFF)
 // and an external RAM, and a ram offset.
 
-use crate::dmg::mbc::mbc_properties::Mbc;
+use super::mbc_properties::Mbc;
+use super::mbc_properties::MbcInfo;
+use super::mbc_properties::RamInfo;
 
 const ROM_BASE_ADDR: usize = 0x4000;
 const RAM_BASE_ADDR: usize = 0xA000;
@@ -22,10 +24,11 @@ pub struct Mbc1 {
 }
 
 impl Mbc1 {
-    pub fn new(ram: Option<Box<[u8]>>) -> Self {
-        let ram = match ram {
-            Some(boxed_ram) => boxed_ram,
-            None => vec![0; 0].into_boxed_slice(),
+    pub fn new(mbc_info: MbcInfo, ram: Option<Box<[u8]>>) -> Self {
+        let ram = if let Some(extern_ram) = mbc_info.ram_info {
+            extern_ram.make_external_ram(ram)
+        } else {
+            vec![0; 0].into_boxed_slice()
         };
 
         Mbc1 {

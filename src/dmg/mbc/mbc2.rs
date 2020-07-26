@@ -15,12 +15,18 @@ pub struct Mbc2 {
 
 impl Mbc2 {
     pub fn new(mbc_info: MbcInfo, ram: Option<Box<[u8]>>) -> Mbc2 {
+        let ram = if let Some(extern_ram) = mbc_info.ram_info {
+            extern_ram.make_external_ram(ram)
+        } else {
+            vec![0; 512].into_boxed_slice()
+        };
+        
         Mbc2 {
             ram_flag: true,
             rom_bank_0: 0,
             rom_bank_1: 1,
             rom_offset: 0x4000,
-            ram: [0; 512],
+            ram: ram,
         }
     }
 }
