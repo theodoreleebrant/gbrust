@@ -8,7 +8,7 @@
 
 use crate::dmg::mbc::mbc_properties::Mbc;
 
-const ROM_BANK_SIZE: usize = 0x4000;
+const ROM_BASE_ADDR: usize = 0x4000;
 const RAM_BASE_ADDR: usize = 0xA000;
 
 pub struct Mbc1 {
@@ -27,7 +27,7 @@ impl Mbc1 {
             extern_ram_enable: false, // default disabled
             rom_bank_num: 0,
             ram_bank_num: 0,
-            rom_offset: ROM_BANK_SIZE,
+            rom_offset: ROM_BASE_ADDR,
             ram_offset: 0,
             ram_mode: false, // default 0
             ram: ram,
@@ -45,7 +45,7 @@ impl Mbc1 {
            }
         } as usize;
 
-        self.rom_offset = bank_id * ROM_BANK_SIZE;
+        self.rom_offset = bank_id * 16 * 1024;
     }
 
     pub fn update_ram_offset(&mut self) {
@@ -61,7 +61,7 @@ impl Mbc for Mbc1 {
     fn read_rom(&self, rom: &Box<[u8]>, addr: u16) -> u8 {
         match addr {
             0x0000..=0x3FFF => rom[addr as usize],
-            0x4000..=0x7FFF => rom[addr as usize - ROM_BANK_SIZE + self.rom_offset],
+            0x4000..=0x7FFF => rom[addr as usize - ROM_BASE_ADDR + self.rom_offset],
             _ => panic!("Unsupported address"),
         }
     }
