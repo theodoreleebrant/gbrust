@@ -22,7 +22,12 @@ pub struct Mbc1 {
 }
 
 impl Mbc1 {
-    pub fn new(ram: Box<[u8]>) -> Self {
+    pub fn new(ram: Option<Box<[u8]>>) -> Self {
+        let ram = match ram {
+            Some(boxed_ram) => boxed_ram,
+            None => vec![0; 0].into_boxed_slice(),
+        };
+
         Mbc1 {
             extern_ram_enable: false, // default disabled
             rom_bank_num: 0,
