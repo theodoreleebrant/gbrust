@@ -1,14 +1,27 @@
 // MBC3
 // 2MBytes (128 banks) ROM and/or 32KByte (4 banks) of RAM and TIMER
 // RTC: Real Time Clock. requires 32.768 kHZ Quartz Oscillator and external battery
+// Supports 127 ROM Banks and 4 RAM banks, supports access for banks 20,40,60
+// Real Time Clock, how it works:
+// RAM Bank: 08  09  0A  0B        0C(bit0)  0C(bit6) 0C(bit7)
+//           Sec Min Hrs Days(lsb) Days(msb) halt     overflow flag, set when 9-bit day counter overflows
 
 use super::Mbc;
 
-const ROM_BANK_SIZE: usize = 0x4000;
-const RAM_BASE_ADDR: usize = 0xA000;
 const TICK_RATE: f64 = 32.768;
 
+pub struct Timer {
+    sec: u8,
+    min: u8,
+    hrs: u8,
+    days_lo: u8,
+    days_hi: u8, // bit 0: msb of day counter, bit 6: halt, bit 7: day counter overflow
+}
+
 pub struct Mbc3 {
+    timer_writeOnly: Timer,
+    timer_readOnly: Timer,
+    timer_latch: bool, // When from false to true, clone timer_writeOnly to timer_readOnly
     extern_ram_enable: bool,
     rom_bank_num: u8,
     ram_bank_num: u8,
@@ -19,30 +32,42 @@ pub struct Mbc3 {
 }
 
 impl Mbc3 {
-    pub fn new(ram: Box<[u8]>) -> Self {
+    pub fn new(ram: Option<Box<[u8]>>) -> Self {
+        let ram = match ram {
+            Some(boxed_ram) => boxed_ram,
+            None => vec![0; 0].into_boxed_slice(),
+        }
+
+        let timer_std = Timer {
+            sec: 0,
+            min: 0,
+            hrs: 0,
+            days_lo: 0,
+            days_hi: 0,
+        }
+
         Mbc3 {
+            timer_writeOnly: timer_std,
+            timer_readOnly: timer_std,
+            timer_latch: false,
             extern_ram_enable: false, // default disabled
             rom_bank_num: 0,
             ram_bank_num: 0,
-            rom_offset: ROM_BANK_SIZE,
+            rom_offset: 0x4000,
             ram_offset: 0,
             ram_mode: false, // default 0
             ram: ram,
         }
     }
 
+    // Supports banks 20,40,60 here
     pub fn update_rom_offset(&mut self) {
         let bank_id = match self.rom_bank_num {
            0 => 1,
-           _ => {
-               match self.rom_bank_num & 0xf0 {
-                   0x20 | 0x40 | 0x60 => self.rom_bank_num | 0x01,
-                   _ => self.rom_bank_num,
-               }
-           }
+           _ => self.rom_bank_num & 0x7F, // msb is always reset
         } as usize;
 
-        self.rom_offset = bank_id * ROM_BANK_SIZE;
+        self.rom_offset = bank_id * 16 * 1024; // 16kb each bank
     }
 
     pub fn update_ram_offset(&mut self) {
@@ -54,34 +79,58 @@ impl Mbc3 {
     }
 }
 
-impl Mbc for Mbc1 {
+impl Mbc for Mbc3 {
     fn read_rom(&self, rom: &Box<[u8]>, addr: u16) -> u8 {
         match addr {
             0x0000..=0x3FFF => rom[addr as usize],
             0x4000..=0x7FFF => rom[addr as usize - ROM_BANK_SIZE + self.rom_offset],
-            _ => panic!("Unsupported address"),
+            _ => panic!("Unsupported address 0x{:x}", addr),
         }
     }
 
+    // Addr 0x0000 - 0x1FFF en/disables both RAM and timer
     fn write_rom(&mut self, addr: u16, content: u8) {
         match addr {
             0x0000..=0x1FFF => self.extern_ram_enable = content == 0x0A,
-            0x2000..=0x3FFF => self.rom_bank_num = content & 0x1F,
-            0x4000..=0x5FFF => self.ram_bank_num = content & 0x03,
-            0x6000..=0x7FFF => self.ram_mode = content == 0x01,
+            0x2000..=0x3FFF => self.rom_bank_num = content & 0x7F,
+            0x4000..=0x5FFF => self.ram_bank_num = content & 0x0F, // bank number will determine timer register to write to also
+            0x6000..=0x7FFF => {
+                if !self.timer_latch && content == 1 {
+                    self.timer_readOnly = self.timer_writeOnly.clone(),
+                }
+                self.timer_latch = content == 1;
+            },
             _ => panic!("Unsupported address 0x{:x}", addr),
         }
         self.update_rom_offset();
         self.update_ram_offset();
     }
 
+    // different from mbc1: might access ram OR RTC Register depending on bank number / RTC
+    // register selection
     fn read_ram(&self, addr: u16) -> u8 {
-        self.ram[addr as usize - RAM_BASE_ADDR + self.ram_offset]
+        match self.ram_bank {
+            0..=3 => self.ram[addr as usize - RAM_BASE_ADDR + self.ram_offset],
+            0x08 => self.timer_readOnly.sec,
+            0x09 => self.timer_readOnly.min,
+            0x0A => self.timer_readOnly.hrs,
+            0x0B => self.timer_readOnly.days_lo,
+            0x0C => self.timer_readOnly.days_hi,
+            _ => panic!("unsupported RAM bank 0x{:x}", self.ram_bank),
+        }
     }
 
+    // RAM or timer register depending on bank number / RTC register selection.
     fn write_ram(&mut self, addr: u16, content: u8) {
         if self.extern_ram_enable {
-            self.ram[addr as usize - RAM_BASE_ADDR + self.ram_offset] = content;
+            match self.ram_bank {
+                0..=3 => self.ram[addr as usize - RAM_BASE_ADDR + self.ram_offset] = content,
+                0x08 => self.timer_writeOnly.sec = content & 0x3F, // <= 60s
+                0x09 => self.timer_writeOnly.min = content & 0x3F, // <= 60m
+                0x0A => self.timer_writeOnly.hrs = content & 0x1F, // <= 24
+                0x0B => self.timer_writeOnly.days_lo = content,
+                0x0C => self.timer_writeOnly.days_hi = content & 0b1100_0001, // extracts day counter, carry bit, halt flag
+                _ => panic!("Unsupported ram bank number 0x{:x}", self.ram_bank),
         }
     }
 
