@@ -4,11 +4,11 @@
 use std::fmt;
 use std::fmt::Debug;
 use std::string::String;
-use super::mbc::mbc_properties::{MbcType, MbcInfo, RamInfo};
+use super::mbc::mbc_properties::{MbcType, MbcInfo, RamInfo, Mbc};
 
 pub struct Cart {
     program: Box<[u8]>,
-    mbc_info: MbcInfo,
+    mbc: Box<Mbc>, // Box because Mbc is a trait, no box = need dynamic typing
 }
 
 #[derive(Debug)]
@@ -23,16 +23,15 @@ pub enum DestinationCode {
 // }
 
 impl Cart {
-    pub fn new(program: Box<[u8]>) -> Self {
+    pub fn new(program: Box<[u8]>, ram: Option<Box<[u8]>>) -> Self {
+        let mbc_info = Cart::get_mbc_info(&program);
+        let boxed_mbc = super::mbc::mbc_properties::new_mbc(mbc_info, ram);
         Cart {
             program: program,
-            mbc_info: Cart::get_mbc_info(&program),
+            mbc: boxed_mbc,
         }
     }
 
-    pub fn write(&self, _addr: u16, _val: u8) { 
-        // Gameboy: read only, does not do anything
-    }
 
     pub fn get_logo(&self) -> &[u8] {
         let slice = &self.program[0x0104..0x0133];
@@ -150,7 +149,20 @@ impl Cart {
 
     pub fn read(&self, addr: u16) -> u8 {
         // Change to support MBC
-        self.program[addr as usize]
+        //self.program[addr as usize]
+        self.mbc.read_rom(&self.program, addr)
+    }
+
+    pub fn write(&mut self, addr: u16, val: u8) {
+        self.mbc.write_rom(addr, val);
+    }
+
+    pub fn read_ram(&self, addr: u16) -> u8 {
+        self.mbc.read_ram(addr)
+    }
+
+    pub fn write_ram(&mut self, addr: u16, val: u8) {
+        self.mbc.write_ram(addr, val);
     }
 }
 
@@ -161,13 +173,13 @@ impl Debug for Cart {
                     title: {},
                     size: {:?},
                     destination_code: {:?},
-                    mbc_info: {:?}
+                    
                     rom_bank_count: {}
                 }}",
                self.get_title(),
                self.get_rom_size(),
                self.get_dest(),
-               self.mbc_info,
+               //self.mbc,
                self.rom_bank_count())
     }
 }

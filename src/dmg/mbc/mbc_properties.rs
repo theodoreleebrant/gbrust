@@ -5,7 +5,7 @@
 use super::rom_only::RomOnly;
 use super::mbc1::Mbc1;
 use super::mbc2::Mbc2;
-//use super::mbc3::Mbc3;
+use super::mbc3::Mbc3;
 //use super::mbc5::Mbc5;
 
 #[derive(Debug)]
@@ -31,19 +31,16 @@ pub trait Mbc {
     fn copy_ram(&self) -> Option<Box<[u8]>>; // ????
 }
 
-/* MOVE THIS FUNCTION TO MOD.RS SO THAT IT HAS ALL THE MBC IMPLEMENTED
-// Why box tho?
 pub fn new_mbc(mbc_info: MbcInfo, ram: Option<Box<[u8]>>) -> Box<Mbc> {
     match mbc_info.mbc_type {
         MbcType::None => Box::new(RomOnly {}),
         MbcType::Mbc1 => Box::new(Mbc1::new(mbc_info, ram)),
         MbcType::Mbc2 => Box::new(Mbc2::new(mbc_info, ram)),
         MbcType::Mbc3 => Box::new(Mbc3::new(mbc_info, ram)),
-        MbcType::Mbc5 => Box::new(Mbc5::new(mbc_info, ram)),
+        //MbcType::Mbc5 => Box::new(Mbc5::new(mbc_info, ram)),
         _ => panic!("Unimplemented MBC"),
     }
 }
-*/
 
 // Each MBC should carry following information, can be obtained from :
 // Type: Informs the configuration of how MBC switches banks
