@@ -91,11 +91,11 @@ fn main() {
     let rom_path = PathBuf::from(env::args().nth(1).unwrap());
     let rom_binary = load_bin(&rom_path);
 
-    // let save_ram_path = {
-    //     let mut path = rom_path.clone();
-    //     path.set_extension("sav");
-    //     path
-    // };
+    let save_ram_path = {
+        let mut path = rom_path.clone();
+        path.set_extension("sav");
+        path
+    };
 
     let ram = if save_ram_path.exists() {
         Some(load_bin(&save_ram_path))

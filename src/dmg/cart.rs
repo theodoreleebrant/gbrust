@@ -53,10 +53,7 @@ impl Cart {
             None 
         } else {
             Some(
-                RamInfo {
-                    size: ram_size,
-                    bank_count: Cart::ram_bank_count(program),
-                }
+                RamInfo::new(ram_size, Cart::ram_bank_count(program))
             )
         };
 
