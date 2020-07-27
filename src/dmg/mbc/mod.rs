@@ -1,9 +1,9 @@
 // This file defines default trait for all MBCs and RamInfo, RomInfo
-mod mbc_properties;
-mod rom_only;
-mod mbc1;
-mod mbc2;
-mod mbc3;
+pub mod mbc_properties;
+pub mod rom_only;
+pub mod mbc1;
+pub mod mbc2;
+pub mod mbc3;
 //mod mbc5;
 
 pub use self::mbc_properties::*;

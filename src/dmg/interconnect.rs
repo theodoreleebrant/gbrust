@@ -109,7 +109,7 @@ impl Interconnect {
             // character ram (basically tile data)
             0x8000..= 0x9FFF => self.ppu.write(addr, val),
             // Cartridge RAM to switch, now not available
-            0xA000..= 0xBFFF => self.cart.write_ram(addr),
+            0xA000..= 0xBFFF => self.cart.write_ram(addr, val),
             // Internal RAM (bank 0)
             0xC000..= 0xCFFF => self.ram[(addr - 0xc000) as usize] = val,
             // Internal RAM (Now fixed, will become switchable

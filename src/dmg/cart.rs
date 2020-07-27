@@ -4,12 +4,11 @@
 use std::fmt;
 use std::fmt::Debug;
 use std::string::String;
-
-use super::mbc::*;
+use super::mbc::mbc_properties::{MbcType, MbcInfo, RamInfo, Mbc};
 
 pub struct Cart {
     program: Box<[u8]>,
-    mbc: Box<Mbc>,
+    mbc: Box<Mbc>, // Box because Mbc is a trait, no box = need dynamic typing
 }
 
 #[derive(Debug)]
@@ -25,45 +24,14 @@ pub enum CartType {
 
 impl Cart {
     pub fn new(program: Box<[u8]>, ram: Option<Box<[u8]>>) -> Self {
-        let mbc_prop = Cart::get_mbc_properties(&program);
-        let mbc = super::mbc::new_mbc(mbc_prop, ram);
+        let mbc_info = Cart::get_mbc_info(&program);
+        let boxed_mbc = super::mbc::mbc_properties::new_mbc(mbc_info, ram);
         Cart {
-            mbc: mbc,
             program: program,
+            mbc: boxed_mbc,
         }
     }
 
-    pub fn get_mbc_properties(program: &Box<[u8]>) -> MbcInfo {
-        let ram_info = if Cart::get_ram_size() != 0 {
-            Some(RamInfo::new(Cart::get_ram_size(), Cart::get_rambank_count(&program)))
-        } else {
-            None
-        };
-        match program[0x0147] {
-            0x00 => MbcInfo::new(MbcType::None, ram_info, false),
-            0x01 => MbcInfo::new(MbcType::Mbc1, ram_info, false),
-            0x02 => MbcInfo::new(MbcType::Mbc1, ram_info, false),
-            0x03 => MbcInfo::new(MbcType::Mbc1, ram_info, true),
-            0x13 => MbcInfo::new(MbcType::Mbc3, ram_info, true),
-            0x19 => MbcInfo::new(MbcType::Mbc5, ram_info, false),
-            0x1b => MbcInfo::new(MbcType::Mbc5, ram_info, true),
-            _ => panic!("Unsupported mbc_info: 0x{:x}", program[0x0147]),
-        }
-    }
-
-    pub fn get_rambank_count(program: &Box<[u8]>) -> u32 {
-        match program[0x0149] {
-            0 => 0,
-            1 | 2 => 1,
-            3 => 4,
-            4 => 16,
-            _ => panic!("Unsupported ram size"),
-        }
-    }
-
-    pub fn write(&self, _addr: u16, _val: u8) { 
-        // Gameboy: read only, does not do anything
-    }
 
     pub fn get_logo(&self) -> &[u8] {
         let slice = &self.program[0x0104..0x0133];
@@ -79,9 +47,33 @@ impl Cart {
         String::from_utf8(title).unwrap()
     }
 
-    pub fn get_type(&self) -> CartType {
-        match self.program[0x0147] {
-            0x00 => CartType::RomOnly,
+    pub fn get_mbc_info(program: &Box<[u8]>) -> MbcInfo {
+        let ram_size = Cart::get_ram_size(program);
+        let ram_info = if ram_size == 0 {
+            None 
+        } else {
+            Some(
+                RamInfo {
+                    size: ram_size,
+                    bank_count: Cart::ram_bank_count(program),
+                }
+            )
+        };
+
+        match program[0x0147] {
+            0x00 => MbcInfo::new(MbcType::None, ram_info, false),
+            0x01 => MbcInfo::new(MbcType::Mbc1, ram_info, false),
+            0x02 => MbcInfo::new(MbcType::Mbc1, ram_info, false),
+            0x03 => MbcInfo::new(MbcType::Mbc1, ram_info, true),
+            0x05 => MbcInfo::new(MbcType::Mbc2, ram_info, false),
+            0x06 => MbcInfo::new(MbcType::Mbc2, ram_info, true),
+            0x0F => MbcInfo::new(MbcType::Mbc3, ram_info, true),
+            0x10 => MbcInfo::new(MbcType::Mbc3, ram_info, true),
+            0x11 => MbcInfo::new(MbcType::Mbc3, ram_info, false),
+            // For mbc5
+            //0x00 => MbcInfo::new(MbcType::None, ram_info, false),
+            //0x00 => MbcInfo::new(MbcType::None, ram_info, false),
+            //0x00 => MbcInfo::new(MbcType::None, ram_info, false),
             _ => panic!("Haven't developed MBCs yet!"),
         }
     }
@@ -89,19 +81,48 @@ impl Cart {
     pub fn get_rom_size(&self) -> u32 {
         match self.program[0x0148] {
             0x00 => 1024 * 32,
-            _ => panic!("Have not implemented banking for > 32kb"),
+            0x01 => 1024 * 64,
+            0x02 => 1024 * 128,
+            0x03 => 1024 * 256,
+            0x04 => 1024 * 512,
+            0x05 => 1024 * 1024, // 1MB
+            0x06 => 1024 * 1024 * 2,
+            0x07 => 1024 * 1024 * 4,
+            0x08 => 1024 * 1024 * 8,
+            _ => panic!("Invalid ROM size"),
+        }
+    }
+
+    pub fn rom_bank_count(&self) -> u32 {
+        if self.get_rom_size() == 1024 * 32 {
+            0
+        } else {
+            self.get_rom_size() / (1024 * 16)
         }
     }
     
-    pub fn get_ram_size(&self) -> u32 {
-        match self.program[0x0149] {
+    // Do not take in &self as this is needed for initialisation
+    pub fn get_ram_size(program: &Box<[u8]>) -> u32 {
+        match program[0x0149] {
             0 => 0,
             1 => 1024 * 2,
             2 => 1024 * 8,
             3 => 1024 * 32,
             4 => 1024 * 128, // in program
             5 => 1024 * 64,
-            _ => panic!("Unsupported ram size: {:x}", self.program[0x0149]),
+            _ => panic!("Unsupported ram size: {:x}", program[0x0149]),
+        }
+    }
+
+    // Do not take in &self as this is needed for initialisation
+    pub fn ram_bank_count(program: &Box<[u8]>) -> u32 {
+        let ram_size = Cart::get_ram_size(program) / 1024; // number of kb
+
+        match ram_size {
+            0 => 0,
+            2..=8 => 1,
+            32..=128 => ram_size / 8,
+            _ => panic!("Invalid ram size: {} kb", ram_size),
         }
     }
 
@@ -128,7 +149,20 @@ impl Cart {
 
     pub fn read(&self, addr: u16) -> u8 {
         // Change to support MBC
-        self.program[addr as usize]
+        //self.program[addr as usize]
+        self.mbc.read_rom(&self.program, addr)
+    }
+
+    pub fn write(&mut self, addr: u16, val: u8) {
+        self.mbc.write_rom(addr, val);
+    }
+
+    pub fn read_ram(&self, addr: u16) -> u8 {
+        self.mbc.read_ram(addr)
+    }
+
+    pub fn write_ram(&mut self, addr: u16, val: u8) {
+        self.mbc.write_ram(addr, val);
     }
 }
 
@@ -139,12 +173,14 @@ impl Debug for Cart {
                     title: {},
                     size: {:?},
                     destination_code: {:?},
+                    
+                    rom_bank_count: {}
                 }}",
                self.get_title(),
-               // self.mbc_info(),
                self.get_rom_size(),
-               // self.rom_bank_count(),
-               self.get_dest())
+               self.get_dest(),
+               //self.mbc,
+               self.rom_bank_count())
     }
 }
 
