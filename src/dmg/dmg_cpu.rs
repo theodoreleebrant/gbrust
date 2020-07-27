@@ -983,6 +983,21 @@ current pc: 0x{:x}", self.reg.pc);
         ProgramCounter::Next(1, 3)
     }
 
+    /// ldhl_sp_e: 8-bit operand e is added to SP and result is stored in HL. Basically HL = SP + e
+    pub fn ld_hl_sp_e(&mut self) -> ProgramCounter {
+        let e = ((self.get_n() as i8) as i16) as i32;
+        let new_hl = ((self.reg.sp as i16) as i32). + e;
+       
+        self.write_to_r16(HL_ID, new_hl);
+        // Theodore bro need ur help
+        let h = true; // set if there is a carry from bit 11, otherwise reset
+        let c = true; // set if there is a carry from bit 15, otherwise reset
+        
+        // set flags
+        self.set_hcnz(h, c, false, false);
+        
+        ProgramCounter::Next(2, 3)
+    }
 
     // 8 Bit Arithmetic Operation Instruction
     // ADD A,r: Add the value in register r to A, set it to A. 
