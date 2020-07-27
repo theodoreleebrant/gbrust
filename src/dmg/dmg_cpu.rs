@@ -22,6 +22,7 @@ const BC_ID: u8 = 0b00;
 const DE_ID: u8 = 0b01;
 const HL_ID: u8 = 0b10;
 const SP_ID: u8 = 0b11;
+const AF_ID: u8 = 0b11;
 
 // Places to jump to during interrupts
 
@@ -113,7 +114,9 @@ impl Cpu {
     pub fn step(&mut self, video_sink: &mut dyn VideoSink) -> u32 {
         // elapsed_cycles calculates how many cycles are spent carrying out the instruction and
         // corresponding interrupt (if produced) = time to execute + time to handle interrupt
-        //println!("current pc: {:?}", self.reg.pc);
+        println!("
+======================
+current pc: 0x{:x}", self.reg.pc);
         //thread::sleep(time::Duration::from_millis(1));
         let elapsed_cycles = {
             self.execute_opcode() + self.handle_interrupt() 
@@ -178,7 +181,7 @@ impl Cpu {
             is_0bb,
         );
 
-        //println!("opcode: 0x{:x}", opcode);
+        println!("opcode: 0x{:x}", opcode);
 
         let pc_change = match parts {
             // opcodes starting with 00
@@ -417,7 +420,8 @@ impl Cpu {
 
     /// get_n: gets 8-bit immediate n right after opcode
     pub fn get_n(&mut self) -> u8 {
-        self.interconnect.read(self.reg.pc + 1) 
+        println!("immediate = 0x{:x}", self.interconnect.read(self.reg.pc + 1));
+        self.interconnect.read(self.reg.pc + 1)
     }
 
     /// get_r8_to: gets 3-bit register ID from opcode. Register ID takes bit 3, 4, 5 for register
@@ -461,6 +465,35 @@ impl Cpu {
         }
     }
 
+    pub fn pp_write_r16(&mut self, r16_id: u8, content: u16) {
+        let msb = (content >> 8) as u8;
+        let lsb = (content & 0x00FF) as u8;
+
+        match r16_id {
+            BC_ID => {
+                self.reg.bc = content;
+                self.reg.b = msb;
+                self.reg.c = lsb;
+            },
+            DE_ID => {
+                self.reg.de = content;
+                self.reg.d = msb;
+                self.reg.e = lsb;
+            },
+            HL_ID => {
+                self.reg.hl = content;
+                self.reg.h = msb;
+                self.reg.l = lsb;
+            },
+            AF_ID => {
+                self.reg.a = msb;
+                self.reg.f = lsb;
+            },
+            _ => panic!("Invalid register"),
+        }
+    }
+
+
     /// read_from_r16: reads content of a 16-bit register.
     /// @param r16_id: ID of a 16-byte register.
     /// @return Some<u16> if ID is valid, None if not valid.
@@ -472,6 +505,21 @@ impl Cpu {
             DE_ID => result = self.reg.de,
             HL_ID => result = self.reg.hl,
             SP_ID => result = self.reg.sp,
+            _ => return None,
+        }
+
+        Some(result)
+    }
+
+    /// Separate function to serve push and pop
+    pub fn pp_read_r16(&mut self, r16_id: u8) -> Option<u16> {
+        let result: u16;
+
+        match r16_id {
+            BC_ID => result = self.reg.bc,
+            DE_ID => result = self.reg.de,
+            HL_ID => result = self.reg.hl,
+            AF_ID => result = (self.reg.a as u16) << 8 | (self.reg.f as u16), // manual AF lmao
             _ => return None,
         }
 
@@ -502,7 +550,7 @@ impl Cpu {
 
     pub fn get_r16(&mut self) -> u8 {
         let res = ((self.interconnect.read(self.reg.pc) & 0b00110000) >> 4) as u8;
-        //println!("get_r16: {:?}", res);
+        println!("get_r16: {:?}", res);
         res
     }
 
@@ -654,7 +702,8 @@ impl Cpu {
             0b11 => result = self.reg.f & CF != 0,
             _ => panic!("Invalid cc: 0b{:b}", cc),
         }
-
+        
+        println!("cc 0b{:b} is {}", cc, result);
         result
     }
    
@@ -916,7 +965,7 @@ impl Cpu {
     /// 1-byte instruction
     pub fn push_rr(&mut self) -> ProgramCounter {
         let rr = self.get_r16();
-        let val = self.read_from_r16(rr).unwrap();
+        let val = self.pp_read_r16(rr).unwrap();
 
         self.push_u16(val);
 
@@ -929,7 +978,7 @@ impl Cpu {
         let rr = self.get_r16();
         let val_pop = self.pop_u16();
         
-        self.write_to_r16(rr, val_pop);
+        self.pp_write_r16(rr, val_pop);
 
         ProgramCounter::Next(1, 3)
     }
