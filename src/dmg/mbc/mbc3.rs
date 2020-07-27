@@ -7,6 +7,7 @@
 //           Sec Min Hrs Days(lsb) Days(msb) halt     overflow flag, set when 9-bit day counter overflows
 
 use super::Mbc;
+use super::MbcInfo;
 
 const ROM_BANK_BASE: usize = 0x4000;
 const RAM_BANK_BASE: usize = 0xA000;
