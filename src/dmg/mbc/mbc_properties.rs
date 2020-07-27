@@ -50,6 +50,7 @@ pub fn new_mbc(mbc_info: MbcInfo, ram: Option<Box<[u8]>>) -> Box<Mbc> {
 // ram_info: Information about RAM (Size and bank_ID 00 - 03)
 // has_battery: RAM Bank accessed by MBC is battery_buffered. While still have battery, RAM Bank
 // can store info even after cartridge is removed or GB is turned off
+#[derive(Debug)]
 pub struct MbcInfo {
     mbc_type: MbcType,
     pub ram_info: Option<RamInfo>,
@@ -69,6 +70,7 @@ impl MbcInfo {
 // RAM Bank (Read / Write). Helps store states even when gameboy is turned off 
 // such as high score, game positions.
 // Ram should contain info: size and bank count (00 - 03)
+#[derive(Debug)]
 pub struct RamInfo {
     size: u32,
     bank_count: u32,

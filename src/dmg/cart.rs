@@ -161,12 +161,14 @@ impl Debug for Cart {
                     title: {},
                     size: {:?},
                     destination_code: {:?},
+                    mbc_info: {:?}
+                    rom_bank_count: {}
                 }}",
                self.get_title(),
-               // self.mbc_info(),
                self.get_rom_size(),
-               // self.rom_bank_count(),
-               self.get_dest())
+               self.get_dest(),
+               self.mbc_info,
+               self.rom_bank_count())
     }
 }
 
