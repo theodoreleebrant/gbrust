@@ -97,14 +97,13 @@ fn main() {
     //     path
     // };
 
-    // Unused for DMG
-    // let ram = if save_ram_path.exists() {
-    //     Some(load_bin(&save_ram_path))
-    // } else {
-    //     None
-    // };
+    let ram = if save_ram_path.exists() {
+        Some(load_bin(&save_ram_path))
+    } else {
+        None
+    };
 
-    let cart = Cart::new(rom_binary);
+    let cart = Cart::new(rom_binary, ram);
 
     println!("{:?}", cart);
 
