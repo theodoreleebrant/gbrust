@@ -1,2 +1,2 @@
 /target
-*.rs.swp # ignore all swap files
+.*.rs.swp # ignore all swap files
