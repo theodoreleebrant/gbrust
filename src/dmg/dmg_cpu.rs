@@ -114,9 +114,9 @@ impl Cpu {
     pub fn step(&mut self, video_sink: &mut dyn VideoSink) -> u32 {
         // elapsed_cycles calculates how many cycles are spent carrying out the instruction and
         // corresponding interrupt (if produced) = time to execute + time to handle interrupt
-        println!("
-======================
-current pc: 0x{:x}", self.reg.pc);
+//         println!("
+// ======================
+// current pc: 0x{:x}", self.reg.pc);
         //thread::sleep(time::Duration::from_millis(1));
         let elapsed_cycles = {
             self.execute_opcode() + self.handle_interrupt() 
@@ -181,7 +181,7 @@ current pc: 0x{:x}", self.reg.pc);
             is_0bb,
         );
 
-        println!("opcode: 0x{:x}", opcode);
+        //println!("opcode: 0x{:x}", opcode);
 
         let pc_change = match parts {
             // opcodes starting with 00
@@ -420,7 +420,7 @@ current pc: 0x{:x}", self.reg.pc);
 
     /// get_n: gets 8-bit immediate n right after opcode
     pub fn get_n(&mut self) -> u8 {
-        println!("immediate = 0x{:x}", self.interconnect.read(self.reg.pc + 1));
+        //println!("immediate = 0x{:x}", self.interconnect.read(self.reg.pc + 1));
         self.interconnect.read(self.reg.pc + 1)
     }
 
@@ -550,7 +550,7 @@ current pc: 0x{:x}", self.reg.pc);
 
     pub fn get_r16(&mut self) -> u8 {
         let res = ((self.interconnect.read(self.reg.pc) & 0b00110000) >> 4) as u8;
-        println!("get_r16: {:?}", res);
+        //println!("get_r16: {:?}", res);
         res
     }
 
@@ -703,7 +703,7 @@ current pc: 0x{:x}", self.reg.pc);
             _ => panic!("Invalid cc: 0b{:b}", cc),
         }
         
-        println!("cc 0b{:b} is {}", cc, result);
+        //println!("cc 0b{:b} is {}", cc, result);
         result
     }
    
