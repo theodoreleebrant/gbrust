@@ -207,6 +207,7 @@ impl Cpu {
             (0b00, 0b010, 0b111, _, _) => self.rla(),
             (0b00, 0b001, 0b111, _, _) => self.rrca(),
             (0b00, 0b011, 0b111, _, _) => self.rra(),
+            (0b00, 0b010, 0b000, _, _) => self.stop(),
             
             (0b00, _, 0b011, true, _) => self.inc_ss(), // ss0
             (0b00, _, 0b011, false, _) => self.dec_ss(), // ss1
@@ -265,6 +266,7 @@ impl Cpu {
             (0b11, 0b110, 0b011, _, _) => self.di(),
             (0b11, 0b111, 0b011, _, _) => self.ei(),
             (0b11, 0b001, 0b011, _, _) => self.execute_bc(self.reg.pc),
+            (0b11, 0b111, 0b000, _, _) => self.ld_hl_sp_e(),
             
             (0b11, _, 0b101, true, _) => self.push_rr(), // xx0
             (0b11, _, 0b001, true, _) => self.pop_rr(), // xx0
@@ -274,7 +276,7 @@ impl Cpu {
             (0b11, _, 0b111, _, _) => self.rst_n(), 
             
             // The rest: panik
-            _ => panic!("No such opcode"),
+            _ => panic!("No such opcode: 0b{:b}", opcode),
         };
         
         let cycles_taken: u32 = match pc_change {
@@ -2281,7 +2283,7 @@ impl Cpu {
 
         if is_addition { // after addition, adjust if half-carry occured or if results out of bounds.
             if a > 0x90 || c_flag {
-                a += 0x60;
+                a.wrapping_add(0x60);
                 has_carry = true;
             }
 
