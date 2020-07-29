@@ -2283,20 +2283,20 @@ impl Cpu {
 
         if is_addition { // after addition, adjust if half-carry occured or if results out of bounds.
             if a > 0x90 || c_flag {
-                a.wrapping_add(0x60);
+                a = a.wrapping_add(0x60);
                 has_carry = true;
             }
 
             if (a & 0x0F) > 0x09 || h_flag {
-                a += 0x06;
+                a = a.wrapping_add(0x06);
             }
         } else { // after subtraction, adjust if half-carry occured.
             if c_flag {
-                a -= 0x60;
+                a = a.wrapping_sub(0x60);
             }
 
             if h_flag {
-                a -= 0x06;
+                a = a.wrapping_sub(0x06);
             }
         }
 
