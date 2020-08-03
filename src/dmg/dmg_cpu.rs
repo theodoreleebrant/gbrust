@@ -473,31 +473,31 @@ impl Cpu {
 
         match r16_id {
             BC_ID => {
-                println!("===== Old value of bc: 0x{:x}", self.reg.bc);
+                //println!("===== Old value of bc: 0x{:x}", self.reg.bc);
                 self.reg.bc = content;
                 self.reg.b = msb;
                 self.reg.c = lsb;
-                println!("New value: 0x{:x}", self.reg.bc);
+                //println!("New value: 0x{:x}", self.reg.bc);
             },
             DE_ID => {
-                println!("===== Old value of de: 0x{:x}", self.reg.de);
+                //println!("===== Old value of de: 0x{:x}", self.reg.de);
                 self.reg.de = content;
                 self.reg.d = msb;
                 self.reg.e = lsb;
-                println!("New value: 0x{:x}", self.reg.de);
+                //println!("New value: 0x{:x}", self.reg.de);
             },
             HL_ID => {
-                println!("===== Old value of hl: 0x{:x}", self.reg.hl);
+                //println!("===== Old value of hl: 0x{:x}", self.reg.hl);
                 self.reg.hl = content;
                 self.reg.h = msb;
                 self.reg.l = lsb;
-                println!("New value: 0x{:x}", self.reg.hl);
+                //println!("New value: 0x{:x}", self.reg.hl);
             },
             AF_ID => {
-                println!("===== Old value of af: 0x{:x}", (self.reg.a as u16) << 8 | self.reg.f as u16);
+                //println!("===== Old value of af: 0x{:x}", (self.reg.a as u16) << 8 | self.reg.f as u16);
                 self.reg.a = msb;
                 self.reg.f = lsb;
-                println!("New value: 0x{:x}", (self.reg.a as u16) << 8 | self.reg.f as u16);
+                //println!("New value: 0x{:x}", (self.reg.a as u16) << 8 | self.reg.f as u16);
 
             },
             _ => panic!("Invalid register"),
