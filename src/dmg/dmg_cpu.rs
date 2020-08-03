@@ -181,6 +181,7 @@ impl Cpu {
             is_0bb,
         );
 
+        //println!("Current pc: 0x{:x}", self.reg.pc);
         //println!("opcode: 0x{:x}", opcode);
 
         let pc_change = match parts {
@@ -297,13 +298,13 @@ impl Cpu {
                 cycles
             },
         };
-
         cycles_taken
 
     }
 
     pub fn execute_bc(&mut self, pc_current: u16) -> ProgramCounter {
         let suffix = self.interconnect.read(pc_current + 1);
+        //println!("Prefix cb detected, suffix: 0x{:x}", suffix);
         let parts = (
             suffix >> 6, //  bit 76
             (suffix & 0b0011_1000) >> 3, // bit 543
@@ -473,32 +474,31 @@ impl Cpu {
 
         match r16_id {
             BC_ID => {
-                println!("===== Old value of bc: 0x{:x}", self.reg.bc);
+                //println!("===== Old value of bc: 0x{:x}", self.reg.bc);
                 self.reg.bc = content;
                 self.reg.b = msb;
                 self.reg.c = lsb;
-                println!("New value: 0x{:x}", self.reg.bc);
+                //println!("New value: 0x{:x}", self.reg.bc);
             },
             DE_ID => {
-                println!("===== Old value of de: 0x{:x}", self.reg.de);
+                //println!("===== Old value of de: 0x{:x}", self.reg.de);
                 self.reg.de = content;
                 self.reg.d = msb;
                 self.reg.e = lsb;
-                println!("New value: 0x{:x}", self.reg.de);
+                //println!("New value: 0x{:x}", self.reg.de);
             },
             HL_ID => {
-                println!("===== Old value of hl: 0x{:x}", self.reg.hl);
+                //println!("===== Old value of hl: 0x{:x}", self.reg.hl);
                 self.reg.hl = content;
                 self.reg.h = msb;
                 self.reg.l = lsb;
-                println!("New value: 0x{:x}", self.reg.hl);
+                //println!("New value: 0x{:x}", self.reg.hl);
             },
             AF_ID => {
-                println!("===== Old value of af: 0x{:x}", (self.reg.a as u16) << 8 | self.reg.f as u16);
+                //println!("===== Old value of af: 0x{:x}", (self.reg.a as u16) << 8 | self.reg.f as u16);
                 self.reg.a = msb;
                 self.reg.f = lsb;
-                println!("New value: 0x{:x}", (self.reg.a as u16) << 8 | self.reg.f as u16);
-
+                //println!("New value: 0x{:x}", (self.reg.a as u16) << 8 | self.reg.f as u16);
             },
             _ => panic!("Invalid register"),
         }
@@ -1647,8 +1647,9 @@ impl Cpu {
 	    let to_write: u16 = (res & 0xFFFF) as u16;
 
 	    self.write_to_r16(SP_ID, to_write);
-	    self.set_hcnz(h, c, n, z);
+        self.set_hcnz(h, c, n, z);
 
+        println!("For add_spe: r = 0x{:x}, old_sp = 0x{:x}, new_sp = 0x{:x}. flags (znhc) = 0b{:b}", r, sp, self.reg.sp, self.reg.f);
 	    ProgramCounter::Next(2, 4)
 	}
 
@@ -2105,7 +2106,7 @@ impl Cpu {
     /// 2 bytes, 3 cycles.
     pub fn jr_e(&mut self) -> ProgramCounter {
         let e = (self.get_n() as i8) as i16;
-        //println!("{:?}", e);
+        //println!("Unconditional relative jump to e = {}", e);
         ProgramCounter::Next(e + 2, 3)
     }
 
@@ -2116,6 +2117,8 @@ impl Cpu {
         let cc = self.check_cc();
         let pc_final: ProgramCounter;
         
+        //println!("Conditional relative jump. cc: {}, e: {}", cc, e);
+
         if cc {
             pc_final = ProgramCounter::Next(e + 2, 3);
         } else {
@@ -2402,8 +2405,10 @@ mod tests {
         let original_de = cpu.reg.de;
         let original_sp = cpu.reg.sp;
         
-        set_1byte_op(&mut cpu, 0b11_000_101 | (AF_ID << 4)); // push AF
-        assert_eq!(cpu.interconnect.read(cpu.reg.pc), 0b11_000_101);
+        set_1byte_op(&mut cpu, 0x45); // push AF
+        // set_1byte_op(&mut cpu, 0b11_000_101 | (AF_ID << 4)); // push AF
+        assert_eq!(cpu.reg.pc, 0x0100); // pass
+        assert_eq!(cpu.interconnect.read(cpu.reg.pc), 0b11_110_101); // actually is just 0
         cpu.execute_opcode(); // Stack: AF,          SP: 0xFFFC
         assert_eq!(cpu.reg.sp, original_sp - 2);
         set_1byte_op(&mut cpu, 0b11_000_101 | (BC_ID << 4)); // push BC
