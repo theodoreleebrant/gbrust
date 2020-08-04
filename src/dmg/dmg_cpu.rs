@@ -114,9 +114,6 @@ impl Cpu {
     pub fn step(&mut self, video_sink: &mut dyn VideoSink) -> u32 {
         // elapsed_cycles calculates how many cycles are spent carrying out the instruction and
         // corresponding interrupt (if produced) = time to execute + time to handle interrupt
-//         println!("
-// ======================
-// current pc: 0x{:x}", self.reg.pc);
         //thread::sleep(time::Duration::from_millis(1));
         let elapsed_cycles = {
             self.execute_opcode() + self.handle_interrupt() 
@@ -423,7 +420,7 @@ impl Cpu {
 
     /// get_n: gets 8-bit immediate n right after opcode
     pub fn get_n(&mut self) -> u8 {
-        //println!("immediate = 0x{:x}", self.interconnect.read(self.reg.pc + 1));
+        //println!("get_n: 0x{:x}", self.interconnect.read(self.reg.pc + 1));
         self.interconnect.read(self.reg.pc + 1)
     }
 
@@ -474,31 +471,23 @@ impl Cpu {
 
         match r16_id {
             BC_ID => {
-                //println!("===== Old value of bc: 0x{:x}", self.reg.bc);
                 self.reg.bc = content;
                 self.reg.b = msb;
                 self.reg.c = lsb;
-                //println!("New value: 0x{:x}", self.reg.bc);
             },
             DE_ID => {
-                //println!("===== Old value of de: 0x{:x}", self.reg.de);
                 self.reg.de = content;
                 self.reg.d = msb;
                 self.reg.e = lsb;
-                //println!("New value: 0x{:x}", self.reg.de);
             },
             HL_ID => {
-                //println!("===== Old value of hl: 0x{:x}", self.reg.hl);
                 self.reg.hl = content;
                 self.reg.h = msb;
                 self.reg.l = lsb;
-                //println!("New value: 0x{:x}", self.reg.hl);
             },
             AF_ID => {
-                //println!("===== Old value of af: 0x{:x}", (self.reg.a as u16) << 8 | self.reg.f as u16);
                 self.reg.a = msb;
                 self.reg.f = lsb;
-                //println!("New value: 0x{:x}", (self.reg.a as u16) << 8 | self.reg.f as u16);
             },
             _ => panic!("Invalid register"),
         }
@@ -1649,7 +1638,7 @@ impl Cpu {
 	    self.write_to_r16(SP_ID, to_write);
         self.set_hcnz(h, c, n, z);
 
-        println!("For add_spe: r = 0x{:x}, old_sp = 0x{:x}, new_sp = 0x{:x}. flags (znhc) = 0b{:b}", r, sp, self.reg.sp, self.reg.f);
+        // println!("For add_spe: r = 0x{:x}, old_sp = 0x{:x}, new_sp = 0x{:x}. flags (znhc) = 0b{:b}", r, sp, self.reg.sp, self.reg.f);
 	    ProgramCounter::Next(2, 4)
 	}
 
@@ -2361,7 +2350,7 @@ mod tests {
 
     fn set_up_cpu() -> Cpu {
         
-        let mut cpu = Cpu::new(Interconnect::new(Cart::new(vec![0; 36452].into_boxed_slice(), Some(vec![0; 65532].into_boxed_slice()))));
+        let mut cpu = Cpu::new(Interconnect::new(Cart::new(vec![0; 36452].into_boxed_slice(), None)));
 
         cpu.write_to_r16(BC_ID, BC_DEF); // will write to B and C also
         cpu.write_to_r16(DE_ID, DE_DEF);
@@ -2372,31 +2361,43 @@ mod tests {
     }
 
     fn set_1byte_op(cpu: &mut Cpu, opcode: u8) {
-        cpu.interconnect.write(cpu.reg.pc, opcode);
+        // println!("Writing opcode 0x{:x} to address 0x{:x}", cpu.reg.pc, opcode);
+        let addr = cpu.reg.pc;
+        cpu.interconnect.cart.program[addr as usize] = opcode;
     }
 
     fn set_2byte_op(cpu: &mut Cpu, opcode: u16) {
-        cpu.interconnect.write(cpu.reg.pc, (opcode >> 8) as u8);
-        cpu.interconnect.write(cpu.reg.pc + 1, opcode as u8);
+        let addr = cpu.reg.pc;
+        cpu.interconnect.cart.program[addr as usize] = (opcode >> 8) as u8;
+        cpu.interconnect.cart.program[(addr + 1) as usize] = opcode as u8;
     }
 
     fn set_3byte_op(cpu: &mut Cpu, opcode: u32) {
-        cpu.interconnect.write(cpu.reg.pc, (opcode >> 16) as u8);
-        cpu.interconnect.write(cpu.reg.pc + 1, (opcode >> 8) as u8);
-        cpu.interconnect.write(cpu.reg.pc + 2, opcode as u8);
+        let addr = cpu.reg.pc;
+        cpu.interconnect.cart.program[addr as usize] = (opcode >> 16) as u8;
+        cpu.interconnect.cart.program[(addr + 1) as usize] = (opcode >> 8) as u8;
+        cpu.interconnect.cart.program[(addr + 2) as usize] = opcode as u8;
     }
 
     fn set_4byte_op(cpu: &mut Cpu, opcode: u32) {
+        let addr = cpu.reg.pc;
+        cpu.interconnect.cart.program[addr as usize] = (opcode >> 24) as u8;
+        cpu.interconnect.cart.program[(addr + 1) as usize] = (opcode >> 16) as u8;
+        cpu.interconnect.cart.program[(addr + 2) as usize] = (opcode >> 8) as u8;
+        cpu.interconnect.cart.program[(addr + 3) as usize] = opcode as u8;
+        /*
         cpu.interconnect.write(cpu.reg.pc, (opcode >> 24) as u8);
         cpu.interconnect.write(cpu.reg.pc + 1, (opcode >> 16) as u8);
         cpu.interconnect.write(cpu.reg.pc + 2, (opcode >> 8) as u8);
         cpu.interconnect.write(cpu.reg.pc + 3, opcode as u8);
+        */
     }
 
     fn read_af(cpu: &Cpu) -> u16 {
         ((cpu.reg.a as u16) << 8) | (cpu.reg.f as u16)
     }
 
+    
     #[test]
     fn test_pop_rr() {
         let mut cpu = set_up_cpu(); // Stack: empty, SP: 0xFFFE
@@ -2405,10 +2406,9 @@ mod tests {
         let original_de = cpu.reg.de;
         let original_sp = cpu.reg.sp;
         
-        set_1byte_op(&mut cpu, 0x45); // push AF
-        // set_1byte_op(&mut cpu, 0b11_000_101 | (AF_ID << 4)); // push AF
+        set_1byte_op(&mut cpu, 0b11_000_101 | (AF_ID << 4)); // push AF
         assert_eq!(cpu.reg.pc, 0x0100); // pass
-        assert_eq!(cpu.interconnect.read(cpu.reg.pc), 0b11_110_101); // actually is just 0
+        assert_eq!(cpu.interconnect.read(cpu.reg.pc), 0b11_110_101); // actually is just 0 for some reason
         cpu.execute_opcode(); // Stack: AF,          SP: 0xFFFC
         assert_eq!(cpu.reg.sp, original_sp - 2);
         set_1byte_op(&mut cpu, 0b11_000_101 | (BC_ID << 4)); // push BC
@@ -2429,5 +2429,11 @@ mod tests {
         assert_eq!(cpu.reg.bc, original_af);
         
     }
+    
+    
+    /*
+    #[test]
+    fn write_to_memory() {
+*/
 
 }

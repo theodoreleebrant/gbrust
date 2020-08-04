@@ -7,8 +7,8 @@ use std::string::String;
 use super::mbc::mbc_properties::{MbcType, MbcInfo, RamInfo, Mbc};
 
 pub struct Cart {
-    program: Box<[u8]>,
-    mbc: Box<Mbc>, // Box because Mbc is a trait, no box = need dynamic typing
+    pub program: Box<[u8]>,
+    mbc: Box<dyn Mbc>, // Box because Mbc is a trait, no box = need dynamic typing
 }
 
 #[derive(Debug)]
