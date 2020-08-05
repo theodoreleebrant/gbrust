@@ -62,6 +62,8 @@ impl Cart {
             0x01 => MbcInfo::new(MbcType::Mbc1, ram_info, false),
             0x02 => MbcInfo::new(MbcType::Mbc1, ram_info, false),
             0x03 => MbcInfo::new(MbcType::Mbc1, ram_info, true),
+            0x13 => MbcInfo::new(MbcType::Mbc3, ram_info, true),
+            /*
             0x05 => MbcInfo::new(MbcType::Mbc2, ram_info, false),
             0x06 => MbcInfo::new(MbcType::Mbc2, ram_info, true),
             0x0F => MbcInfo::new(MbcType::Mbc3, ram_info, true),
@@ -71,7 +73,8 @@ impl Cart {
             //0x00 => MbcInfo::new(MbcType::None, ram_info, false),
             //0x00 => MbcInfo::new(MbcType::None, ram_info, false),
             //0x00 => MbcInfo::new(MbcType::None, ram_info, false),
-            _ => panic!("Haven't developed MBCs yet!"),
+            */
+            _ => panic!("Haven't developed MBCs yet!. Found MBC code 0b{:b}", program[0x0147]),
         }
     }
 
