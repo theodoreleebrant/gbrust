@@ -2430,6 +2430,78 @@ mod tests {
         
     }
     
+    #[test]
+    fn test_jp_nn() { // pass blargg test
+        let mut cpu = set_up_cpu();
+        
+        assert_eq!(cpu.reg.pc, 0x0100);
+        set_3byte_op(&mut cpu, 0b11000011_00000000_10000000); // jp 0x8000
+        assert_eq!(cpu.interconnect.read(cpu.reg.pc), 0b11000011);
+        assert_eq!(cpu.interconnect.read(cpu.reg.pc + 1), 0b00000000);
+        assert_eq!(cpu.interconnect.read(cpu.reg.pc + 2), 0b10000000);
+        cpu.execute_opcode();
+        assert_eq!(cpu.reg.pc, 0x8000);
+    }
+
+    // cc: 00 - Z!, 01 - Z, 10 - C!, 11 - C;
+    fn test_jp_cc_nn(cc: u8) { // failed blargg test
+        let mut cpu = set_up_cpu();
+        assert_eq!(cpu.reg.pc, 0x0100);
+        assert_eq!(cpu.reg.f, 0xB0); // ZNHC = 1011
+        
+        let (flag_involved, jump_first) = match cc {
+            0b00 => (ZF, false),
+            0b01 => (ZF, true),
+            0b10 => (CF, false),
+            0b11 => (CF, true),
+            _ => panic!("No flag matches"),
+        };
+
+        // Do not jump
+        set_3byte_op(&mut cpu, 0b11_000_010_00000000_01100000 | ((cc as u32) << 19));
+        assert_eq!(cpu.interconnect.read(cpu.reg.pc), 0b11000010 | (cc << 3));
+        assert_eq!(cpu.interconnect.read(cpu.reg.pc + 1), 0b00000000);
+        assert_eq!(cpu.interconnect.read(cpu.reg.pc + 2), 0b01100000);
+        cpu.execute_opcode();
+        if jump_first {
+            assert_eq!(cpu.reg.pc, 0x6000);
+        } else {
+            assert_eq!(cpu.reg.pc, 0x0103);
+        }
+        // cc = 00, now jump
+        cpu.reset_flag(flag_involved);
+        set_3byte_op(&mut cpu, 0b11_000_010_00000000_01100000 | ((cc as u32) << 19));
+        assert_eq!(cpu.interconnect.read(cpu.reg.pc), 0b11000010 | (cc << 3));
+        assert_eq!(cpu.interconnect.read(cpu.reg.pc + 1), 0b00000000);
+        assert_eq!(cpu.interconnect.read(cpu.reg.pc + 2), 0b01100000);
+        cpu.execute_opcode();
+        if jump_first {
+            assert_eq!(cpu.reg.pc, 0x6003);
+        } else {
+            assert_eq!(cpu.reg.pc, 0x6000);
+        }
+    }
+    
+    #[test]
+    fn test_jp_00_nn() {
+        test_jp_cc_nn(0b00);
+    }
+
+    #[test]
+    fn test_jp_01_nn() {
+        test_jp_cc_nn(0b01);
+    }
+
+    #[test]
+    fn test_jp_10_nn() {
+        test_jp_cc_nn(0b10);
+    }
+
+    #[test]
+    fn test_jp_11_nn() {
+        test_jp_cc_nn(0b11);
+    }
+
     
     /*
     #[test]
